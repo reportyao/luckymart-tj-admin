@@ -1,4 +1,13 @@
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
+import { LotteryForm } from './components/Lottery/LotteryForm'
+import { LotteryListPage } from './components/Lottery/LotteryListPage'
+import { UserListPage } from './components/User/UserListPage'
+import { UserDetailsPage } from './components/User/UserDetailsPage'
+import { OrderListPage } from './components/Order/OrderListPage'
+import { DepositReviewPage } from './components/Finance/DepositReviewPage'
+import { WithdrawalReviewPage } from './components/Finance/WithdrawalReviewPage'
+import { ShippingManagementPage } from './components/Order/ShippingManagementPage'
+import { ShowoffReviewPage } from './components/Showoff/ShowoffReviewPage'
 import { Toaster } from 'react-hot-toast'
 import { useState } from 'react'
 
@@ -46,16 +55,16 @@ function App() {
           <div className="flex-1 overflow-auto p-6">
             <Routes>
               <Route path="/" element={<DashboardPlaceholder />} />
-              <Route path="/users" element={<PagePlaceholder title="User Management" />} />
-              <Route path="/users/:id" element={<PagePlaceholder title="User Details" />} />
-              <Route path="/lotteries" element={<PagePlaceholder title="Lottery Management" />} />
-              <Route path="/lotteries/new" element={<PagePlaceholder title="Create Lottery" />} />
-              <Route path="/lotteries/:id" element={<PagePlaceholder title="Edit Lottery" />} />
-              <Route path="/orders" element={<PagePlaceholder title="Order Management" />} />
-              <Route path="/deposit-review" element={<PagePlaceholder title="Deposit Review" />} />
-              <Route path="/withdrawal-review" element={<PagePlaceholder title="Withdrawal Review" />} />
-              <Route path="/shipping-management" element={<PagePlaceholder title="Shipping Management" />} />
-              <Route path="/showoff-review" element={<PagePlaceholder title="Showoff Review" />} />
+              <Route path="/users" element={<UserListPage />} />
+              <Route path="/users/:id" element={<UserDetailsPage />} />
+              <Route path="/lotteries" element={<LotteryListPage />} />
+              <Route path="/lotteries/new" element={<LotteryForm />} />
+              <Route path="/lotteries/:id" element={<LotteryForm />} />
+              <Route path="/orders" element={<OrderListPage />} />
+              <Route path="/deposit-review" element={<DepositReviewPage />} />
+              <Route path="/withdrawal-review" element={<WithdrawalReviewPage />} />
+              <Route path="/shipping-management" element={<ShippingManagementPage />} />
+              <Route path="/showoff-review" element={<ShowoffReviewPage />} />
               <Route path="/resale-management" element={<PagePlaceholder title="Resale Management" />} />
               <Route path="/payment-config" element={<PagePlaceholder title="Payment Configuration" />} />
               <Route path="/audit-logs" element={<PagePlaceholder title="Audit Logs" />} />
