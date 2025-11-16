@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useSupabase } from '../../contexts/SupabaseContext';
-import { Tables, Enums } from '../../types/supabase';
+import { useSupabase } from '../../../contexts/SupabaseContext';
+import { Tables, Enums } from '../../../types/supabase';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Button } from '../ui/button';
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { MultiLanguageInput } from '../MultiLanguageInput';
 import toast from 'react-hot-toast';
+import { formatDateTime } from '../../../lib/utils';
 
 type Lottery = Tables<'lotteries'>;
 type LotteryStatus = Enums<'LotteryStatus'>;
@@ -336,16 +337,18 @@ export const LotteryForm: React.FC = () => {
           </div>
 
           {/* 状态和图片 */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="sp	              <Label htmlFor="status">状态</Label>
+	          <div className="grid grid-cols-2 gap-4">
+	            <div className="space-y-2">
+	              <Label htmlFor="status">状态</Label>
 	              <Select
 	                value={formData.status}
 	                onValueChange={(v) => handleSelectChange('status', v)}
 	                disabled={isDrawn} // 开奖后不能修改状态
 	              >
-                  <SelectValue placeholder="选择状态" />
-                </SelectTrigger>
-                <SelectContent>
+	                <SelectTrigger id="status">
+	                  <SelectValue placeholder="选择状态" />
+	                </SelectTrigger>
+	                <SelectContent>
                   <SelectItem value="PENDING">待开始</SelectItem>
                   <SelectItem value="ACTIVE">进行中</SelectItem>
                   <SelectItem value="DRAWN">已开奖</SelectItem>

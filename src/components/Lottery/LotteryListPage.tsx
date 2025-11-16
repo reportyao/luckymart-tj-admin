@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSupabase } from '../../contexts/SupabaseContext';
-import { Tables, Enums } from '../../types/supabase';
+import { useSupabase } from '../../../contexts/SupabaseContext';
+import { Tables, Enums } from '../../../types/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { formatDateTime } from '../../lib/utils';
+import { formatDateTime } from '../../../lib/utils';
 import toast from 'react-hot-toast';
 
 type Lottery = Tables<'lotteries'>;
@@ -110,9 +110,9 @@ export const LotteryListPage: React.FC = () => {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-2xl font-bold">夺宝管理</CardTitle>
-        <Button onClick={() => navigate('/lotteries/new')}>
-          创建新夺宝
-	                      </Button>
+	        <Button onClick={() => navigate('/lotteries/new')}>
+	          创建新夺宝
+	        </Button>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -139,7 +139,9 @@ export const LotteryListPage: React.FC = () => {
                     <TableCell>{lottery.ticket_price} {lottery.currency}</TableCell>
                     <TableCell>{lottery.total_tickets}/{lottery.sold_tickets}</TableCell>
                     <TableCell>
-	                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lottery.statu	                      </span>
+	                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lottery.status)}`}>
+	                        {lottery.status}
+	                      </span>
 	                    </TableCell>
 	                    <TableCell>{formatDateTime(lottery.start_time)}</TableCell>
 	                    <TableCell className="flex space-x-2">
@@ -159,7 +161,8 @@ export const LotteryListPage: React.FC = () => {
 	                      <Button variant="destructive" size="sm" onClick={() => handleDelete(lottery.id)}>
 	                        删除
 	                      </Button>
-	                    </TableCell>     </TableRow>
+		                    </TableCell>
+	                  </TableRow>
                 ))}
               </TableBody>
             </Table>
