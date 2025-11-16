@@ -63,7 +63,31 @@ export const LotteryListPage: React.FC = () => {
     fetchLotteries();
   }, [fetchLotteries]);
 
-  const handleDelete = async (id: string) => {
+	  const handleDraw = async (id: string) => {
+	    if (!window.confirm('确定要立即开奖吗？开奖后将无法修改。')) return;
+	
+	    try {
+	      // 假设存在一个 Supabase RPC 或 Edge Function 来执行开奖逻辑
+	      const { data, error } = await supabase.rpc('draw_lottery', { p_lottery_id: id });
+	
+	      if (error) throw error;
+	
+	      toast.success(`夺宝 ${id} 开奖成功! 中奖号码: ${data.lucky_number}`);
+	      fetchLotteries(); // 刷新列表
+	    } catch (error: any) {
+	      toast.error(`开奖失败: ${error.message}`);
+	      console.error('Error drawing lottery:', error);
+	    }
+	  };
+	
+	  const handleViewResult = (id: string) => {
+	    // 跳转到查看开奖结果的页面，前端应用会使用这个页面
+	    // 在管理后台，我们暂时只跳转到编辑页面，或者可以创建一个专门的查看页面
+	    // 为了简化，我们先跳转到编辑页面，并在编辑页面显示结果
+	    navigate(`/lotteries/${id}`);
+	  };
+	
+	  const handleDelete = async (id: string) => {
     if (!window.confirm('确定要删除这个夺宝吗？')) return;
 
     try {
@@ -88,7 +112,7 @@ export const LotteryListPage: React.FC = () => {
         <CardTitle className="text-2xl font-bold">夺宝管理</CardTitle>
         <Button onClick={() => navigate('/lotteries/new')}>
           创建新夺宝
-        </Button>
+	                      </Button>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -115,20 +139,27 @@ export const LotteryListPage: React.FC = () => {
                     <TableCell>{lottery.ticket_price} {lottery.currency}</TableCell>
                     <TableCell>{lottery.total_tickets}/{lottery.sold_tickets}</TableCell>
                     <TableCell>
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lottery.status)}`}>
-                        {lottery.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>{formatDateTime(lottery.start_time)}</TableCell>
-                    <TableCell className="flex space-x-2">
-                      <Button variant="outline" size="sm" onClick={() => navigate(`/lotteries/${lottery.id}`)}>
-                        编辑
-                      </Button>
-                      <Button variant="destructive" size="sm" onClick={() => handleDelete(lottery.id)}>
-                        删除
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+	                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lottery.statu	                      </span>
+	                    </TableCell>
+	                    <TableCell>{formatDateTime(lottery.start_time)}</TableCell>
+	                    <TableCell className="flex space-x-2">
+	                      {lottery.status === 'SOLD_OUT' && (
+	                        <Button variant="default" size="sm" onClick={() => handleDraw(lottery.id)}>
+	                          立即开奖
+	                        </Button>
+	                      )}
+	                      {lottery.status === 'DRAWN' && (
+	                        <Button variant="outline" size="sm" onClick={() => handleViewResult(lottery.id)}>
+	                          查看结果
+	                        </Button>
+	                      )}
+	                      <Button variant="outline" size="sm" onClick={() => navigate(`/lotteries/${lottery.id}`)}>
+	                        编辑
+	                      </Button>
+	                      <Button variant="destructive" size="sm" onClick={() => handleDelete(lottery.id)}>
+	                        删除
+	                      </Button>
+	                    </TableCell>     </TableRow>
                 ))}
               </TableBody>
             </Table>

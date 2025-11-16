@@ -51,7 +51,8 @@ export const LotteryForm: React.FC = () => {
   const isEdit = !!id;
 
   const [formData, setFormData] = useState<LotteryFormData>(initialFormData);
-  const [isLoading, setIsLoading] = useState(isEdit);
+	  const [isLoading, setIsLoading] = useState(isEdit);
+	  const [lotteryRound, setLotteryRound] = useState<Tables<'lottery_rounds'> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadLottery = useCallback(async () => {
@@ -66,7 +67,18 @@ export const LotteryForm: React.FC = () => {
 
       if (error) throw error;
 
-      if (data) {
+	      if (data) {
+	        // 如果已开奖，尝试获取开奖轮次信息
+	        if (data.status === 'DRAWN') {
+	          const { data: roundData, error: roundError } = await supabase
+	            .from('lottery_rounds')
+	            .select('*')
+	            .eq('lottery_id', id)
+	            .single();
+	
+	          if (roundError && roundError.code !== 'PGRST116') throw roundError;
+	          setLotteryRound(roundData);
+	        }
         setFormData({
           title: data.title as Record<string, string>,
           description: data.description as Record<string, string> | null,
@@ -163,15 +175,49 @@ export const LotteryForm: React.FC = () => {
     }
   };
 
-  if (isLoading) {
-    return <div className="text-center py-10">加载中...</div>;
-  }
+	  if (isLoading) {
+	    return <div className="text-center py-10">加载中...</div>;
+	  }
+	
+	  const isDrawn = formData.status === 'DRAWN';
+	
+	  const verificationData = lotteryRound ? [
+	    { label: '开奖时间', value: formatDateTime(lotteryRound.draw_time) },
+	    { label: '中奖号码', value: lotteryRound.lucky_number },
+	    { label: '时间戳总和 (S)', value: lotteryRound.timestamp_sum },
+	    { label: '总份数 (N)', value: lotteryRound.total_numbers },
+	    { label: '中奖用户 ID', value: lotteryRound.winner_user_id },
+	    { label: '中奖门票 ID', value: lotteryRound.winner_entry_id },
+	  ] : [];
 
-  return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle>{isEdit ? '编辑夺宝' : '创建新夺宝'}</CardTitle>
-      </CardHeader>
+	  return (
+	    <Card className="w-full max-w-4xl mx-auto">
+	      {isDrawn && lotteryRound && (
+	        <Card className="mb-6 border-2 border-green-500 bg-green-50">
+	          <CardHeader>
+	            <CardTitle className="text-xl text-green-700">开奖结果与验证数据</CardTitle>
+	          </CardHeader>
+	          <CardContent>
+	            <div className="grid grid-cols-2 gap-4">
+	              {verificationData.map((item, index) => (
+	                <div key={index} className="space-y-1">
+	                  <Label className="text-sm font-medium text-green-600">{item.label}</Label>
+	                  <p className="text-base font-semibold text-gray-800 break-all">{item.value}</p>
+	                </div>
+	              ))}
+	            </div>
+	            <div className="mt-4 p-3 bg-green-100 rounded-lg">
+	              <Label className="text-sm font-medium text-green-600">开奖公式</Label>
+	              <p className="text-sm font-mono text-gray-700 break-all">
+	                (时间戳总和 S / 总份数 N) % 总份数 N + 1 = 中奖号码
+	              </p>
+	            </div>
+	          </CardContent>
+	        </Card>
+	      )}
+	      <CardHeader>
+	        <CardTitle>{isEdit ? '编辑夺宝' : '创建新夺宝'}</CardTitle>
+	      </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* 多语言标题 */}
@@ -291,13 +337,12 @@ export const LotteryForm: React.FC = () => {
 
           {/* 状态和图片 */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="status">状态</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(v) => handleSelectChange('status', v)}
-              >
-                <SelectTrigger id="status">
+            <div className="sp	              <Label htmlFor="status">状态</Label>
+	              <Select
+	                value={formData.status}
+	                onValueChange={(v) => handleSelectChange('status', v)}
+	                disabled={isDrawn} // 开奖后不能修改状态
+	              >
                   <SelectValue placeholder="选择状态" />
                 </SelectTrigger>
                 <SelectContent>
@@ -319,9 +364,9 @@ export const LotteryForm: React.FC = () => {
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? '提交中...' : isEdit ? '保存更改' : '创建夺宝'}
-          </Button>
+	          <Button type="submit" className="w-full" disabled={isSubmitting || isDrawn}>
+	            {isSubmitting ? '提交中...' : isEdit ? (isDrawn ? '已开奖，无法修改' : '保存更改') : '创建夺宝'}
+	          </Button>
         </form>
       </CardContent>
     </Card>
