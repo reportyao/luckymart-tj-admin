@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useSupabase } from '../../../contexts/SupabaseContext';
-import { Tables, Enums } from '../../../types/supabase';
+import { useSupabase } from '@/contexts/SupabaseContext';
+import { Tables, Enums } from '@/types/supabase';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Button } from '../ui/button';
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { MultiLanguageInput } from '../MultiLanguageInput';
 import toast from 'react-hot-toast';
-import { formatDateTime } from '../../../lib/utils';
+import { formatDateTime } from '@/lib/utils';
 
 type Lottery = Tables<'lotteries'>;
 type LotteryStatus = Enums<'LotteryStatus'>;
@@ -53,7 +53,7 @@ export const LotteryForm: React.FC = () => {
 
   const [formData, setFormData] = useState<LotteryFormData>(initialFormData);
 	  const [isLoading, setIsLoading] = useState(isEdit);
-	  const [lotteryRound, setLotteryRound] = useState<Tables<'lottery_rounds'> | null>(null);
+	  const [lotteryRound, setLotteryRound] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadLottery = useCallback(async () => {
@@ -72,13 +72,24 @@ export const LotteryForm: React.FC = () => {
 	        // 如果已开奖，尝试获取开奖轮次信息
 	        if (data.status === 'DRAWN') {
 	          const { data: roundData, error: roundError } = await supabase
-	            .from('lottery_rounds')
-	            .select('*')
+	            .from('lottery_results')
+	            .select(
+	              `
+	                *,
+	                winner:tickets!lottery_results_winner_id_fkey (
+	                  ticket_number,
+	                  user_id,
+	                  profiles:user_profiles (username, avatar_url)
+	                )
+	              `
+	            )
 	            .eq('lottery_id', id)
 	            .single();
 	
 	          if (roundError && roundError.code !== 'PGRST116') throw roundError;
-	          setLotteryRound(roundData);
+	          // 确保 winner 字段是一个对象而不是数组
+	          const result = roundData ? { ...roundData, winner: roundData.winner[0] } : null;
+	          setLotteryRound(result);
 	        }
         setFormData({
           title: data.title as Record<string, string>,
@@ -184,11 +195,11 @@ export const LotteryForm: React.FC = () => {
 	
 	  const verificationData = lotteryRound ? [
 	    { label: '开奖时间', value: formatDateTime(lotteryRound.draw_time) },
-	    { label: '中奖号码', value: lotteryRound.lucky_number },
-	    { label: '时间戳总和 (S)', value: lotteryRound.timestamp_sum },
+	    { label: '中奖号码', value: lotteryRound.winning_number },
+	    { label: '时间戳总和 (S)', value: lotteryRound.total_sum },
 	    { label: '总份数 (N)', value: lotteryRound.total_numbers },
-	    { label: '中奖用户 ID', value: lotteryRound.winner_user_id },
-	    { label: '中奖门票 ID', value: lotteryRound.winner_entry_id },
+	    { label: '中奖用户', value: lotteryRound.winner?.profiles?.username || 'N/A' },
+	    { label: '中奖门票 ID', value: lotteryRound.winner_id },
 	  ] : [];
 
 	  return (

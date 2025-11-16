@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSupabase } from '../../../contexts/SupabaseContext';
-import { Tables, Enums } from '../../../types/supabase';
+import { useSupabase } from '@/contexts/SupabaseContext';
+import { Tables, Enums } from '@/types/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { formatDateTime } from '../../../lib/utils';
+import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 type Lottery = Tables<'lotteries'>;
@@ -72,7 +72,7 @@ export const LotteryListPage: React.FC = () => {
 	
 	      if (error) throw error;
 	
-	      toast.success(`夺宝 ${id} 开奖成功! 中奖号码: ${data.lucky_number}`);
+	      toast.success(`夺宝 ${id} 开奖成功! 中奖号码: ${data.winning_number}`);
 	      fetchLotteries(); // 刷新列表
 	    } catch (error: any) {
 	      toast.error(`开奖失败: ${error.message}`);
@@ -81,9 +81,7 @@ export const LotteryListPage: React.FC = () => {
 	  };
 	
 	  const handleViewResult = (id: string) => {
-	    // 跳转到查看开奖结果的页面，前端应用会使用这个页面
-	    // 在管理后台，我们暂时只跳转到编辑页面，或者可以创建一个专门的查看页面
-	    // 为了简化，我们先跳转到编辑页面，并在编辑页面显示结果
+	    // 在管理后台，我们跳转到编辑页面，并在编辑页面显示结果
 	    navigate(`/lotteries/${id}`);
 	  };
 	
