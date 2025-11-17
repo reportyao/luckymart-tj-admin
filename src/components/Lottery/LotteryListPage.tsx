@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { formatDateTime } from '@/lib/utils';
-import toast from 'react-hot-toast';
+import toast from 'react-hot-toast';\nimport { EmptyState } from '../EmptyState';
 
 
 type LotteryStatus = Enums<'LotteryStatus'>;
@@ -38,26 +38,36 @@ export const LotteryListPage: React.FC = () => {
   const { supabase } = useSupabase();
   const navigate = useNavigate();
   const [lotteries, setLotteries] = useState<Tables<'lotteries'>[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const LIMIT = 10; // 每页显示 10 条
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchLotteries = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error, count } = await supabase
         .from('lotteries')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*, count()', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range((page - 1) * LIMIT, page * LIMIT - 1);
 
       if (error) throw error;
 
       setLotteries(data || []);
+      if (count !== null) {
+        setTotalPages(Math.ceil(count / LIMIT));
+        if (page > Math.ceil(count / LIMIT) && count > 0) {
+          setPage(Math.ceil(count / LIMIT));
+        }
+      }
     } catch (error: any) {
       toast.error(`加载夺宝列表失败: ${error.message}`);
       console.error('Error loading lotteries:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, page]);
 
   useEffect(() => {
     fetchLotteries();
@@ -115,7 +125,7 @@ export const LotteryListPage: React.FC = () => {
       <CardContent>
         {isLoading ? (
           <div className="text-center py-10">加载中...</div>
-        ) : (
+        ) : lotteries.length === 0 ? (\n          <EmptyState title="暂无夺宝" message="当前没有夺宝活动，请点击上方按钮创建。" action={<Button onClick={() => navigate('/lotteries/new')}>创建新夺宝</Button>} />\n        ) : (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -163,6 +173,26 @@ export const LotteryListPage: React.FC = () => {
 	                  </TableRow>
                 ))}
               </TableBody>
+            </Table>
+            <div className="flex justify-between items-center mt-4">
+              <Button 
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                variant="outline"
+              >
+                上一页
+              </Button>
+              <span className="text-sm text-gray-600">
+                第 {page} 页 / 共 {totalPages} 页
+              </span>
+              <Button 
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                variant="outline"
+              >
+                下一页
+              </Button>
+            </div>
             </Table>
           </div>
         )}
