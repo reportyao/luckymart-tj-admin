@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSupabase } from '../../contexts/SupabaseContext';
-import { Tables, Enums } from '../../types/supabase';
+// import { useNavigate } from 'react-router-dom';
+import { useSupabase } from '@/contexts/SupabaseContext';
+import { Tables, Enums } from '@/types/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { formatDateTime } from '../../lib/utils';
+import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 type Deposit = Tables<'deposits'>;
@@ -26,7 +26,7 @@ const getStatusColor = (status: DepositStatus) => {
 
 export const DepositReviewPage: React.FC = () => {
   const { supabase } = useSupabase();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 

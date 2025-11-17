@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useSupabase } from '@/contexts/SupabaseContext';
-import { Tables, Enums } from '@/types/supabase';
+import { Enums } from '@/types/supabase';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Button } from '../ui/button';
@@ -10,8 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { MultiLanguageInput } from '../MultiLanguageInput';
 import toast from 'react-hot-toast';
 import { formatDateTime } from '@/lib/utils';
-
-type Lottery = Tables<'lotteries'>;
 type LotteryStatus = Enums<'LotteryStatus'>;
 type Currency = Enums<'Currency'>;
 
@@ -195,11 +193,11 @@ export const LotteryForm: React.FC = () => {
 	
 	  const verificationData = lotteryRound ? [
 	    { label: '开奖时间', value: formatDateTime(lotteryRound.draw_time) },
-	    { label: '中奖号码', value: lotteryRound.winning_number },
-	    { label: '时间戳总和 (S)', value: lotteryRound.total_sum },
-	    { label: '总份数 (N)', value: lotteryRound.total_numbers },
+	    { label: '中奖号码 (Winning Number)', value: lotteryRound.winning_number },
+	    { label: '时间戳总和 (S)', value: lotteryRound.timestamp_sum },
+	    { label: '总份数 (N)', value: lotteryRound.total_shares },
 	    { label: '中奖用户', value: lotteryRound.winner?.profiles?.username || 'N/A' },
-	    { label: '中奖门票 ID', value: lotteryRound.winner_id },
+	    { label: '中奖门票 ID', value: lotteryRound.winning_ticket_id },
 	  ] : [];
 
 	  return (

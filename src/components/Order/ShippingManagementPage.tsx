@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSupabase } from '../../contexts/SupabaseContext';
-import { Tables, Enums } from '../../types/supabase';
+import { useSupabase } from '@/contexts/SupabaseContext';
+import { Tables, Enums } from '@/types/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { formatDateTime } from '../../lib/utils';
+import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 type Order = Tables<'orders'>;

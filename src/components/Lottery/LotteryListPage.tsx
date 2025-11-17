@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
-type Lottery = Tables<'lotteries'>;
+
 type LotteryStatus = Enums<'LotteryStatus'>;
 
 const getStatusColor = (status: LotteryStatus) => {
@@ -37,7 +37,7 @@ const getLocalizedText = (jsonb: any, language: string = 'zh', fallbackLanguage:
 export const LotteryListPage: React.FC = () => {
   const { supabase } = useSupabase();
   const navigate = useNavigate();
-  const [lotteries, setLotteries] = useState<Lottery[]>([]);
+  const [lotteries, setLotteries] = useState<Tables<'lotteries'>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchLotteries = useCallback(async () => {
@@ -72,7 +72,7 @@ export const LotteryListPage: React.FC = () => {
 	
 	      if (error) throw error;
 	
-	      toast.success(`夺宝 ${id} 开奖成功! 中奖号码: ${data.winning_number}`);
+	      toast.success(`夺宝 ${id} 开奖成功! 中奖号码: ${(data as any).winning_number}`);
 	      fetchLotteries(); // 刷新列表
 	    } catch (error: any) {
 	      toast.error(`开奖失败: ${error.message}`);
@@ -135,7 +135,7 @@ export const LotteryListPage: React.FC = () => {
                     <TableCell className="font-medium">{lottery.period}</TableCell>
                     <TableCell>{getLocalizedText(lottery.title, 'zh')}</TableCell>
                     <TableCell>{lottery.ticket_price} {lottery.currency}</TableCell>
-                    <TableCell>{lottery.total_tickets}/{lottery.sold_tickets}</TableCell>
+                    <TableCell>{lottery.total_tickets}</TableCell>
                     <TableCell>
 	                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lottery.status)}`}>
 	                        {lottery.status}
@@ -143,7 +143,7 @@ export const LotteryListPage: React.FC = () => {
 	                    </TableCell>
 	                    <TableCell>{formatDateTime(lottery.start_time)}</TableCell>
 	                    <TableCell className="flex space-x-2">
-	                      {lottery.status === 'SOLD_OUT' && (
+	                      {(lottery.status === 'ACTIVE' && new Date(lottery.end_time) < new Date()) && !lottery.status.includes('DRAWN') && (
 	                        <Button variant="default" size="sm" onClick={() => handleDraw(lottery.id)}>
 	                          立即开奖
 	                        </Button>

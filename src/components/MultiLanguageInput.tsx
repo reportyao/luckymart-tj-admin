@@ -8,7 +8,7 @@ import { Label } from './ui/label';
 const SUPPORTED_LANGUAGES = [
   { code: 'zh', label: '中文 (Chinese)' },
   { code: 'en', label: '英文 (English)' },
-  { code: 'tg', label: '塔吉克语 (Tajik)' }, // 假设 tg 是塔吉克语
+  { code: 'ru', label: '俄语 (Russian)' }, // 假设 ru 是俄语
 ];
 
 interface MultiLanguageInputProps {
@@ -29,7 +29,7 @@ export const MultiLanguageInput: React.FC<MultiLanguageInputProps> = ({
   type = 'input',
   className,
 }) => {
-  const [activeTab, setActiveTab] = useState(SUPPORTED_LANGUAGES[0].code);
+  const [activeTab, setActiveTab] = useState(SUPPORTED_LANGUAGES[0]?.code || 'zh');
   const currentValues = value || {};
 
   const handleChange = useCallback(

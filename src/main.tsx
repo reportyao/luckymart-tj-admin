@@ -1,11 +1,22 @@
 import { StrictMode } from 'react'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { createRoot } from 'react-dom/client'
 import './i18n/config'
 import './index.css'
-import App from './App.tsx'
+import App from './App'
+import { setupGlobalErrorHandlers } from './utils/errorHandlers'
 
-createRoot(document.getElementById('root')!).render(
+setupGlobalErrorHandlers()
+
+const rootElement = document.getElementById('root')
+if (!rootElement) {
+  throw new Error('Root element not found')
+}
+
+createRoot(rootElement).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 )

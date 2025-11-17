@@ -12,7 +12,7 @@ import { Toaster } from 'react-hot-toast'
 import { useState } from 'react'
 
 // Simplified Admin Dashboard
-function App() {
+function App(): JSX.Element {
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   return (
@@ -78,7 +78,7 @@ function App() {
   )
 }
 
-function NavLink({ to, label, icon }: { to: string; label: string; icon: string }) {
+function NavLink({ to, label, icon }: { to: string; label: string; icon: string }): JSX.Element {
   return (
     <Link
       to={to}
@@ -90,7 +90,7 @@ function NavLink({ to, label, icon }: { to: string; label: string; icon: string 
   )
 }
 
-function DashboardPlaceholder() {
+function DashboardPlaceholder(): JSX.Element {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
@@ -104,7 +104,7 @@ function DashboardPlaceholder() {
   )
 }
 
-function StatCard({ title, value }: { title: string; value: string }) {
+function StatCard({ title, value }: { title: string; value: string }): JSX.Element {
   return (
     <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4">
       <p className="text-gray-600 text-sm">{title}</p>
@@ -113,7 +113,7 @@ function StatCard({ title, value }: { title: string; value: string }) {
   )
 }
 
-function PagePlaceholder({ title }: { title: string }) {
+function PagePlaceholder({ title }: { title: string }): JSX.Element {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h1 className="text-3xl font-bold mb-4">{title}</h1>

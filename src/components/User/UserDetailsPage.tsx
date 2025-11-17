@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { useSupabase } from '../../contexts/SupabaseContext';
-import { Tables } from '../../types/supabase';
+import { useSupabase } from '@/contexts/SupabaseContext';
+import { Tables } from '@/types/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
-import { formatDateTime } from '../../lib/utils';
+import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 type UserProfile = Tables<'profiles'>;
