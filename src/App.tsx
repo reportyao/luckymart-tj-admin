@@ -9,7 +9,7 @@ import { WithdrawalReviewPage } from './components/Finance/WithdrawalReviewPage'
 import { ShippingManagementPage } from './components/Order/ShippingManagementPage'
 import { ShowoffReviewPage } from './components/Showoff/ShowoffReviewPage'
 import { Toaster } from 'react-hot-toast'
-import { useState } from 'react'
+import { useState } from 'react'\nimport { ProtectedRoute } from './components/ProtectedRoute'\nimport { UnauthorizedPage } from './components/UnauthorizedPage'\nimport { ForbiddenPage } from './components/ForbiddenPage'
 
 // Simplified Admin Dashboard
 function App(): JSX.Element {
@@ -54,20 +54,20 @@ function App(): JSX.Element {
           {/* Content */}
           <div className="flex-1 overflow-auto p-6">
             <Routes>
-              <Route path="/" element={<DashboardPlaceholder />} />
-              <Route path="/users" element={<UserListPage />} />
-              <Route path="/users/:id" element={<UserDetailsPage />} />
-              <Route path="/lotteries" element={<LotteryListPage />} />
-              <Route path="/lotteries/new" element={<LotteryForm />} />
-              <Route path="/lotteries/:id" element={<LotteryForm />} />
-              <Route path="/orders" element={<OrderListPage />} />
-              <Route path="/deposit-review" element={<DepositReviewPage />} />
-              <Route path="/withdrawal-review" element={<WithdrawalReviewPage />} />
-              <Route path="/shipping-management" element={<ShippingManagementPage />} />
-              <Route path="/showoff-review" element={<ShowoffReviewPage />} />
-              <Route path="/resale-management" element={<PagePlaceholder title="Resale Management" />} />
-              <Route path="/payment-config" element={<PagePlaceholder title="Payment Configuration" />} />
-              <Route path="/audit-logs" element={<PagePlaceholder title="Audit Logs" />} />
+              <Route path="/" element={<ProtectedRoute element={<DashboardPlaceholder />} />} />
+              <Route path="/users" element={<ProtectedRoute element={<UserListPage />} requiredRole="admin" />} />
+              <Route path="/users/:id" element={<ProtectedRoute element={<UserDetailsPage />} requiredRole="admin" />} />
+              <Route path="/lotteries" element={<ProtectedRoute element={<LotteryListPage />} requiredRole="admin" />} />
+              <Route path="/lotteries/new" element={<ProtectedRoute element={<LotteryForm />} requiredRole="admin" />} />
+              <Route path="/lotteries/:id" element={<ProtectedRoute element={<LotteryForm />} requiredRole="admin" />} />
+              <Route path="/orders" element={<ProtectedRoute element={<OrderListPage />} requiredRole="admin" />} />
+              <Route path="/deposit-review" element={<ProtectedRoute element={<DepositReviewPage />} requiredRole="admin" />} />
+              <Route path="/withdrawal-review" element={<ProtectedRoute element={<WithdrawalReviewPage />} requiredRole="admin" />} />
+              <Route path="/shipping-management" element={<ProtectedRoute element={<ShippingManagementPage />} requiredRole="admin" />} />
+              <Route path="/showoff-review" element={<ProtectedRoute element={<ShowoffReviewPage />} requiredRole="admin" />} />
+              <Route path="/resale-management" element={<ProtectedRoute element={<PagePlaceholder title="Resale Management" />} requiredRole="admin" />} />
+              <Route path="/payment-config" element={<ProtectedRoute element={<PagePlaceholder title="Payment Configuration" />} requiredRole="admin" />} />
+              <Route path="/audit-logs" element={<ProtectedRoute element={<PagePlaceholder title="Audit Logs" />} requiredRole="admin" />} />\n              <Route path="/unauthorized" element={<UnauthorizedPage />} />\n              <Route path="/forbidden" element={<ForbiddenPage />} />
             </Routes>
           </div>
         </div>
