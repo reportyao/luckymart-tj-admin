@@ -1,0 +1,55 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - heading "LuckyMart Admin" [level=1] [ref=e6]
+    - navigation [ref=e7]:
+      - link "📊 Dashboard" [ref=e8] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e9]: 📊
+        - generic [ref=e10]: Dashboard
+      - link "👥 Users" [ref=e11] [cursor=pointer]:
+        - /url: /users
+        - generic [ref=e12]: 👥
+        - generic [ref=e13]: Users
+      - link "🎰 Lotteries" [ref=e14] [cursor=pointer]:
+        - /url: /lotteries
+        - generic [ref=e15]: 🎰
+        - generic [ref=e16]: Lotteries
+      - link "📦 Orders" [ref=e17] [cursor=pointer]:
+        - /url: /orders
+        - generic [ref=e18]: 📦
+        - generic [ref=e19]: Orders
+      - link "💰 Deposits" [ref=e20] [cursor=pointer]:
+        - /url: /deposit-review
+        - generic [ref=e21]: 💰
+        - generic [ref=e22]: Deposits
+      - link "💸 Withdrawals" [ref=e23] [cursor=pointer]:
+        - /url: /withdrawal-review
+        - generic [ref=e24]: 💸
+        - generic [ref=e25]: Withdrawals
+      - link "🚚 Shipping" [ref=e26] [cursor=pointer]:
+        - /url: /shipping-management
+        - generic [ref=e27]: 🚚
+        - generic [ref=e28]: Shipping
+      - link "📸 Showoff" [ref=e29] [cursor=pointer]:
+        - /url: /showoff-review
+        - generic [ref=e30]: 📸
+        - generic [ref=e31]: Showoff
+      - link "🔄 Resale" [ref=e32] [cursor=pointer]:
+        - /url: /resale-management
+        - generic [ref=e33]: 🔄
+        - generic [ref=e34]: Resale
+      - link "⚙️ Payment" [ref=e35] [cursor=pointer]:
+        - /url: /payment-config
+        - generic [ref=e36]: ⚙️
+        - generic [ref=e37]: Payment
+      - link "📋 Audit Logs" [ref=e38] [cursor=pointer]:
+        - /url: /audit-logs
+        - generic [ref=e39]: 📋
+        - generic [ref=e40]: Audit Logs
+  - generic [ref=e42]:
+    - button "☰" [ref=e43]
+    - generic [ref=e44]: Admin Panel
+```
