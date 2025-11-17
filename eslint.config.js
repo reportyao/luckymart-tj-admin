@@ -35,8 +35,8 @@ export default [
       'react-hooks/exhaustive-deps': 'warn',
       
       // TypeScript 规则
-      '@typescript-eslint/explicit-function-return-types': 'warn',
-      '@typescript-eslint/explicit-module-boundary-types': 'warn',
+      // '@typescript-eslint/explicit-function-return-types': 'warn', // 规则已弃用或不存在
+      // '@typescript-eslint/explicit-module-boundary-types': 'warn', // 规则已弃用或不存在
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': 'error',
       

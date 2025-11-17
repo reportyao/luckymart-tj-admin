@@ -2,14 +2,20 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
 import { LotteryForm } from './components/Lottery/LotteryForm'
 import { LotteryListPage } from './components/Lottery/LotteryListPage'
 import { UserListPage } from './components/User/UserListPage'
+import UserManagementPage from './pages/UserManagementPage'
 import { UserDetailsPage } from './components/User/UserDetailsPage'
 import { OrderListPage } from './components/Order/OrderListPage'
 import { DepositReviewPage } from './components/Finance/DepositReviewPage'
+import { PaymentConfigPage } from './pages/PaymentConfigPage'
+import AlgorithmConfigPage from './pages/AlgorithmConfigPage'
 import { WithdrawalReviewPage } from './components/Finance/WithdrawalReviewPage'
 import { ShippingManagementPage } from './components/Order/ShippingManagementPage'
 import { ShowoffReviewPage } from './components/Showoff/ShowoffReviewPage'
 import { Toaster } from 'react-hot-toast'
-import { useState } from 'react'\nimport { ProtectedRoute } from './components/ProtectedRoute'\nimport { UnauthorizedPage } from './components/UnauthorizedPage'\nimport { ForbiddenPage } from './components/ForbiddenPage'
+import { useState } from 'react'
+import { ProtectedRoute } from './components/ProtectedRoute'
+import { UnauthorizedPage } from './components/UnauthorizedPage'
+import { ForbiddenPage } from './components/ForbiddenPage'
 
 // Simplified Admin Dashboard
 function App(): JSX.Element {
@@ -26,6 +32,7 @@ function App(): JSX.Element {
           <nav className="mt-4 space-y-2 px-2">
             <NavLink to="/" label="Dashboard" icon="📊" />
             <NavLink to="/users" label="Users" icon="👥" />
+            <NavLink to="/user-management" label="User Management" icon="👤" />
             <NavLink to="/lotteries" label="Lotteries" icon="🎰" />
             <NavLink to="/orders" label="Orders" icon="📦" />
             <NavLink to="/deposit-review" label="Deposits" icon="💰" />
@@ -33,8 +40,9 @@ function App(): JSX.Element {
             <NavLink to="/shipping-management" label="Shipping" icon="🚚" />
             <NavLink to="/showoff-review" label="Showoff" icon="📸" />
             <NavLink to="/resale-management" label="Resale" icon="🔄" />
-            <NavLink to="/payment-config" label="Payment" icon="⚙️" />
+            <NavLink to="/payment-config" label="Payment Config" icon="⚙️" />
             <NavLink to="/audit-logs" label="Audit Logs" icon="📋" />
+            <NavLink to="/algorithm-config" label="Algorithm Config" icon="🧮" />
           </nav>
         </div>
 
@@ -57,6 +65,7 @@ function App(): JSX.Element {
               <Route path="/" element={<ProtectedRoute element={<DashboardPlaceholder />} />} />
               <Route path="/users" element={<ProtectedRoute element={<UserListPage />} requiredRole="admin" />} />
               <Route path="/users/:id" element={<ProtectedRoute element={<UserDetailsPage />} requiredRole="admin" />} />
+              <Route path="/user-management" element={<ProtectedRoute element={<UserManagementPage />} requiredRole="admin" />} />
               <Route path="/lotteries" element={<ProtectedRoute element={<LotteryListPage />} requiredRole="admin" />} />
               <Route path="/lotteries/new" element={<ProtectedRoute element={<LotteryForm />} requiredRole="admin" />} />
               <Route path="/lotteries/:id" element={<ProtectedRoute element={<LotteryForm />} requiredRole="admin" />} />
@@ -66,7 +75,9 @@ function App(): JSX.Element {
               <Route path="/shipping-management" element={<ProtectedRoute element={<ShippingManagementPage />} requiredRole="admin" />} />
               <Route path="/showoff-review" element={<ProtectedRoute element={<ShowoffReviewPage />} requiredRole="admin" />} />
               <Route path="/resale-management" element={<ProtectedRoute element={<PagePlaceholder title="Resale Management" />} requiredRole="admin" />} />
-              <Route path="/payment-config" element={<ProtectedRoute element={<PagePlaceholder title="Payment Configuration" />} requiredRole="admin" />} />
+              <Route path="/payment-config" element={<ProtectedRoute element={<PaymentConfigPage />} requiredRole="admin" />} />
+
+              <Route path="/algorithm-config" element={<ProtectedRoute element={<AlgorithmConfigPage />} requiredRole="admin" />} />
               <Route path="/audit-logs" element={<ProtectedRoute element={<PagePlaceholder title="Audit Logs" />} requiredRole="admin" />} />\n              <Route path="/unauthorized" element={<UnauthorizedPage />} />\n              <Route path="/forbidden" element={<ForbiddenPage />} />
             </Routes>
           </div>

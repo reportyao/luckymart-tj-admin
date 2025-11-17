@@ -8,12 +8,14 @@ import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { MultiLanguageInput } from '../MultiLanguageInput';
+import { RichTextEditor } from '../RichTextEditor';
 import toast from 'react-hot-toast';
 import { formatDateTime } from '@/lib/utils';
 type LotteryStatus = Enums<'LotteryStatus'>;
 type Currency = Enums<'Currency'>;
 
 interface LotteryFormData {
+  details: Record<string, string> | null;
   title: Record<string, string> | null;
   description: Record<string, string> | null;
   period: string;
@@ -29,6 +31,7 @@ interface LotteryFormData {
 }
 
 const initialFormData: LotteryFormData = {
+  details: { zh: '', ru: '', tg: '' },
   title: { zh: '', en: '' },
   description: { zh: '', en: '' },
   period: '',
@@ -55,7 +58,7 @@ export const LotteryForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadLottery = useCallback(async () => {
-    if (!id) return;
+    if (!id) {return;}
 
     try {
       const { data, error } = await supabase
@@ -64,7 +67,7 @@ export const LotteryForm: React.FC = () => {
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      if (error) {throw error;}
 
 	      if (data) {
 	        // 如果已开奖，尝试获取开奖轮次信息
@@ -84,7 +87,7 @@ export const LotteryForm: React.FC = () => {
 	            .eq('lottery_id', id)
 	            .single();
 	
-	          if (roundError && roundError.code !== 'PGRST116') throw roundError;
+	          if (roundError && roundError.code !== 'PGRST116') {throw roundError;}
 	          // 确保 winner 字段是一个对象而不是数组
 	          const result = roundData ? { ...roundData, winner: roundData.winner[0] } : null;
 	          setLotteryRound(result);
@@ -92,6 +95,7 @@ export const LotteryForm: React.FC = () => {
         setFormData({
           title: data.title as Record<string, string>,
           description: data.description as Record<string, string> | null,
+          details: data.details_i18n as Record<string, string> | null,
           period: data.period,
           ticket_price: data.ticket_price,
           total_tickets: data.total_tickets,
@@ -157,6 +161,7 @@ export const LotteryForm: React.FC = () => {
         // 确保 JSONB 字段非空
         title: formData.title || {},
         description: formData.description || {},
+        details_i18n: formData.details || {},
       };
 
       let result;
@@ -173,7 +178,7 @@ export const LotteryForm: React.FC = () => {
           .select();
       }
 
-      if (result.error) throw result.error;
+      if (result.error) {throw result.error;}
 
       toast.success(isEdit ? '夺宝信息更新成功!' : '夺宝创建成功!');
       navigate('/lotteries'); // 假设存在一个夺宝列表页
@@ -243,6 +248,13 @@ export const LotteryForm: React.FC = () => {
             value={formData.description}
             onChange={(v) => handleMultiLangChange('description', v)}
             type="textarea"
+          />
+
+          {/* 多语言详情 (富文本) */}
+          <RichTextEditor
+            label="夺宝详情"
+            value={formData.details}
+            onChange={(v) => handleMultiLangChange('details', v)}
           />
 
           {/* 基础信息 */}

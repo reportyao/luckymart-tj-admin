@@ -143,7 +143,7 @@ export const LotteryListPage: React.FC = () => {
                 {lotteries.map((lottery) => (
                   <TableRow key={lottery.id}>
                     <TableCell className="font-medium">{lottery.period}</TableCell>
-                    <TableCell>{getLocalizedText(lottery.title, 'zh')}</TableCell>
+                    <TableCell>{getLocalizedText(lottery.title_i18n, 'zh')}</TableCell>
                     <TableCell>{lottery.ticket_price} {lottery.currency}</TableCell>
                     <TableCell>{lottery.total_tickets}</TableCell>
                     <TableCell>

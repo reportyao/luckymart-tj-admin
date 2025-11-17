@@ -76,10 +76,10 @@ export function getTimeRemaining(endTime: string): {
 // 格式化时间剩余（用于显示）
 export function formatTimeRemaining(endTime: string): string {
   const timeRemaining = getTimeRemaining(endTime);
-  if (timeRemaining.total <= 0) return '已结束';
+  if (timeRemaining.total <= 0) {return '已结束';}
   
-  if (timeRemaining.days > 0) return `${timeRemaining.days}天${timeRemaining.hours}小时`;
-  if (timeRemaining.hours > 0) return `${timeRemaining.hours}小时${timeRemaining.minutes}分钟`;
+  if (timeRemaining.days > 0) {return `${timeRemaining.days}天${timeRemaining.hours}小时`;}
+  if (timeRemaining.hours > 0) {return `${timeRemaining.hours}小时${timeRemaining.minutes}分钟`;}
   return `${timeRemaining.minutes}分钟`;
 }
 

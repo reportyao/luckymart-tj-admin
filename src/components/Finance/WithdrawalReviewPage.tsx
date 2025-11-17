@@ -40,7 +40,7 @@ export const WithdrawalReviewPage: React.FC = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       setWithdrawals(data || []);
     } catch (error: any) {
@@ -56,7 +56,7 @@ export const WithdrawalReviewPage: React.FC = () => {
   }, [fetchWithdrawals]);
 
   const handleReview = async (id: string, status: 'APPROVED' | 'REJECTED' | 'COMPLETED') => {
-    if (!window.confirm(`确定要将这笔提现标记为 ${status} 吗？`)) return;
+    if (!window.confirm(`确定要将这笔提现标记为 ${status} 吗？`)) {return;}
 
     try {
       const { error } = await supabase
@@ -64,7 +64,7 @@ export const WithdrawalReviewPage: React.FC = () => {
         .update({ status, updated_at: new Date().toISOString() })
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       toast.success(`提现状态已更新为 ${status}!`);
       fetchWithdrawals(); // 刷新列表

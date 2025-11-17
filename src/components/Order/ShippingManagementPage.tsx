@@ -38,7 +38,7 @@ export const ShippingManagementPage: React.FC = () => {
         .in('status', ['PAID', 'SHIPPED'])
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       setOrders(data || []);
     } catch (error: any) {
@@ -55,7 +55,7 @@ export const ShippingManagementPage: React.FC = () => {
 
   const handleShip = async (orderId: string) => {
     const trackingNumber = prompt('请输入快递单号:');
-    if (!trackingNumber) return;
+    if (!trackingNumber) {return;}
 
     try {
       const { error } = await supabase
@@ -67,7 +67,7 @@ export const ShippingManagementPage: React.FC = () => {
         })
         .eq('id', orderId);
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       toast.success('订单已标记为已发货!');
       fetchOrders(); // 刷新列表
@@ -78,7 +78,7 @@ export const ShippingManagementPage: React.FC = () => {
   };
 
   const handleDeliver = async (orderId: string) => {
-    if (!window.confirm('确定要将此订单标记为已送达吗？')) return;
+    if (!window.confirm('确定要将此订单标记为已送达吗？')) {return;}
 
     try {
       const { error } = await supabase
@@ -89,7 +89,7 @@ export const ShippingManagementPage: React.FC = () => {
         })
         .eq('id', orderId);
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       toast.success('订单已标记为已送达!');
       fetchOrders(); // 刷新列表

@@ -36,7 +36,7 @@ export const ShowoffReviewPage: React.FC = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       setShowoffs(data || []);
     } catch (error: any) {
@@ -52,7 +52,7 @@ export const ShowoffReviewPage: React.FC = () => {
   }, [fetchShowoffs]);
 
   const handleReview = async (id: string, status: 'APPROVED' | 'REJECTED') => {
-    if (!window.confirm(`确定要${status === 'APPROVED' ? '批准' : '拒绝'}这篇晒单吗？`)) return;
+    if (!window.confirm(`确定要${status === 'APPROVED' ? '批准' : '拒绝'}这篇晒单吗？`)) {return;}
 
     try {
       const { error } = await supabase
@@ -60,7 +60,7 @@ export const ShowoffReviewPage: React.FC = () => {
         .update({ status, updated_at: new Date().toISOString() })
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       toast.success(`晒单已${status === 'APPROVED' ? '批准' : '拒绝'}!`);
       fetchShowoffs(); // 刷新列表

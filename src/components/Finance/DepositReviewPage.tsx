@@ -38,7 +38,7 @@ export const DepositReviewPage: React.FC = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       setDeposits(data || []);
     } catch (error: any) {
@@ -54,7 +54,7 @@ export const DepositReviewPage: React.FC = () => {
   }, [fetchDeposits]);
 
   const handleReview = async (id: string, status: 'APPROVED' | 'REJECTED') => {
-    if (!window.confirm(`确定要${status === 'APPROVED' ? '批准' : '拒绝'}这笔充值吗？`)) return;
+    if (!window.confirm(`确定要${status === 'APPROVED' ? '批准' : '拒绝'}这笔充值吗？`)) {return;}
 
     try {
       const { error } = await supabase
@@ -62,7 +62,7 @@ export const DepositReviewPage: React.FC = () => {
         .update({ status, updated_at: new Date().toISOString() })
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       toast.success(`充值已${status === 'APPROVED' ? '批准' : '拒绝'}!`);
       fetchDeposits(); // 刷新列表

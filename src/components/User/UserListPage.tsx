@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';\nimport { EmptyState } from '../EmptyState';
 
-type UserProfile = Tables<'profiles'>;
+type UserProfile = Tables<'users'>;
 
 export const UserListPage: React.FC = () => {
   const { supabase } = useSupabase();
@@ -19,9 +19,9 @@ export const UserListPage: React.FC = () => {
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
-      // 假设 profiles 表存储了用户的主要信息
+      // 假设 users 表存储了用户的主要信息
       const { data, error, count } = await supabase
-        .from('profiles')
+        .from('users')
         .select('*, count()', { count: 'exact' })
         .order('created_at', { ascending: false })\n        .range((page - 1) * LIMIT, page * LIMIT - 1);
 
@@ -58,9 +58,9 @@ export const UserListPage: React.FC = () => {
                 <TableRow>
                   <TableHead>Telegram ID</TableHead>
                   <TableHead>用户名</TableHead>
-                  <TableHead>姓名</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>KYC 等级</TableHead>
+                  <TableHead>显示名称</TableHead>
+                  <TableHead>余额/夺宝币</TableHead>
+                  <TableHead>VIP/返利(%)</TableHead>
                   <TableHead>注册时间</TableHead>
                   <TableHead>操作</TableHead>
                 </TableRow>
@@ -70,13 +70,9 @@ export const UserListPage: React.FC = () => {
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.telegram_id}</TableCell>
                     <TableCell>{user.telegram_username || 'N/A'}</TableCell>
-                    <TableCell>{user.first_name} {user.last_name}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${user.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {user.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>{user.kyc_level}</TableCell>
+                    <TableCell>{user.display_name || 'N/A'}</TableCell>
+                    <TableCell>{user.balance.toFixed(2)} / {user.lucky_coins.toFixed(2)}</TableCell>
+                    <TableCell>{user.vip_level} / {user.commission_rate || 0}%</TableCell>
                     <TableCell>{formatDateTime(user.created_at)}</TableCell>
                     <TableCell className="flex space-x-2">
                       <Button variant="outline" size="sm" onClick={() => navigate(`/users/${user.id}`)}>

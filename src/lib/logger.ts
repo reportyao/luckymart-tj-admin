@@ -15,7 +15,7 @@ function shouldLog(level: LogLevel): boolean {
 }
 
 function sanitizeObject(obj: unknown): unknown {
-  if (typeof obj !== 'object' || obj === null) return obj
+  if (typeof obj !== 'object' || obj === null) {return obj}
 
   const SENSITIVE_KEYS = [
     'password',
@@ -46,22 +46,22 @@ function formatMessage(level: string, message: string): string {
 
 export const logger = {
   debug: (message: string, data?: unknown): void => {
-    if (!isDevelopment || !shouldLog('DEBUG')) return
+    if (!isDevelopment || !shouldLog('DEBUG')) {return}
     console.debug(formatMessage('DEBUG', message), sanitizeObject(data))
   },
 
   info: (message: string, data?: unknown): void => {
-    if (!shouldLog('INFO')) return
+    if (!shouldLog('INFO')) {return}
     console.info(formatMessage('INFO', message), sanitizeObject(data))
   },
 
   warn: (message: string, data?: unknown): void => {
-    if (!shouldLog('WARN')) return
+    if (!shouldLog('WARN')) {return}
     console.warn(formatMessage('WARN', message), sanitizeObject(data))
   },
 
   error: (message: string, error?: unknown): void => {
-    if (!shouldLog('ERROR')) return
+    if (!shouldLog('ERROR')) {return}
     console.error(formatMessage('ERROR', message), sanitizeObject(error))
   }
 }

@@ -1,4 +1,5 @@
-export type Json =
+'''
+export type Json = 
   | string
   | number
   | boolean
@@ -55,6 +56,8 @@ export type Database = {
           created_at: string
           currency: Database['public']['Enums']['Currency']
           description: Json | null
+          description_i18n: Json | null
+          details_i18n: Json | null
           draw_time: string
           end_time: string
           id: string
@@ -65,6 +68,7 @@ export type Database = {
           status: Database['public']['Enums']['LotteryStatus']
           ticket_price: number
           title: Json
+          title_i18n: Json | null
           total_tickets: number
           updated_at: string
         }
@@ -72,6 +76,8 @@ export type Database = {
           created_at?: string
           currency: Database['public']['Enums']['Currency']
           description?: Json | null
+          description_i18n?: Json | null
+          details_i18n?: Json | null
           draw_time: string
           end_time: string
           id?: string
@@ -82,6 +88,7 @@ export type Database = {
           status?: Database['public']['Enums']['LotteryStatus']
           ticket_price: number
           title: Json
+          title_i18n?: Json | null
           total_tickets: number
           updated_at?: string
         }
@@ -89,6 +96,8 @@ export type Database = {
           created_at?: string
           currency?: Database['public']['Enums']['Currency']
           description?: Json | null
+          description_i18n?: Json | null
+          details_i18n?: Json | null
           draw_time?: string
           end_time?: string
           id?: string
@@ -99,6 +108,7 @@ export type Database = {
           status?: Database['public']['Enums']['LotteryStatus']
           ticket_price?: number
           title?: Json
+          title_i18n?: Json | null
           total_tickets?: number
           updated_at?: string
         }
@@ -206,6 +216,30 @@ export type Database = {
           },
         ]
       }
+      payment_config: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -221,7 +255,11 @@ export type Database = {
           telegram_id: string
           telegram_username: string | null
           updated_at: string
-          username: string | null
+          username: string | null,
+          level: number,
+          commission_rate: number
+          level: number
+          commission_rate: number
         }
         Insert: {
           avatar_url?: string | null
@@ -237,7 +275,11 @@ export type Database = {
           telegram_id: string
           telegram_username?: string | null
           updated_at?: string
-          username?: string | null
+          username?: string | null,
+          level?: number,
+          commission_rate?: number
+          level?: number
+          commission_rate?: number
         }
         Update: {
           avatar_url?: string | null
@@ -253,7 +295,11 @@ export type Database = {
           telegram_id?: string
           telegram_username?: string | null
           updated_at?: string
-          username?: string | null
+          username?: string | null,
+          level?: number,
+          commission_rate?: number
+          level?: number
+          commission_rate?: number
         }
         Relationships: [
           {
@@ -470,13 +516,4 @@ export type Database = {
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
+'''
