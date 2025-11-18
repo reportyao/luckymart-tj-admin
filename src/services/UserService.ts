@@ -1,5 +1,5 @@
 
-import { supabase } from './supabaseClient';
+import { supabase } from '@/lib/supabase';
 import { PostgrestResponse } from '@supabase/supabase-js';
 
 export interface User {

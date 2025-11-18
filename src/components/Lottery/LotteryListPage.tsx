@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { formatDateTime } from '@/lib/utils';
-import toast from 'react-hot-toast';\nimport { EmptyState } from '../EmptyState';
+import toast from 'react-hot-toast';
+import { EmptyState } from '../EmptyState';
 
 
 type LotteryStatus = Enums<'LotteryStatus'>;
@@ -125,7 +126,9 @@ export const LotteryListPage: React.FC = () => {
       <CardContent>
         {isLoading ? (
           <div className="text-center py-10">加载中...</div>
-        ) : lotteries.length === 0 ? (\n          <EmptyState title="暂无夺宝" message="当前没有夺宝活动，请点击上方按钮创建。" action={<Button onClick={() => navigate('/lotteries/new')}>创建新夺宝</Button>} />\n        ) : (
+        ) : lotteries.length === 0 ? (
+          <EmptyState title="暂无夺宝" message="当前没有夺宝活动，请点击上方按钮创建。" action={<Button onClick={() => navigate('/lotteries/new')}>创建新夺宝</Button>} />
+        ) : (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -193,7 +196,6 @@ export const LotteryListPage: React.FC = () => {
                 下一页
               </Button>
             </div>
-            </Table>
           </div>
         )}
       </CardContent>

@@ -78,7 +78,9 @@ function App(): JSX.Element {
               <Route path="/payment-config" element={<ProtectedRoute element={<PaymentConfigPage />} requiredRole="admin" />} />
 
               <Route path="/algorithm-config" element={<ProtectedRoute element={<AlgorithmConfigPage />} requiredRole="admin" />} />
-              <Route path="/audit-logs" element={<ProtectedRoute element={<PagePlaceholder title="Audit Logs" />} requiredRole="admin" />} />\n              <Route path="/unauthorized" element={<UnauthorizedPage />} />\n              <Route path="/forbidden" element={<ForbiddenPage />} />
+              <Route path="/audit-logs" element={<ProtectedRoute element={<PagePlaceholder title="Audit Logs" />} requiredRole="admin" />} />
+              <Route path="/unauthorized" element={<UnauthorizedPage />} />
+              <Route path="/forbidden" element={<ForbiddenPage />} />
             </Routes>
           </div>
         </div>
