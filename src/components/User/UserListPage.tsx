@@ -6,14 +6,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { formatDateTime } from '@/lib/utils';
-import toast from 'react-hot-toast';\nimport { EmptyState } from '../EmptyState';
+import toast from 'react-hot-toast';
+import { EmptyState } from '../EmptyState';
 
 type UserProfile = Tables<'users'>;
 
 export const UserListPage: React.FC = () => {
   const { supabase } = useSupabase();
   const navigate = useNavigate();
-  const [users, setUsers] = useState<UserProfile[]>([]);\n  const [page, setPage] = useState(1);\n  const [totalPages, setTotalPages] = useState(1);\n  const LIMIT = 10; // 每页显示 10 条
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const LIMIT = 10; // 每页显示 10 条
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchUsers = useCallback(async () => {
@@ -23,12 +27,20 @@ export const UserListPage: React.FC = () => {
       const { data, error, count } = await supabase
         .from('users')
         .select('*, count()', { count: 'exact' })
-        .order('created_at', { ascending: false })\n        .range((page - 1) * LIMIT, page * LIMIT - 1);
+        .order('created_at', { ascending: false })
+        .range((page - 1) * LIMIT, page * LIMIT - 1);
 
-      if (error) throw error;
+      if (error) {throw error;}
 
-      setUsers(data || []);\n      if (count !== null) {\n        setTotalPages(Math.ceil(count / LIMIT));\n        // 如果当前页码大于总页码，重定向到最后一页\n        if (page > Math.ceil(count / LIMIT) && count > 0) {\n          setPage(Math.ceil(count / LIMIT));\n        }\n      }
-    } catch (error: any) {
+      setUsers(data || []);
+      if (count !== null) {
+        setTotalPages(Math.ceil(count / LIMIT));
+        // 如果当前页码大于总页码，重定向到最后一页
+        if (page > Math.ceil(count / LIMIT) && count > 0) {
+          setPage(Math.ceil(count / LIMIT));
+        }
+      }
+    } catch (error) {
       toast.error(`加载用户列表失败: ${error.message}`);
       console.error('Error loading users:', error);
     } finally {
@@ -51,7 +63,9 @@ export const UserListPage: React.FC = () => {
       <CardContent>
         {isLoading ? (
           <div className="text-center py-10">加载中...</div>
-        ) : users.length === 0 ? (\n          <EmptyState title="暂无用户" message="当前没有用户数据，或搜索结果为空。" />\n        ) : (
+        ) : users.length === 0 ? (
+          <EmptyState title="暂无用户" message="当前没有用户数据，或搜索结果为空。" />
+        ) : (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -81,10 +95,30 @@ export const UserListPage: React.FC = () => {
                     </TableCell>
                   </TableRow>
                 ))}
-              </TableBody>\n            </Table>\n            <div className="flex justify-between items-center mt-4">\n              <Button \n                onClick={() => setPage(p => Math.max(1, p - 1))}\n                disabled={page === 1}\n                variant="outline"\n              >\n                上一页\n              </Button>\n              <span className="text-sm text-gray-600">\n                第 {page} 页 / 共 {totalPages} 页\n              </span>\n              <Button \n                onClick={() => setPage(p => Math.min(totalPages, p + 1))}\n                disabled={page === totalPages}\n                variant="outline"\n              >\n                下一页\n              </Button>\n            </div>\n          </div>\n        )}
+              </TableBody>
             </Table>
+            <div className="flex justify-between items-center mt-4">
+              <Button 
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                variant="outline"
+              >
+                上一页
+              </Button>
+              <span className="text-sm text-gray-600">
+                第 {page} 页 / 共 {totalPages} 页
+              </span>
+              <Button 
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                variant="outline"
+              >
+                下一页
+              </Button>
+            </div>
           </div>
         )}
+
       </CardContent>
     </Card>
   );

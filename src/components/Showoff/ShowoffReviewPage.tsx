@@ -39,7 +39,7 @@ export const ShowoffReviewPage: React.FC = () => {
       if (error) {throw error;}
 
       setShowoffs(data || []);
-    } catch (error: any) {
+    } catch (error) {
       toast.error(`加载晒单列表失败: ${error.message}`);
       console.error('Error loading showoffs:', error);
     } finally {
@@ -64,7 +64,7 @@ export const ShowoffReviewPage: React.FC = () => {
 
       toast.success(`晒单已${status === 'APPROVED' ? '批准' : '拒绝'}!`);
       fetchShowoffs(); // 刷新列表
-    } catch (error: any) {
+    } catch (error) {
       toast.error(`审核失败: ${error.message}`);
       console.error('Error reviewing showoff:', error);
     }

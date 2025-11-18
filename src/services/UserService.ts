@@ -1,4 +1,4 @@
-'''
+
 import { supabase } from './supabaseClient';
 import { PostgrestResponse } from '@supabase/supabase-js';
 
@@ -32,4 +32,4 @@ export const updateUserCommissionRate = async (userId: string, commissionRate: n
     console.error('Error updating user commission rate:', error);
   }
 };
-'''
+

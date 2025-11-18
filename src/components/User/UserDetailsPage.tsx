@@ -32,7 +32,7 @@ export const UserDetailsPage: React.FC = () => {
       if (error) {throw error;}
 
       setUser(data as UserProfile);
-    } catch (error: any) {
+    } catch (error) {
       toast.error(`加载用户详情失败: ${error.message}`);
       console.error('Error loading user:', error);
     } finally {
@@ -115,9 +115,9 @@ export const UserDetailsPage: React.FC = () => {
                 id="commission_rate"
                 type="number"
                 value={user.commission_rate || 0}
-                onChange={(e) => {
-                  // 仅用于展示，实际修改需要一个单独的表单提交
-                }}
+	                onChange={() => {
+	                  // 仅用于展示，实际修改需要一个单独的表单提交
+	                }}
               />
             </div>
             <Button onClick={() => toast.error('功能未实现')}>

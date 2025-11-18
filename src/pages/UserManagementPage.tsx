@@ -1,4 +1,4 @@
-'''
+
 import React, { useState, useEffect } from 'react';
 import { getUsers, updateUserLevel, updateUserCommissionRate, User } from '../services/UserService';
 
@@ -63,4 +63,4 @@ const UserManagementPage: React.FC = () => {
 };
 
 export default UserManagementPage;
-'''
+
