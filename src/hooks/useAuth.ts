@@ -21,14 +21,14 @@ export function useAuth() {
           // 查询用户角色 (假设在 profiles 表中有 role 字段)
           const { data: profile } = await supabase
             .from('profiles')
-            .select('role')
+            .select('is_admin')
             .eq('id', session.user.id)
             .single()
           
           setUser({
             id: session.user.id,
             email: session.user.email,
-            role: profile?.role || 'user'
+            role: profile?.is_admin ? 'admin' : 'user'
           })
         } else {
           setUser(null)
@@ -48,14 +48,14 @@ export function useAuth() {
       if (session?.user) {
         supabase
           .from('profiles')
-          .select('role')
+          .select('is_admin')
           .eq('id', session.user.id)
           .single()
           .then(({ data: profile }) => {
             setUser({
               id: session.user.id,
               email: session.user.email,
-              role: profile?.role || 'user'
+              role: profile?.is_admin ? 'admin' : 'user'
             })
           })
       } else {

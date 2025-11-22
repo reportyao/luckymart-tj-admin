@@ -8,7 +8,7 @@ import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 type Order = Tables<'orders'>;
-type OrderStatus = Enums<'order_status'>;
+type OrderStatus = Enums<'OrderStatus'>;
 
 const getStatusColor = (status: OrderStatus) => {
   switch (status) {

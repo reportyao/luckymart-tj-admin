@@ -12,8 +12,7 @@ import { EmptyState } from '../EmptyState';
 
 
 
-const getStatusColor = (status: Enums<'lottery_status'>) => {
-  switch (status) {
+const getStatusColor = (status: Enums<'LotteryStatus'>) => { switch (status) {
     case 'PENDING':
       return 'bg-yellow-100 text-yellow-800';
     case 'DRAWN':

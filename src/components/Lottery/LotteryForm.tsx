@@ -11,7 +11,7 @@ import { MultiLanguageInput } from '../MultiLanguageInput';
 import { RichTextEditor } from '../RichTextEditor';
 import toast from 'react-hot-toast';
 import { formatDateTime } from '@/lib/utils';
-type LotteryStatus = Enums<'lottery_status'>;
+type LotteryStatus = Enums<'LotteryStatus'>;
 // type Currency = Enums<'Currency'>; // 假设货币不是枚举，直接使用 string
 
 interface LotteryFormData {

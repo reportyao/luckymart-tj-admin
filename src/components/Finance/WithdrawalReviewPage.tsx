@@ -9,7 +9,7 @@ import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 type Withdrawal = Tables<'withdrawals'>;
-type WithdrawalStatus = Enums<'withdrawal_status'>;
+type WithdrawalStatus = Enums<'WithdrawalStatus'>;
 
 const getStatusColor = (status: WithdrawalStatus) => {
   switch (status) {
