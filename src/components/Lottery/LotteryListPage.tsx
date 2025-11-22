@@ -88,10 +88,15 @@ export const LotteryListPage: React.FC = () => {
 	    }
 	  };
 	
-	  const handleViewResult = (id: string) => {
-	    // 在管理后台，我们跳转到编辑页面，并在编辑页面显示结果
-	    navigate(`/lotteries/${id}`);
-	  };
+		  const handleViewResult = (id: string) => {
+		    // 在管理后台，我们跳转到编辑页面，并在编辑页面显示结果
+		    navigate(`/lotteries/${id}`);
+		  };
+		
+		  const handleCopy = (id: string) => {
+		    // 跳转到创建页面，并带上源 ID 作为查询参数
+		    navigate(`/lotteries/new?copyFrom=${id}`);
+		  };
 	
 	  const handleDelete = async (id: string) => {
     if (!window.confirm('确定要删除这个夺宝吗？')) {return;}
@@ -165,6 +170,9 @@ export const LotteryListPage: React.FC = () => {
 	                      )}
 	                      <Button variant="outline" size="sm" onClick={() => navigate(`/lotteries/${lottery.id}`)}>
 	                        编辑
+	                      </Button>
+	                      <Button variant="outline" size="sm" onClick={() => handleCopy(lottery.id)}>
+	                        复制
 	                      </Button>
 	                      <Button variant="destructive" size="sm" onClick={() => handleDelete(lottery.id)}>
 	                        删除

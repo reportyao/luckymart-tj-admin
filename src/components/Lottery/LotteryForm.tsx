@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useSupabase } from '@/contexts/SupabaseContext';
 import { Enums } from '@/types/supabase';
 import { Input } from '../ui/input';
@@ -8,6 +8,7 @@ import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { MultiLanguageInput } from '../MultiLanguageInput';
+import { MultiImageUpload } from '../MultiImageUpload'; // 新增多图上传组件
 import { RichTextEditor } from '../RichTextEditor';
 import toast from 'react-hot-toast';
 import { formatDateTime } from '@/lib/utils';
@@ -20,13 +21,15 @@ interface LotteryFormData {
   details: Record<string, string> | null;
   title: Record<string, string> | null;
   description: Record<string, string> | null;
+  specifications: Record<string, string> | null; // 新增：规格信息
+  material: Record<string, string> | null; // 新增：材质信息
   period: string;
   ticket_price: number;
   total_tickets: number;
   max_per_user: number;
   currency: string;
   status: LotteryStatus;
-  image_url: string;
+  image_urls: string[]; // 更改：支持多图
   start_time: string;
   end_time: string;
   draw_time: string;
@@ -34,47 +37,52 @@ interface LotteryFormData {
 
 const initialFormData: LotteryFormData = {
   details: { zh: '', ru: '', tg: '' },
-  title: { zh: '', en: '' },
-  description: { zh: '', en: '' },
+  title: { zh: '', ru: '', tg: '' },
+  description: { zh: '', ru: '', tg: '' },
+  specifications: { zh: '', ru: '', tg: '' }, // 新增
+  material: { zh: '', ru: '', tg: '' }, // 新增
   period: '',
   ticket_price: 0,
   total_tickets: 0,
   max_per_user: 1,
   currency: 'CNY', // 默认使用 CNY
   status: 'PENDING',
-  image_url: '',
+  image_urls: [], // 更改
   start_time: new Date().toISOString().slice(0, 16), // YYYY-MM-DDTHH:MM 格式
   end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
   draw_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString().slice(0, 16),
 };
 
 export const LotteryForm: React.FC = () => {
-  const { supabase } = useSupabase();
-  const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
-  const isEdit = !!id;
+	  const { supabase } = useSupabase();
+	  const navigate = useNavigate();
+	  const { id } = useParams<{ id: string }>();
+	  const [searchParams] = useSearchParams();
+	  const copyFromId = searchParams.get('copyFrom');
+	  const isEdit = !!id && !copyFromId; // 只有在编辑模式下，且没有 copyFrom 参数时，才是真正的编辑
+	  const isCopy = !!copyFromId;
 
-  const [formData, setFormData] = useState<LotteryFormData>(initialFormData);
-	  const [isLoading, setIsLoading] = useState(isEdit);
+	  const [formData, setFormData] = useState<LotteryFormData>(initialFormData);
+		  const [isLoading, setIsLoading] = useState(isEdit || isCopy);
 	  const [lotteryRound, setLotteryRound] = useState<any | null>(null);
-	  const [isSubmitting, setIsSubmitting] = useState(false);
-	  const [isUploading, setIsUploading] = useState(false);
+		  const [isSubmitting, setIsSubmitting] = useState(false);
+		  // 移除 isUploading 状态，由 MultiImageUpload 内部管理
 
-  const loadLottery = useCallback(async () => {
-    if (!id) {return;}
-
-    try {
-      const { data, error } = await supabase
-        .from('lotteries')
-        .select('*')
-        .eq('id', id)
-        .single();
+	  const loadLottery = useCallback(async (loadId: string) => {
+	    if (!loadId) {return;}
+	
+	    try {
+	      const { data, error } = await supabase
+	        .from('lotteries')
+	        .select('*')
+	        .eq('id', loadId)
+	        .single();
 
       if (error) {throw error;}
 
 	      if (data) {
-	        // 如果已开奖，尝试获取开奖轮次信息
-	        if (data.status === 'DRAWN') {
+	        // 如果是编辑模式且已开奖，尝试获取开奖轮次信息
+	        if (isEdit && data.status === 'DRAWN') {
 	          const { data: roundData, error: roundError } = await supabase
 	            .from('lottery_results')
 	            .select(
@@ -97,35 +105,39 @@ export const LotteryForm: React.FC = () => {
 	        }
         setFormData({
           title: (data.title_i18n || { zh: data.title || '' }) as Record<string, string>,
-          description: data.description_i18n as Record<string, string> | null,
-          details: data.details_i18n as Record<string, string> | null,
-          period: String(data.period),
-          ticket_price: data.ticket_price,
-          total_tickets: data.total_tickets,
-          max_per_user: data.max_per_user,
-          currency: data.currency,
-          status: data.status,
-          image_url: data.image_url || '',
-          start_time: new Date(data.start_time).toISOString().slice(0, 16),
-          end_time: new Date(data.end_time).toISOString().slice(0, 16),
-          draw_time: new Date(data.draw_time).toISOString().slice(0, 16),
-        });
-      }
-    } catch (error: any) {
-      toast.error(`加载夺宝信息失败: ${error.message}`);
-      console.error('Error loading lottery:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [id, supabase]);
+	          description: data.description_i18n as Record<string, string> | null,
+	          details: data.details_i18n as Record<string, string> | null,
+	          specifications: data.specifications_i18n as Record<string, string> | null, // 新增
+	          material: data.material_i18n as Record<string, string> | null, // 新增
+	          period: isCopy ? '' : String(data.period), // 复制时不带期号
+	          ticket_price: data.ticket_price,
+	          total_tickets: data.total_tickets,
+	          max_per_user: data.max_per_user,
+	          currency: data.currency,
+	          status: isCopy ? 'PENDING' : data.status, // 复制时状态重置为 PENDING
+	          image_urls: data.image_urls || [], // 更改
+	          start_time: isCopy ? initialFormData.start_time : new Date(data.start_time).toISOString().slice(0, 16), // 复制时重置时间
+	          end_time: isCopy ? initialFormData.end_time : new Date(data.end_time).toISOString().slice(0, 16), // 复制时重置时间
+	          draw_time: isCopy ? initialFormData.draw_time : new Date(data.draw_time).toISOString().slice(0, 16), // 复制时重置时间
+	        });
+	      }
+	    } catch (error: any) {
+	      toast.error(`加载夺宝信息失败: ${error.message}`);
+	      console.error('Error loading lottery:', error);
+	    } finally {
+	      setIsLoading(false);
+	    }
+	  }, [isEdit, isCopy, supabase]);
 
-  useEffect(() => {
-    if (isEdit) {
-      loadLottery();
-    } else {
-      setIsLoading(false);
-    }
-  }, [isEdit, loadLottery]);
+	  useEffect(() => {
+	    if (isEdit) {
+	      loadLottery(id!);
+	    } else if (isCopy) {
+	      loadLottery(copyFromId!);
+	    } else {
+	      setIsLoading(false);
+	    }
+	  }, [isEdit, isCopy, id, copyFromId, loadLottery]);
 
 	  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
 	    const { id, value, type } = e.target;
@@ -135,29 +147,7 @@ export const LotteryForm: React.FC = () => {
 	    }));
 	  };
 	
-		  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-		    const file = e.target.files?.[0];
-		    if (!file) {return;}
-		
-		    setIsUploading(true);
-		    try {
-		      // 使用通用的上传函数，它已包含压缩和 WebP 转换逻辑
-		      const publicUrl = await uploadImage(file, true, 'public', 'lottery-images');
-		
-		      setFormData((prev) => ({
-		        ...prev,
-		        image_url: publicUrl,
-		      }));
-		
-		      toast.success('图片上传成功并已优化!');
-		    } catch (error: any) {
-		      toast.error(`图片上传失败: ${error.message}`);
-		      console.error('Image upload error:', error);
-		    } finally {
-		      setIsUploading(false);
-		      e.target.value = ''; // 清空文件输入框
-		    }
-		  };
+	  // 移除 handleImageUpload 函数，由 MultiImageUpload 组件处理
 
   const handleSelectChange = (id: keyof LotteryFormData, value: string) => {
     setFormData((prev) => ({
@@ -166,12 +156,19 @@ export const LotteryForm: React.FC = () => {
     }));
   };
 
-  const handleMultiLangChange = (id: 'title' | 'description' | 'details', value: Record<string, string>) => {
-    setFormData((prev) => ({
-      ...prev,
-      [id]: value,
-    }));
-  };
+	  const handleMultiLangChange = (id: 'title' | 'description' | 'details' | 'specifications' | 'material', value: Record<string, string>) => {
+	    setFormData((prev) => ({
+	      ...prev,
+	      [id]: value,
+	    }));
+	  };
+	
+	  const handleImageUrlsChange = (urls: string[]) => {
+	    setFormData((prev) => ({
+	      ...prev,
+	      image_urls: urls,
+	    }));
+	  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -185,31 +182,38 @@ export const LotteryForm: React.FC = () => {
         ticket_price: Number(formData.ticket_price),
         total_tickets: Number(formData.total_tickets),
         max_per_user: Number(formData.max_per_user),
-        // 确保 JSONB 字段非空
-        title_i18n: formData.title || {}, // 修正：使用 title_i18n
-          description_i18n: formData.description || {}, // 修正：使用 description_i18n
-          details_i18n: formData.details || {},
-          // 修正：title 字段应该使用 MultiLanguageInput 的值
-          title: formData.title?.zh || '',
-        };
+	        // 确保 JSONB 字段非空
+	        title_i18n: formData.title || {},
+	        description_i18n: formData.description || {},
+	        details_i18n: formData.details || {},
+	        specifications_i18n: formData.specifications || {}, // 新增
+	        material_i18n: formData.material || {}, // 新增
+	        // 修正：title 字段应该使用 MultiLanguageInput 的值
+	        title: formData.title?.zh || '',
+	        // 更改：image_url -> image_urls
+	        image_urls: formData.image_urls,
+	      };
 
-      let result;
-      if (isEdit) {
-        result = await supabase
-          .from('lotteries')
-          .update(payload as any) // 暂时使用 any 绕过复杂的类型检查
-          .eq('id', id)
-          .select();
-      } else {
-        result = await supabase
-          .from('lotteries')
-          .insert(payload as any) // 暂时使用 any 绕过复杂的类型检查
-          .select();
-      }
+	      let result;
+	      if (isEdit) {
+	        result = await supabase
+	          .from('lotteries')
+	          .update(payload as any) // 暂时使用 any 绕过复杂的类型检查
+	          .eq('id', id)
+	          .select();
+	      } else {
+	        // 创建或复制
+	        // 移除 id 字段，确保 Supabase 自动生成新的 ID
+	        const { id, ...insertPayload } = payload;
+	        result = await supabase
+	          .from('lotteries')
+	          .insert(insertPayload as any) // 暂时使用 any 绕过复杂的类型检查
+	          .select();
+	      }
 
       if (result.error) {throw result.error;}
 
-      toast.success(isEdit ? '夺宝信息更新成功!' : '夺宝创建成功!');
+	      toast.success(isEdit ? '夺宝信息更新成功!' : isCopy ? '夺宝复制创建成功!' : '夺宝创建成功!');
       navigate('/lotteries'); // 假设存在一个夺宝列表页
     } catch (error: any) {
       toast.error(error.message || (isEdit ? '更新失败' : '创建失败'));
@@ -260,7 +264,7 @@ export const LotteryForm: React.FC = () => {
 	        </Card>
 	      )}
 	      <CardHeader>
-	        <CardTitle>{isEdit ? '编辑夺宝' : '创建新夺宝'}</CardTitle>
+	          <CardTitle>{isEdit ? '编辑夺宝' : isCopy ? '复制夺宝' : '创建新夺宝'}</CardTitle>
 	      </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -271,20 +275,36 @@ export const LotteryForm: React.FC = () => {
             onChange={(v) => handleMultiLangChange('title', v)}
           />
 
-          {/* 多语言描述 */}
-          <MultiLanguageInput
-            label="夺宝描述"
-            value={formData.description}
-            onChange={(v) => handleMultiLangChange('description', v)}
-            type="textarea"
-          />
+	          {/* 多语言描述 */}
+	          <MultiLanguageInput
+	            label="夺宝描述"
+	            value={formData.description}
+	            onChange={(v) => handleMultiLangChange('description', v)}
+	            type="textarea"
+	          />
+	
+	          {/* 多语言规格信息 */}
+	          <MultiLanguageInput
+	            label="规格信息"
+	            value={formData.specifications}
+	            onChange={(v) => handleMultiLangChange('specifications', v)}
+	            type="textarea"
+	          />
+	
+	          {/* 多语言材质信息 */}
+	          <MultiLanguageInput
+	            label="材质信息"
+	            value={formData.material}
+	            onChange={(v) => handleMultiLangChange('material', v)}
+	            type="textarea"
+	          />
 
-          {/* 多语言详情 (富文本) */}
-          <RichTextEditor
-            label="夺宝详情"
-            value={formData.details}
-            onChange={(v) => handleMultiLangChange('details', v)}
-          />
+	          {/* 多语言详情 (富文本) */}
+	          <RichTextEditor
+	            label="夺宝详情"
+	            value={formData.details}
+	            onChange={(v) => handleMultiLangChange('details', v)}
+	          />
 
           {/* 基础信息 */}
           <div className="grid grid-cols-2 gap-4">
@@ -386,62 +406,39 @@ export const LotteryForm: React.FC = () => {
             </div>
           </div>
 
-          {/* 状态和图片 */}
-	          <div className="grid grid-cols-2 gap-4">
-	            <div className="space-y-2">
-	              <Label htmlFor="status">状态</Label>
-	              <Select
-	                value={formData.status as string}
-	                onValueChange={(v) => handleSelectChange('status', v)}
-	                disabled={isDrawn} // 开奖后不能修改状态
-	              >
-	                <SelectTrigger id="status">
-	                  <SelectValue placeholder="选择状态" />
-	                </SelectTrigger>
-	                <SelectContent>
-                  <SelectItem value="PENDING">待开始</SelectItem>
-                  <SelectItem value="ACTIVE">进行中</SelectItem>
-                  <SelectItem value="DRAWN">已开奖</SelectItem>
-                  <SelectItem value="CANCELLED">已取消</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-	            <div className="space-y-2">
-	              <Label htmlFor="image_url">夺宝图片</Label>
-	              <div className="flex items-center space-x-4">
-	                <div className="relative w-32 h-32 border border-gray-300 rounded-lg overflow-hidden flex items-center justify-center bg-gray-50">
-	                  {formData.image_url ? (
-	                    <img src={formData.image_url} alt="夺宝图片" className="w-full h-full object-cover" />
-	                  ) : isUploading ? (
-	                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-	                  ) : (
-	                    <Upload className="w-8 h-8 text-gray-400" />
-	                  )}
-	                </div>
-	                <div className="flex-1 space-y-2">
-	                  <Input
-	                    id="image_upload"
-	                    type="file"
-	                    accept="image/*"
-	                    onChange={handleImageUpload}
-	                    disabled={isUploading}
-	                  />
-	                  <p className="text-xs text-gray-500">
-	                    图片将自动压缩并转换为 WebP 格式 (最大 1MB, 1920px)。
-	                  </p>
-	                  {formData.image_url && (
-	                    <p className="text-xs text-gray-500 truncate">
-	                      URL: {formData.image_url}
-	                    </p>
-	                  )}
-	                </div>
-	              </div>
-	            </div>
-          </div>
+	          {/* 状态 */}
+	          <div className="space-y-2">
+	            <Label htmlFor="status">状态</Label>
+	            <Select
+	              value={formData.status as string}
+	              onValueChange={(v) => handleSelectChange('status', v)}
+	              disabled={isDrawn} // 开奖后不能修改状态
+	            >
+	              <SelectTrigger id="status">
+	                <SelectValue placeholder="选择状态" />
+	              </SelectTrigger>
+	              <SelectContent>
+	                <SelectItem value="PENDING">待开始</SelectItem>
+	                <SelectItem value="ACTIVE">进行中</SelectItem>
+	                <SelectItem value="DRAWN">已开奖</SelectItem>
+	                <SelectItem value="CANCELLED">已取消</SelectItem>
+	              </SelectContent>
+	            </Select>
+	          </div>
+	
+	          {/* 多图上传 */}
+	          <MultiImageUpload
+	            label="夺宝图片 (最多5张)"
+	            bucket="lottery-images"
+	            folder="public"
+	            maxImages={5}
+	            imageUrls={formData.image_urls}
+	            onImageUrlsChange={handleImageUrlsChange}
+	          />
 
-	          <Button type="submit" className="w-full" disabled={isSubmitting || isDrawn}>
-	            {isSubmitting ? '提交中...' : isEdit ? (isDrawn ? '已开奖，无法修改' : '保存更改') : '创建夺宝'}
-	          </Button>
+	          <Button type="submit" className="w-full" disabled={isSubmitting || (isEdit && isDrawn)}>
+		            {isSubmitting ? '提交中...' : isEdit ? (isDrawn ? '已开奖，无法修改' : '保存更改') : '创建夺宝'}
+		          </Button>
         </form>
       </CardContent>
     </Card>
