@@ -1,9 +1,9 @@
 import { supabase } from '../lib/supabase'
-import { Database } from '../../database.types'
+import { Tables } from '@/types/supabase'
 
-type PaymentConfig = Database['public']['Tables']['payment_config']['Row']
-type PaymentConfigInsert = Database['public']['Tables']['payment_config']['Insert']
-type PaymentConfigUpdate = Database['public']['Tables']['payment_config']['Update']
+type PaymentConfig = Tables<'payment_config'>
+type PaymentConfigInsert = Tables<'payment_config'>
+type PaymentConfigUpdate = Tables<'payment_config'>
 
 export class PaymentConfigService {
   private static readonly TABLE_NAME = 'payment_config'

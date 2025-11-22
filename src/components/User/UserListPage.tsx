@@ -9,7 +9,7 @@ import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import { EmptyState } from '../EmptyState';
 
-type UserProfile = Tables<'users'>;
+type UserProfile = Tables<'profiles'>;
 
 export const UserListPage: React.FC = () => {
   const { supabase } = useSupabase();
@@ -25,7 +25,7 @@ export const UserListPage: React.FC = () => {
     try {
       // 假设 users 表存储了用户的主要信息
       const { data, error, count } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*, count()', { count: 'exact' })
         .order('created_at', { ascending: false })
         .range((page - 1) * LIMIT, page * LIMIT - 1);
@@ -41,7 +41,7 @@ export const UserListPage: React.FC = () => {
         }
       }
     } catch (error) {
-      toast.error(`加载用户列表失败: ${error.message}`);
+      toast.error(`加载用户列表失败: ${(error as Error).message}`);
       console.error('Error loading users:', error);
     } finally {
       setIsLoading(false);
@@ -70,7 +70,7 @@ export const UserListPage: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Telegram ID</TableHead>
+	                  <TableHead>ID</TableHead>
                   <TableHead>用户名</TableHead>
                   <TableHead>显示名称</TableHead>
                   <TableHead>余额/夺宝币</TableHead>
@@ -82,14 +82,14 @@ export const UserListPage: React.FC = () => {
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.telegram_id}</TableCell>
-                    <TableCell>{user.telegram_username || 'N/A'}</TableCell>
-                    <TableCell>{user.display_name || 'N/A'}</TableCell>
-                    <TableCell>{user.balance.toFixed(2)} / {user.lucky_coins.toFixed(2)}</TableCell>
-                    <TableCell>{user.vip_level} / {user.commission_rate || 0}%</TableCell>
-                    <TableCell>{formatDateTime(user.created_at)}</TableCell>
+	                    <TableCell className="font-medium">{user.id}</TableCell>
+	                    <TableCell>{user.username || 'N/A'}</TableCell>
+	                    <TableCell>{user.first_name || 'N/A'}</TableCell>
+	                    <TableCell>N/A</TableCell>
+	                    <TableCell>{user.level} / {user.commission_rate || 0}%</TableCell>
+	                    <TableCell>{formatDateTime(user.created_at)}</TableCell>
                     <TableCell className="flex space-x-2">
-                      <Button variant="outline" size="sm" onClick={() => navigate(`/users/${user.id}`)}>
+	                      <Button variant="outline" size="sm" onClick={() => navigate(`/users/${user.id}`)}>
                         详情
                       </Button>
                     </TableCell>

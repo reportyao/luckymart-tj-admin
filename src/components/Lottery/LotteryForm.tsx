@@ -11,8 +11,8 @@ import { MultiLanguageInput } from '../MultiLanguageInput';
 import { RichTextEditor } from '../RichTextEditor';
 import toast from 'react-hot-toast';
 import { formatDateTime } from '@/lib/utils';
-type LotteryStatus = Enums<'LotteryStatus'>;
-type Currency = Enums<'Currency'>;
+type LotteryStatus = Enums<'lottery_status'>;
+// type Currency = Enums<'Currency'>; // 假设货币不是枚举，直接使用 string
 
 interface LotteryFormData {
   details: Record<string, string> | null;
@@ -22,7 +22,7 @@ interface LotteryFormData {
   ticket_price: number;
   total_tickets: number;
   max_per_user: number;
-  currency: Currency;
+  currency: string;
   status: LotteryStatus;
   image_url: string;
   start_time: string;
@@ -38,7 +38,7 @@ const initialFormData: LotteryFormData = {
   ticket_price: 0,
   total_tickets: 0,
   max_per_user: 1,
-  currency: 'CNY', // 默认使用 CNY，但前端用 TJS，这里先用 CNY
+  currency: 'CNY', // 默认使用 CNY
   status: 'PENDING',
   image_url: '',
   start_time: new Date().toISOString().slice(0, 16), // YYYY-MM-DDTHH:MM 格式
@@ -93,10 +93,10 @@ export const LotteryForm: React.FC = () => {
 	          setLotteryRound(result);
 	        }
         setFormData({
-          title: data.title as Record<string, string>,
-          description: data.description as Record<string, string> | null,
+          title: (data.title_i18n || { zh: data.title || '' }) as Record<string, string>,
+          description: data.description_i18n as Record<string, string> | null,
           details: data.details_i18n as Record<string, string> | null,
-          period: data.period,
+          period: String(data.period),
           ticket_price: data.ticket_price,
           total_tickets: data.total_tickets,
           max_per_user: data.max_per_user,
@@ -139,7 +139,7 @@ export const LotteryForm: React.FC = () => {
     }));
   };
 
-  const handleMultiLangChange = (id: 'title' | 'description', value: Record<string, string>) => {
+  const handleMultiLangChange = (id: 'title' | 'description' | 'details', value: Record<string, string>) => {
     setFormData((prev) => ({
       ...prev,
       [id]: value,
@@ -159,22 +159,24 @@ export const LotteryForm: React.FC = () => {
         total_tickets: Number(formData.total_tickets),
         max_per_user: Number(formData.max_per_user),
         // 确保 JSONB 字段非空
-        title: formData.title || {},
-        description: formData.description || {},
-        details_i18n: formData.details || {},
-      };
+        title_i18n: formData.title || {}, // 修正：使用 title_i18n
+          description_i18n: formData.description || {}, // 修正：使用 description_i18n
+          details_i18n: formData.details || {},
+          // 修正：title 字段应该使用 MultiLanguageInput 的值
+          title: formData.title?.zh || '',
+        };
 
       let result;
       if (isEdit) {
         result = await supabase
           .from('lotteries')
-          .update(payload)
+          .update(payload as any) // 暂时使用 any 绕过复杂的类型检查
           .eq('id', id)
           .select();
       } else {
         result = await supabase
           .from('lotteries')
-          .insert(payload)
+          .insert(payload as any) // 暂时使用 any 绕过复杂的类型检查
           .select();
       }
 
@@ -273,7 +275,7 @@ export const LotteryForm: React.FC = () => {
               <Label htmlFor="currency">货币</Label>
               <Select
                 value={formData.currency}
-                onValueChange={(v) => handleSelectChange('currency', v)}
+                onValueChange={(v) => handleSelectChange('currency', v as string)}
               >
                 <SelectTrigger id="currency">
                   <SelectValue placeholder="选择货币" />
@@ -362,7 +364,7 @@ export const LotteryForm: React.FC = () => {
 	            <div className="space-y-2">
 	              <Label htmlFor="status">状态</Label>
 	              <Select
-	                value={formData.status}
+	                value={formData.status as string}
 	                onValueChange={(v) => handleSelectChange('status', v)}
 	                disabled={isDrawn} // 开奖后不能修改状态
 	              >

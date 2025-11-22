@@ -18,7 +18,7 @@ import { UnauthorizedPage } from './components/UnauthorizedPage'
 import { ForbiddenPage } from './components/ForbiddenPage'
 
 // Simplified Admin Dashboard
-function App(): JSX.Element {
+function App(): React.ReactElement {
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   return (
@@ -91,7 +91,7 @@ function App(): JSX.Element {
   )
 }
 
-function NavLink({ to, label, icon }: { to: string; label: string; icon: string }): JSX.Element {
+function NavLink({ to, label, icon }: { to: string; label: string; icon: string }): React.ReactElement {
   return (
     <Link
       to={to}
@@ -103,7 +103,7 @@ function NavLink({ to, label, icon }: { to: string; label: string; icon: string 
   )
 }
 
-function DashboardPlaceholder(): JSX.Element {
+function DashboardPlaceholder(): React.ReactElement {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
@@ -117,7 +117,7 @@ function DashboardPlaceholder(): JSX.Element {
   )
 }
 
-function StatCard({ title, value }: { title: string; value: string }): JSX.Element {
+function StatCard({ title, value }: { title: string; value: string }): React.ReactElement {
   return (
     <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4">
       <p className="text-gray-600 text-sm">{title}</p>
@@ -126,7 +126,7 @@ function StatCard({ title, value }: { title: string; value: string }): JSX.Eleme
   )
 }
 
-function PagePlaceholder({ title }: { title: string }): JSX.Element {
+function PagePlaceholder({ title }: { title: string }): React.ReactElement {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h1 className="text-3xl font-bold mb-4">{title}</h1>

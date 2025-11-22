@@ -8,7 +8,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
+
 import {
   Table,
   TableHeader,
@@ -18,25 +18,30 @@ import {
   TableCell,
 } from '@/components/ui/table'
 import { PaymentConfigService } from '@/services/PaymentConfigService'
-import { Database } from '../../database.types'
+import { Tables, TablesInsert, TablesUpdate } from '@/types/supabase'
 import { useToast } from '@/components/ui/use-toast'
 import { useTranslation } from 'react-i18next'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 
-type PaymentConfig = Database['public']['Tables']['payment_config']['Row']
-type PaymentConfigInsert = Database['public']['Tables']['payment_config']['Insert']
+type PaymentConfig = Tables<'payment_config'>
+type PaymentConfigInsert = TablesInsert<'payment_config'>
 
 const initialFormState: PaymentConfigInsert = {
-  name: '',
-  config: {},
-  is_active: true,
+  alipay_app_id: null,
+  alipay_private_key: null,
+  alipay_public_key: null,
+  wechat_app_id: null,
+  wechat_mch_id: null,
+  wechat_api_key: null,
+  wechat_cert_path: null,
+  wechat_key_path: null,
 }
 
 export const PaymentConfigPage: React.FC = () => {
   const { t } = useTranslation()
   const { toast } = useToast()
   const [configs, setConfigs] = useState<PaymentConfig[]>([])
-  const [form, setForm] = useState<PaymentConfigInsert>(initialFormState)
+  const [form, setForm] = useState<any>(initialFormState)
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
@@ -62,40 +67,32 @@ export const PaymentConfigPage: React.FC = () => {
     fetchConfigs()
   }, [fetchConfigs])
 
+  
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setForm((prev) => ({ ...prev, [name]: value }))
+    setForm((prev: any) => ({ ...prev, [name]: value }))
   }
 
-  const handleConfigChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    try {
-      // 尝试解析 JSON，如果失败则保持原样
-      const jsonValue = JSON.parse(value)
-      setForm((prev) => ({
-        ...prev,
-        config: { ...prev.config, [name]: jsonValue },
-      }))
-    } catch (error) {
-      // 如果不是有效的 JSON，则作为字符串处理
-      setForm((prev) => ({
-        ...prev,
-        config: { ...prev.config, [name]: value },
-      }))
-    }
-  }
-
-  const handleSwitchChange = (checked: boolean) => {
-    setForm((prev) => ({ ...prev, is_active: checked }))
-  }
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     try {
       if (isEditing && form.id) {
-        // Update
-        const updatedConfig = await PaymentConfigService.update(form.id, form)
+        const updateData: TablesUpdate<'payment_config'> = {
+          alipay_app_id: form.alipay_app_id,
+          alipay_private_key: form.alipay_private_key,
+          alipay_public_key: form.alipay_public_key,
+          wechat_app_id: form.wechat_app_id,
+          wechat_mch_id: form.wechat_mch_id,
+          wechat_api_key: form.wechat_api_key,
+          wechat_cert_path: form.wechat_cert_path,
+          wechat_key_path: form.wechat_key_path,
+          updated_at: new Date().toISOString(),
+        }
+        const updatedConfig = await PaymentConfigService.update(form.id, updateData as any)
         setConfigs((prev) =>
           prev.map((c) => (c.id === updatedConfig.id ? updatedConfig : c))
         )
@@ -104,8 +101,7 @@ export const PaymentConfigPage: React.FC = () => {
           description: t('Payment configuration updated successfully.'),
         })
       } else {
-        // Create
-        const newConfig = await PaymentConfigService.create(form)
+       const newConfig = await PaymentConfigService.create(form)
         setConfigs((prev) => [newConfig, ...prev])
         toast({
           title: t('Success'),
@@ -124,9 +120,9 @@ export const PaymentConfigPage: React.FC = () => {
     }
   }
 
-  const handleEdit = (config: PaymentConfig) => {
-    setForm(config)
-    setIsEditing(true)
+const handleEdit = (config: PaymentConfig) => {
+    setForm(config as any);
+    setIsEditing(true);
   }
 
   const handleDeleteClick = (id: string) => {
@@ -139,7 +135,7 @@ export const PaymentConfigPage: React.FC = () => {
     setLoading(true)
     try {
       await PaymentConfigService.delete(configToDelete)
-      setConfigs((prev) => prev.filter((c) => c.id !== configToDelete))
+      setConfigs((prev) => prev.filter((c) => c.id.toString() !== configToDelete))
       toast({
         title: t('Success'),
         description: t('Payment configuration deleted successfully.'),
@@ -168,63 +164,46 @@ export const PaymentConfigPage: React.FC = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>{isEditing ? t('Edit Configuration') : t('Create New Configuration')}</CardTitle>
+          <CardTitle>{isEditing ? t('Edit Payment Configuration') : t('Create New Payment Configuration')}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">{t('Configuration Name')}</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={form.name}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="flex items-center space-x-2 pt-6">
-                <Switch
-                  id="is_active"
-                  checked={form.is_active}
-                  onCheckedChange={handleSwitchChange}
-                />
-                <Label htmlFor="is_active">{t('Is Active')}</Label>
-              </div>
-            </div>
+            
 
             <div className="space-y-2">
-              <Label>{t('Configuration Details (JSON)')}</Label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* 简化配置输入，只展示 key-value 对 */}
-                {Object.entries(form.config || {}).map(([key, value]) => (
-                  <div key={key} className="space-y-2">
-                    <Label htmlFor={key}>{key}</Label>
-                    <Input
-                      id={key}
-                      name={key}
-                      value={typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                      onChange={handleConfigChange}
-                    />
-                  </div>
-                ))}
-                {/* 允许添加新的配置项 */}
+              <Label>{t('Configuration Details')}</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="new_key">{t('New Key')}</Label>
-                  <Input
-                    id="new_key"
-                    name="new_key"
-                    placeholder={t('Enter new key')}
-                    onBlur={(e) => {
-                      if (e.target.value && !(e.target.value in (form.config || {}))) {
-                        setForm((prev) => ({
-                          ...prev,
-                          config: { ...prev.config, [e.target.value]: '' },
-                        }))
-                        e.target.value = '' // 清空输入框
-                      }
-                    }}
-                  />
+                  <Label htmlFor="alipay_app_id">Alipay App ID</Label>
+                  <Input id="alipay_app_id" name="alipay_app_id" value={form.alipay_app_id || ''} onChange={handleInputChange} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="alipay_private_key">Alipay Private Key</Label>
+                  <Input id="alipay_private_key" name="alipay_private_key" value={form.alipay_private_key || ''} onChange={handleInputChange} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="alipay_public_key">Alipay Public Key</Label>
+                  <Input id="alipay_public_key" name="alipay_public_key" value={form.alipay_public_key || ''} onChange={handleInputChange} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="wechat_app_id">WeChat App ID</Label>
+                  <Input id="wechat_app_id" name="wechat_app_id" value={form.wechat_app_id || ''} onChange={handleInputChange} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="wechat_mch_id">WeChat MCH ID</Label>
+                  <Input id="wechat_mch_id" name="wechat_mch_id" value={form.wechat_mch_id || ''} onChange={handleInputChange} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="wechat_api_key">WeChat API Key</Label>
+                  <Input id="wechat_api_key" name="wechat_api_key" value={form.wechat_api_key || ''} onChange={handleInputChange} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="wechat_cert_path">WeChat Cert Path</Label>
+                  <Input id="wechat_cert_path" name="wechat_cert_path" value={form.wechat_cert_path || ''} onChange={handleInputChange} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="wechat_key_path">WeChat Key Path</Label>
+                  <Input id="wechat_key_path" name="wechat_key_path" value={form.wechat_key_path || ''} onChange={handleInputChange} />
                 </div>
               </div>
             </div>
@@ -250,9 +229,9 @@ export const PaymentConfigPage: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t('Name')}</TableHead>
-                  <TableHead>{t('Active')}</TableHead>
-                  <TableHead>{t('Configuration')}</TableHead>
+                  <TableHead>Alipay App ID</TableHead>
+                  <TableHead>WeChat App ID</TableHead>
+                  <TableHead>Alipay Public Key</TableHead>
                   <TableHead>{t('Created At')}</TableHead>
                   <TableHead>{t('Actions')}</TableHead>
                 </TableRow>
@@ -260,13 +239,9 @@ export const PaymentConfigPage: React.FC = () => {
               <TableBody>
                 {configs.map((config) => (
                   <TableRow key={config.id}>
-                    <TableCell className="font-medium">{config.name}</TableCell>
-                    <TableCell>
-                      <Switch checked={config.is_active} disabled />
-                    </TableCell>
-                    <TableCell className="text-xs max-w-xs truncate">
-                      {JSON.stringify(config.config)}
-                    </TableCell>
+                    <TableCell className="font-medium">{config.alipay_app_id}</TableCell>
+                    <TableCell>{config.wechat_app_id}</TableCell>
+                    <TableCell className="text-xs max-w-xs truncate">{config.alipay_public_key}</TableCell>
                     <TableCell>
                       {new Date(config.created_at).toLocaleDateString()}
                     </TableCell>
@@ -281,7 +256,7 @@ export const PaymentConfigPage: React.FC = () => {
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleDeleteClick(config.id)}
+                        onClick={() => handleDeleteClick(config.id.toString())}
                       >
                         {t('Delete')}
                       </Button>

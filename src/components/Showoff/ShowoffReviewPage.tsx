@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSupabase } from '@/contexts/SupabaseContext';
-import { Tables, Enums } from '@/types/supabase';
+import { Tables } from '@/types/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
@@ -8,9 +8,10 @@ import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 type Showoff = Tables<'showoffs'>;
-type ShowoffStatus = Enums<'ShowoffStatus'>;
 
-const getStatusColor = (status: ShowoffStatus) => {
+
+
+const getStatusColor = (status: string) => {
   switch (status) {
     case 'PENDING':
       return 'bg-yellow-100 text-yellow-800';
@@ -39,7 +40,7 @@ export const ShowoffReviewPage: React.FC = () => {
       if (error) {throw error;}
 
       setShowoffs(data || []);
-    } catch (error) {
+    } catch (error: any) {
       toast.error(`加载晒单列表失败: ${error.message}`);
       console.error('Error loading showoffs:', error);
     } finally {
@@ -64,7 +65,7 @@ export const ShowoffReviewPage: React.FC = () => {
 
       toast.success(`晒单已${status === 'APPROVED' ? '批准' : '拒绝'}!`);
       fetchShowoffs(); // 刷新列表
-    } catch (error) {
+    } catch (error: any) {
       toast.error(`审核失败: ${error.message}`);
       console.error('Error reviewing showoff:', error);
     }
@@ -92,24 +93,24 @@ export const ShowoffReviewPage: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {showoffs.map((showoff) => (
+                {showoffs.map((showoff: any) => (
                   <TableRow key={showoff.id}>
                     <TableCell className="font-medium">{showoff.id.substring(0, 8)}...</TableCell>
                     <TableCell>{showoff.user_id.substring(0, 8)}...</TableCell>
                     <TableCell>{showoff.title}</TableCell>
                     <TableCell>
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(showoff.status)}`}>
-                        {showoff.status}
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(showoff.status as string)}`}>
+                        {showoff.status as string}
                       </span>
                     </TableCell>
                     <TableCell>{formatDateTime(showoff.created_at)}</TableCell>
                     <TableCell className="flex space-x-2">
                       {showoff.status === 'PENDING' && (
                         <>
-                          <Button size="sm" onClick={() => handleReview(showoff.id, 'APPROVED')}>
+                          <Button size="sm" onClick={() => handleReview(showoff.id as string, 'APPROVED')}>
                             批准
                           </Button>
-                          <Button variant="destructive" size="sm" onClick={() => handleReview(showoff.id, 'REJECTED')}>
+                          <Button variant="destructive" size="sm" onClick={() => handleReview(showoff.id as string, 'REJECTED')}>
                             拒绝
                           </Button>
                         </>

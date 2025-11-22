@@ -10,12 +10,10 @@ import toast from 'react-hot-toast';
 import { EmptyState } from '../EmptyState';
 
 
-type LotteryStatus = Enums<'LotteryStatus'>;
 
-const getStatusColor = (status: LotteryStatus) => {
+
+const getStatusColor = (status: Enums<'lottery_status'>) => {
   switch (status) {
-    case 'ACTIVE':
-      return 'bg-green-100 text-green-800';
     case 'PENDING':
       return 'bg-yellow-100 text-yellow-800';
     case 'DRAWN':
@@ -28,9 +26,9 @@ const getStatusColor = (status: LotteryStatus) => {
 };
 
 const getLocalizedText = (jsonb: any, language: string = 'zh', fallbackLanguage: string = 'en'): string => {
-  if (!jsonb || typeof jsonb !== 'object') return '';
-  if (jsonb[language]) return jsonb[language];
-  if (jsonb[fallbackLanguage]) return jsonb[fallbackLanguage];
+  if (!jsonb || typeof jsonb !== 'object') {return '';}
+  if (jsonb[language]) {return jsonb[language];}
+  if (jsonb[fallbackLanguage]) {return jsonb[fallbackLanguage];}
   const firstValue = Object.values(jsonb).find(value => typeof value === 'string' && value.trim() !== '');
   return firstValue as string || '';
 };
@@ -53,7 +51,7 @@ export const LotteryListPage: React.FC = () => {
         .order('created_at', { ascending: false })
         .range((page - 1) * LIMIT, page * LIMIT - 1);
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       setLotteries(data || []);
       if (count !== null) {
@@ -75,13 +73,13 @@ export const LotteryListPage: React.FC = () => {
   }, [fetchLotteries]);
 
 	  const handleDraw = async (id: string) => {
-	    if (!window.confirm('确定要立即开奖吗？开奖后将无法修改。')) return;
+	    if (!window.confirm('确定要立即开奖吗？开奖后将无法修改。')) {return;}
 	
 	    try {
 	      // 假设存在一个 Supabase RPC 或 Edge Function 来执行开奖逻辑
 	      const { data, error } = await supabase.rpc('draw_lottery', { p_lottery_id: id });
 	
-	      if (error) throw error;
+	      if (error) {throw error;}
 	
 	      toast.success(`夺宝 ${id} 开奖成功! 中奖号码: ${(data as any).winning_number}`);
 	      fetchLotteries(); // 刷新列表
@@ -97,7 +95,7 @@ export const LotteryListPage: React.FC = () => {
 	  };
 	
 	  const handleDelete = async (id: string) => {
-    if (!window.confirm('确定要删除这个夺宝吗？')) return;
+    if (!window.confirm('确定要删除这个夺宝吗？')) {return;}
 
     try {
       const { error } = await supabase
@@ -105,7 +103,7 @@ export const LotteryListPage: React.FC = () => {
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       toast.success('夺宝删除成功!');
       fetchLotteries(); // 刷新列表
@@ -156,7 +154,7 @@ export const LotteryListPage: React.FC = () => {
 	                    </TableCell>
 	                    <TableCell>{formatDateTime(lottery.start_time)}</TableCell>
 	                    <TableCell className="flex space-x-2">
-	                      {(lottery.status === 'ACTIVE' && new Date(lottery.end_time) < new Date()) && !lottery.status.includes('DRAWN') && (
+	                      {(lottery.status === 'PENDING' && new Date(lottery.end_time) < new Date()) && (
 	                        <Button variant="default" size="sm" onClick={() => handleDraw(lottery.id)}>
 	                          立即开奖
 	                        </Button>

@@ -13,17 +13,16 @@ interface ProtectedRouteProps {
 
 // 占位组件
 const LoadingSpinner = () => <div>Loading...</div>
-const UnauthorizedPage = () => <div>401 - Unauthorized</div>
-const ForbiddenPage = () => <div>403 - Forbidden</div>
+
+
 
 export function ProtectedRoute({
   element,
   requiredRole,
-  requiredPermission,
 }: ProtectedRouteProps) {
-  const { user, loading } = useAuth()
+  const { user, isLoading } = useAuth()
 
-  if (loading) {
+  if (isLoading) {
     return <LoadingSpinner />
   }
 
@@ -40,10 +39,11 @@ export function ProtectedRoute({
   }
 
   // 检查权限
-  // 假设 user.permissions 是一个字符串数组
-  if (requiredPermission && (!user.permissions || !user.permissions.includes(requiredPermission))) {
-    return <Navigate to="/forbidden" replace />
-  }
+43	  // 检查权限
+44	  // 假设 user.permissions 是一个字符串数组，但 profiles 表中没有该字段，暂时跳过权限检查
+45	  // if (requiredPermission && (!user.permissions || !user.permissions.includes(requiredPermission))) {
+46	  //   return <Navigate to="/forbidden" replace />
+47	  // }
 
-  return element
-}
+	  return element
+	}

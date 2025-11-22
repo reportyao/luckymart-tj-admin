@@ -10,7 +10,7 @@ import { SettingsIcon, RefreshCwIcon } from 'lucide-react';
 // 假设开奖算法配置存储在某个配置表中，这里使用占位符
 const AlgorithmConfigPage: React.FC = () => {
   const { t } = useTranslation();
-  const [currentAlgorithm, setCurrentAlgorithm] = React.useState('SHA256_TIMESTAMP_MOD');
+  const [currentAlgorithm] = React.useState('SHA256_TIMESTAMP_MOD');
   const [algorithmSeed, setAlgorithmSeed] = React.useState('2025-11-20T10:00:00Z');
   const [isSaving, setIsSaving] = React.useState(false);
 

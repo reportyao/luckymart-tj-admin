@@ -1,7 +1,8 @@
 import { supabase } from '@/lib/supabase'; // 假设存在 supabase 客户端
-import { Database } from '@/types/supabase'; // 假设存在 Supabase 类型定义
+import { TablesInsert } from '@/types/supabase';
 
-type AuditLogInsert = Database['public']['Tables']['audit_logs']['Insert'];
+// 使用 TablesInsert 获取 audit_logs 表的插入类型
+type AuditLogInsert = TablesInsert<'audit_logs'>;
 
 interface AuditLogParams {
   adminId: string;
@@ -20,7 +21,7 @@ export async function createAuditLog({
   resourceId,
   changes,
   ipAddress,
-  userAgent,
+  // userAgent,
 }: AuditLogParams) {
   const log: AuditLogInsert = {
     user_id: adminId,

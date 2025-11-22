@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client'
 import './i18n/config'
 import './index.css'
 import App from './App'
+import { SupabaseProvider } from './contexts/SupabaseContext'
 import { setupGlobalErrorHandlers } from './utils/errorHandlers'
 
 setupGlobalErrorHandlers()
@@ -16,7 +17,9 @@ if (!rootElement) {
 createRoot(rootElement).render(
   <StrictMode>
     <ErrorBoundary>
-      <App />
+      <SupabaseProvider>
+        <App />
+      </SupabaseProvider>
     </ErrorBoundary>
   </StrictMode>,
 )

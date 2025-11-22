@@ -9,7 +9,7 @@ import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 type Deposit = Tables<'deposits'>;
-type DepositStatus = Enums<'DepositStatus'>;
+type DepositStatus = Enums<'deposit_status'>;
 
 const getStatusColor = (status: DepositStatus) => {
   switch (status) {

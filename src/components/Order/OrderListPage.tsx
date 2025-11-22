@@ -9,7 +9,7 @@ import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 type Order = Tables<'orders'>;
-type OrderStatus = Enums<'OrderStatus'>;
+type OrderStatus = Enums<'order_status'>;
 
 const getStatusColor = (status: OrderStatus) => {
   switch (status) {
@@ -84,7 +84,7 @@ export const OrderListPage: React.FC = () => {
                   <TableRow key={order.id}>
                     <TableCell className="font-medium">{order.id.substring(0, 8)}...</TableCell>
                     <TableCell>{order.user_id.substring(0, 8)}...</TableCell>
-                    <TableCell>{order.total_amount} {order.currency}</TableCell>
+                    <TableCell>{order.total_amount} CNY</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
                         {order.status}

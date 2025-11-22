@@ -9,8 +9,8 @@ import { Input } from '../ui/input';
 import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
-type UserProfile = Tables<'users'> & {
-  invited_by_user?: Tables<'users'>;
+type UserProfile = Tables<'profiles'> & {
+  invited_by_user?: Tables<'profiles'>;
 };
 
 export const UserDetailsPage: React.FC = () => {
@@ -24,8 +24,8 @@ export const UserDetailsPage: React.FC = () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('users')
-        .select('*, invited_by_user:invited_by(*)')
+        .from('profiles')
+        .select('*, invited_by_user:referrer_id(*)')
         .eq('id', id)
         .single();
 
@@ -33,7 +33,7 @@ export const UserDetailsPage: React.FC = () => {
 
       setUser(data as UserProfile);
     } catch (error) {
-      toast.error(`加载用户详情失败: ${error.message}`);
+      toast.error(`加载用户详情失败: ${(error as Error).message}`);
       console.error('Error loading user:', error);
     } finally {
       setIsLoading(false);
@@ -55,7 +55,7 @@ export const UserDetailsPage: React.FC = () => {
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle>用户详情: {user.telegram_username || user.display_name}</CardTitle>
+        <CardTitle>用户详情: {user.username || user.first_name}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
@@ -65,43 +65,39 @@ export const UserDetailsPage: React.FC = () => {
           </div>
           <div className="space-y-2">
             <Label>Telegram ID</Label>
-            <Input value={user.telegram_id} readOnly />
+            <Input value={user.telegram_id || 'N/A'} readOnly />
           </div>
           <div className="space-y-2">
             <Label>用户名</Label>
-            <Input value={user.telegram_username || 'N/A'} readOnly />
+            <Input value={user.username || 'N/A'} readOnly />
           </div>
           <div className="space-y-2">
-            <Label>显示名称</Label>
-            <Input value={user.display_name || 'N/A'} readOnly />
+            <Label>First Name</Label>
+            <Input value={user.first_name || 'N/A'} readOnly />
           </div>
           <div className="space-y-2">
-            <Label>余额 (TJS)</Label>
-            <Input value={user.balance.toFixed(2)} readOnly />
+            <Label>Last Name</Label>
+            <Input value={user.last_name || 'N/A'} readOnly />
           </div>
           <div className="space-y-2">
-            <Label>夺宝币</Label>
-            <Input value={user.lucky_coins.toFixed(2)} readOnly />
+            <Label>Level</Label>
+            <Input value={user.level?.toString() || 'N/A'} readOnly />
           </div>
           <div className="space-y-2">
-            <Label>VIP 等级</Label>
-            <Input value={user.vip_level} readOnly />
+            <Label>Referrer ID</Label>
+            <Input value={user.referrer_id || '无'} readOnly />
           </div>
           <div className="space-y-2">
-            <Label>邀请人</Label>
-            <Input value={user.invited_by_user?.telegram_username || '无'} readOnly />
-          </div>
-          <div className="space-y-2">
-            <Label>邀请码</Label>
-            <Input value={user.invite_code || 'N/A'} readOnly />
+            <Label>Referral Code</Label>
+            <Input value={user.referral_code || 'N/A'} readOnly />
           </div>
           <div className="space-y-2">
             <Label>注册时间</Label>
             <Input value={formatDateTime(user.created_at)} readOnly />
           </div>
           <div className="space-y-2">
-            <Label>最后登录时间</Label>
-            <Input value={user.last_login_at ? formatDateTime(user.last_login_at) : 'N/A'} readOnly />
+            <Label>Telegram Username</Label>
+            <Input value={user.telegram_username || 'N/A'} readOnly />
           </div>
         </div>
         
@@ -115,9 +111,9 @@ export const UserDetailsPage: React.FC = () => {
                 id="commission_rate"
                 type="number"
                 value={user.commission_rate || 0}
-	                onChange={() => {
-	                  // 仅用于展示，实际修改需要一个单独的表单提交
-	                }}
+                onChange={() => {
+                  // 仅用于展示，实际修改需要一个单独的表单提交
+                }}
               />
             </div>
             <Button onClick={() => toast.error('功能未实现')}>
@@ -129,9 +125,18 @@ export const UserDetailsPage: React.FC = () => {
         <div className="pt-4 border-t">
           <h3 className="text-xl font-semibold mb-4">邀请层级 (Referral Structure)</h3>
           <div className="grid grid-cols-3 gap-4">
-            <StatCard title="一级邀请人数" value="N/A" />
-            <StatCard title="二级邀请人数" value="N/A" />
-            <StatCard title="累计佣金" value="N/A" />
+            <div className="space-y-2">
+              <Label>一级邀请人数</Label>
+              <Input value="N/A" readOnly />
+            </div>
+            <div className="space-y-2">
+              <Label>二级邀请人数</Label>
+              <Input value="N/A" readOnly />
+            </div>
+            <div className="space-y-2">
+              <Label>累计佣金</Label>
+              <Input value="N/A" readOnly />
+            </div>
           </div>
           <Button variant="outline" className="mt-4" onClick={() => toast.error('功能未实现')}>
             查看邀请列表
