@@ -11,6 +11,8 @@ import { MultiLanguageInput } from '../MultiLanguageInput';
 import { RichTextEditor } from '../RichTextEditor';
 import toast from 'react-hot-toast';
 import { formatDateTime } from '@/lib/utils';
+import imageCompression from 'browser-image-compression';
+import { Upload } from 'lucide-react';
 type LotteryStatus = Enums<'LotteryStatus'>;
 // type Currency = Enums<'Currency'>; // 假设货币不是枚举，直接使用 string
 
@@ -55,7 +57,8 @@ export const LotteryForm: React.FC = () => {
   const [formData, setFormData] = useState<LotteryFormData>(initialFormData);
 	  const [isLoading, setIsLoading] = useState(isEdit);
 	  const [lotteryRound, setLotteryRound] = useState<any | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+	  const [isSubmitting, setIsSubmitting] = useState(false);
+	  const [isUploading, setIsUploading] = useState(false);
 
   const loadLottery = useCallback(async () => {
     if (!id) {return;}
@@ -124,13 +127,61 @@ export const LotteryForm: React.FC = () => {
     }
   }, [isEdit, loadLottery]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { id, value, type } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [id]: type === 'number' ? parseFloat(value) : value,
-    }));
-  };
+	  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+	    const { id, value, type } = e.target;
+	    setFormData((prev) => ({
+	      ...prev,
+	      [id]: type === 'number' ? parseFloat(value) : value,
+	    }));
+	  };
+	
+	  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+	    const file = e.target.files?.[0];
+	    if (!file) return;
+	
+	    setIsUploading(true);
+	    try {
+	      // 1. 压缩和 WebP 转换
+	      const compressedFile = await imageCompression(file, {
+	        maxSizeMB: 1, // 最大文件大小 1MB
+	        maxWidthOrHeight: 1920, // 最大分辨率 1920px
+	        useWebWorker: true,
+	        fileType: 'image/webp', // 转换为 WebP 格式
+	      });
+	
+	      // 2. 上传到 Supabase Storage
+	      const filePath = `lottery-images/${Date.now()}-${compressedFile.name.replace(/\.[^/.]+$/, '.webp')}`;
+	      const { data, error } = await supabase.storage
+	        .from('public') // 假设使用名为 'public' 的 bucket
+	        .upload(filePath, compressedFile, {
+	          cacheControl: '3600',
+	          upsert: false,
+	          contentType: 'image/webp',
+	        });
+	
+	      if (error) {
+	        throw error;
+	      }
+	
+	      // 3. 获取公共 URL
+	      const { data: publicUrlData } = supabase.storage
+	        .from('public')
+	        .getPublicUrl(data.path);
+	
+	      setFormData((prev) => ({
+	        ...prev,
+	        image_url: publicUrlData.publicUrl,
+	      }));
+	
+	      toast.success('图片上传成功并已优化!');
+	    } catch (error: any) {
+	      toast.error(`图片上传失败: ${error.message}`);
+	      console.error('Image upload error:', error);
+	    } finally {
+	      setIsUploading(false);
+	      e.target.value = ''; // 清空文件输入框
+	    }
+	  };
 
   const handleSelectChange = (id: keyof LotteryFormData, value: string) => {
     setFormData((prev) => ({
@@ -379,15 +430,37 @@ export const LotteryForm: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="image_url">图片 URL</Label>
-              <Input
-                id="image_url"
-                type="url"
-                value={formData.image_url}
-                onChange={handleChange}
-              />
-            </div>
+	            <div className="space-y-2">
+	              <Label htmlFor="image_url">夺宝图片</Label>
+	              <div className="flex items-center space-x-4">
+	                <div className="relative w-32 h-32 border border-gray-300 rounded-lg overflow-hidden flex items-center justify-center bg-gray-50">
+	                  {formData.image_url ? (
+	                    <img src={formData.image_url} alt="夺宝图片" className="w-full h-full object-cover" />
+	                  ) : isUploading ? (
+	                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+	                  ) : (
+	                    <Upload className="w-8 h-8 text-gray-400" />
+	                  )}
+	                </div>
+	                <div className="flex-1 space-y-2">
+	                  <Input
+	                    id="image_upload"
+	                    type="file"
+	                    accept="image/*"
+	                    onChange={handleImageUpload}
+	                    disabled={isUploading}
+	                  />
+	                  <p className="text-xs text-gray-500">
+	                    图片将自动压缩并转换为 WebP 格式 (最大 1MB, 1920px)。
+	                  </p>
+	                  {formData.image_url && (
+	                    <p className="text-xs text-gray-500 truncate">
+	                      URL: {formData.image_url}
+	                    </p>
+	                  )}
+	                </div>
+	              </div>
+	            </div>
           </div>
 
 	          <Button type="submit" className="w-full" disabled={isSubmitting || isDrawn}>
