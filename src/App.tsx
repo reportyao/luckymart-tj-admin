@@ -4,7 +4,8 @@ import { LotteryListPage } from './components/Lottery/LotteryListPage'
 import { UserListPage } from './components/User/UserListPage'
 import UserManagementPage from './pages/UserManagementPage'
 import { UserDetailsPage } from './components/User/UserDetailsPage'
-import { OrderListPage } from './components/Order/OrderListPage'
+import { OrderListPage } from './components/Order/OrderListPage';
+import { OrderDetailPage } from './components/Order/OrderDetailPage';
 import { DepositReviewPage } from './components/Finance/DepositReviewPage'
 import { PaymentConfigPage } from './pages/PaymentConfigPage'
 import AlgorithmConfigPage from './pages/AlgorithmConfigPage'
@@ -70,6 +71,7 @@ function App(): React.ReactElement {
               <Route path="/lotteries/new" element={<ProtectedRoute element={<LotteryForm />} requiredRole="admin" />} />
               <Route path="/lotteries/:id" element={<ProtectedRoute element={<LotteryForm />} requiredRole="admin" />} />
               <Route path="/orders" element={<ProtectedRoute element={<OrderListPage />} requiredRole="admin" />} />
+              <Route path="/orders/:id" element={<ProtectedRoute element={<OrderDetailPage />} requiredRole="admin" />} />
               <Route path="/deposit-review" element={<ProtectedRoute element={<DepositReviewPage />} requiredRole="admin" />} />
               <Route path="/withdrawal-review" element={<ProtectedRoute element={<WithdrawalReviewPage />} requiredRole="admin" />} />
               <Route path="/shipping-management" element={<ProtectedRoute element={<ShippingManagementPage />} requiredRole="admin" />} />

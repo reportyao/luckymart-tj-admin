@@ -8,7 +8,7 @@ import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
-import { updateUserCommissionRate } from '@/services/UserService';
+import { updateUserCommissionRate, getUserReferralStats, getUserTotalCommission } from '@/services/UserService';
 
 type UserProfile = Tables<'profiles'> & {
   invited_by_user?: Tables<'profiles'>;
@@ -21,6 +21,8 @@ export const UserDetailsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [commissionRate, setCommissionRate] = useState<number>(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [referralStats, setReferralStats] = useState<{ level1Count: number, level2Count: number } | null>(null);
+  const [totalCommission, setTotalCommission] = useState<number | null>(null);
 
   const fetchUser = useCallback(async () => {
     if (!id) {return;}
@@ -36,6 +38,14 @@ export const UserDetailsPage: React.FC = () => {
 
       setUser(data as UserProfile);
       setCommissionRate(data.commission_rate || 0);
+
+      // 获取邀请统计和累计佣金
+      const stats = await getUserReferralStats(id);
+      setReferralStats(stats);
+
+      const commission = await getUserTotalCommission(id);
+      setTotalCommission(commission);
+
     } catch (error) {
       toast.error(`加载用户详情失败: ${(error as Error).message}`);
       console.error('Error loading user:', error);
@@ -143,22 +153,22 @@ export const UserDetailsPage: React.FC = () => {
         <div className="pt-4 border-t">
           <h3 className="text-xl font-semibold mb-4">邀请层级 (Referral Structure)</h3>
           <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>一级邀请人数</Label>
-              <Input value="N/A" readOnly />
-            </div>
-            <div className="space-y-2">
-              <Label>二级邀请人数</Label>
-              <Input value="N/A" readOnly />
-            </div>
-            <div className="space-y-2">
-              <Label>累计佣金</Label>
-              <Input value="N/A" readOnly />
-            </div>
+	            <div className="space-y-2">
+	              <Label>一级邀请人数</Label>
+	              <Input value={referralStats?.level1Count.toString() || '0'} readOnly />
+	            </div>
+	            <div className="space-y-2">
+	              <Label>二级邀请人数</Label>
+	              <Input value={referralStats?.level2Count.toString() || '0'} readOnly />
+	            </div>
+	            <div className="space-y-2">
+	              <Label>累计佣金</Label>
+	              <Input value={totalCommission !== null ? `${totalCommission.toFixed(2)} CNY` : 'N/A'} readOnly />
+	            </div>
           </div>
-          <Button variant="outline" className="mt-4" onClick={() => toast.error('功能未实现')}>
-            查看邀请列表
-          </Button>
+	          <Button variant="outline" className="mt-4" onClick={() => toast.error('查看邀请列表功能待实现')}>
+	            查看邀请列表
+	          </Button>
         </div>
       </CardContent>
     </Card>
