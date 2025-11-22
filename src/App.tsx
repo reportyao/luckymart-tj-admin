@@ -9,6 +9,8 @@ import { OrderDetailPage } from './components/Order/OrderDetailPage';
 import { DepositReviewPage } from './components/Finance/DepositReviewPage'
 import { PaymentConfigPage } from './pages/PaymentConfigPage'
 import AlgorithmConfigPage from './pages/AlgorithmConfigPage'
+import BankConfigPage from './pages/BankConfigPage'
+import ResaleManagementPage from './pages/ResaleManagementPage'
 import { WithdrawalReviewPage } from './components/Finance/WithdrawalReviewPage'
 import { ShippingManagementPage } from './components/Order/ShippingManagementPage'
 import { ShowoffReviewPage } from './components/Showoff/ShowoffReviewPage'
@@ -42,6 +44,7 @@ function App(): React.ReactElement {
             <NavLink to="/showoff-review" label="Showoff" icon="📸" />
             <NavLink to="/resale-management" label="Resale" icon="🔄" />
             <NavLink to="/payment-config" label="Payment Config" icon="⚙️" />
+            <NavLink to="/bank-config" label="Bank Config" icon="🏦" />
             <NavLink to="/audit-logs" label="Audit Logs" icon="📋" />
             <NavLink to="/algorithm-config" label="Algorithm Config" icon="🧮" />
           </nav>
@@ -76,8 +79,9 @@ function App(): React.ReactElement {
               <Route path="/withdrawal-review" element={<ProtectedRoute element={<WithdrawalReviewPage />} requiredRole="admin" />} />
               <Route path="/shipping-management" element={<ProtectedRoute element={<ShippingManagementPage />} requiredRole="admin" />} />
               <Route path="/showoff-review" element={<ProtectedRoute element={<ShowoffReviewPage />} requiredRole="admin" />} />
-              <Route path="/resale-management" element={<ProtectedRoute element={<PagePlaceholder title="Resale Management" />} requiredRole="admin" />} />
+              <Route path="/resale-management" element={<ProtectedRoute element={<ResaleManagementPage />} requiredRole="admin" />} />
               <Route path="/payment-config" element={<ProtectedRoute element={<PaymentConfigPage />} requiredRole="admin" />} />
+              <Route path="/bank-config" element={<ProtectedRoute element={<BankConfigPage />} requiredRole="admin" />} />
 
               <Route path="/algorithm-config" element={<ProtectedRoute element={<AlgorithmConfigPage />} requiredRole="admin" />} />
               <Route path="/audit-logs" element={<ProtectedRoute element={<PagePlaceholder title="Audit Logs" />} requiredRole="admin" />} />

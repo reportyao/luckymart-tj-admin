@@ -6,7 +6,7 @@ import { Upload, X, Loader2, GripVertical } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { uploadImage } from '@/lib/uploadImage';
 import { SortableContainer, SortableElement, SortableHandle } from 'react-sortable-hoc';
-import arrayMove from 'array-move';
+import { arrayMoveImmutable as arrayMove } from 'array-move';
 
 interface MultiImageUploadProps {
   label: string;
@@ -65,7 +65,7 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0) {return;}
 
     const newFiles = Array.from(files);
     const availableSlots = maxImages - imageUrls.length;

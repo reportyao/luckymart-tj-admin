@@ -59,7 +59,7 @@ export const UserDetailsPage: React.FC = () => {
   }, [fetchUser]);
 
   const handleSaveCommissionRate = async () => {
-    if (!id) return;
+    if (!id) {return;}
     setIsSaving(true);
     try {
       await updateUserCommissionRate(id, commissionRate);

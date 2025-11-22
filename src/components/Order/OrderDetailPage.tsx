@@ -44,7 +44,7 @@ export const OrderDetailPage: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const fetchOrder = useCallback(async () => {
-    if (!id) return;
+    if (!id) {return;}
     setIsLoading(true);
     try {
       const data = await OrderService.getOrderDetails(id);
@@ -65,7 +65,7 @@ export const OrderDetailPage: React.FC = () => {
   }, [fetchOrder]);
 
   const handleUpdateTrackingNumber = async () => {
-    if (!id || !order) return;
+    if (!id || !order) {return;}
     setIsUpdating(true);
     try {
       await OrderService.updateOrderStatus(id, order.status, trackingNumber);
