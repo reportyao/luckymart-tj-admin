@@ -11,7 +11,7 @@ import { MultiLanguageInput } from '../MultiLanguageInput';
 import { RichTextEditor } from '../RichTextEditor';
 import toast from 'react-hot-toast';
 import { formatDateTime } from '@/lib/utils';
-import imageCompression from 'browser-image-compression';
+import { uploadImage } from '@/lib/uploadImage';
 import { Upload } from 'lucide-react';
 type LotteryStatus = Enums<'LotteryStatus'>;
 // type Currency = Enums<'Currency'>; // 假设货币不是枚举，直接使用 string
@@ -135,53 +135,29 @@ export const LotteryForm: React.FC = () => {
 	    }));
 	  };
 	
-	  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-	    const file = e.target.files?.[0];
-	    if (!file) return;
-	
-	    setIsUploading(true);
-	    try {
-	      // 1. 压缩和 WebP 转换
-	      const compressedFile = await imageCompression(file, {
-	        maxSizeMB: 1, // 最大文件大小 1MB
-	        maxWidthOrHeight: 1920, // 最大分辨率 1920px
-	        useWebWorker: true,
-	        fileType: 'image/webp', // 转换为 WebP 格式
-	      });
-	
-	      // 2. 上传到 Supabase Storage
-	      const filePath = `lottery-images/${Date.now()}-${compressedFile.name.replace(/\.[^/.]+$/, '.webp')}`;
-	      const { data, error } = await supabase.storage
-	        .from('public') // 假设使用名为 'public' 的 bucket
-	        .upload(filePath, compressedFile, {
-	          cacheControl: '3600',
-	          upsert: false,
-	          contentType: 'image/webp',
-	        });
-	
-	      if (error) {
-	        throw error;
-	      }
-	
-	      // 3. 获取公共 URL
-	      const { data: publicUrlData } = supabase.storage
-	        .from('public')
-	        .getPublicUrl(data.path);
-	
-	      setFormData((prev) => ({
-	        ...prev,
-	        image_url: publicUrlData.publicUrl,
-	      }));
-	
-	      toast.success('图片上传成功并已优化!');
-	    } catch (error: any) {
-	      toast.error(`图片上传失败: ${error.message}`);
-	      console.error('Image upload error:', error);
-	    } finally {
-	      setIsUploading(false);
-	      e.target.value = ''; // 清空文件输入框
-	    }
-	  };
+		  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		    const file = e.target.files?.[0];
+		    if (!file) {return;}
+		
+		    setIsUploading(true);
+		    try {
+		      // 使用通用的上传函数，它已包含压缩和 WebP 转换逻辑
+		      const publicUrl = await uploadImage(file, true, 'public', 'lottery-images');
+		
+		      setFormData((prev) => ({
+		        ...prev,
+		        image_url: publicUrl,
+		      }));
+		
+		      toast.success('图片上传成功并已优化!');
+		    } catch (error: any) {
+		      toast.error(`图片上传失败: ${error.message}`);
+		      console.error('Image upload error:', error);
+		    } finally {
+		      setIsUploading(false);
+		      e.target.value = ''; // 清空文件输入框
+		    }
+		  };
 
   const handleSelectChange = (id: keyof LotteryFormData, value: string) => {
     setFormData((prev) => ({
