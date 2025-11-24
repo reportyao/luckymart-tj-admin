@@ -11,11 +11,16 @@ import { PaymentConfigPage } from './pages/PaymentConfigPage'
 import AlgorithmConfigPage from './pages/AlgorithmConfigPage'
 import BankConfigPage from './pages/BankConfigPage'
 import ResaleManagementPage from './pages/ResaleManagementPage'
+import ReferralManagementPage from './pages/ReferralManagementPage'
+import CommissionConfigPage from './pages/CommissionConfigPage'
+import CommissionRecordsPage from './pages/CommissionRecordsPage'
 import { WithdrawalReviewPage } from './components/Finance/WithdrawalReviewPage'
 import { ShippingManagementPage } from './components/Order/ShippingManagementPage'
 import { ShowoffReviewPage } from './components/Showoff/ShowoffReviewPage'
 import { Toaster } from 'react-hot-toast'
 import { useState } from 'react'
+import React from 'react'
+import { supabase } from './lib/supabase'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { UnauthorizedPage } from './components/UnauthorizedPage'
 import { ForbiddenPage } from './components/ForbiddenPage'
@@ -47,6 +52,9 @@ function App(): React.ReactElement {
             <NavLink to="/bank-config" label="Bank Config" icon="🏦" />
             <NavLink to="/audit-logs" label="Audit Logs" icon="📋" />
             <NavLink to="/algorithm-config" label="Algorithm Config" icon="🧮" />
+            <NavLink to="/referral-management" label="Referral Tree" icon="🌳" />
+            <NavLink to="/commission-config" label="Commission Config" icon="💵" />
+            <NavLink to="/commission-records" label="Commission Records" icon="📊" />
           </nav>
         </div>
 
@@ -84,6 +92,9 @@ function App(): React.ReactElement {
               <Route path="/bank-config" element={<ProtectedRoute element={<BankConfigPage />} requiredRole="admin" />} />
 
               <Route path="/algorithm-config" element={<ProtectedRoute element={<AlgorithmConfigPage />} requiredRole="admin" />} />
+              <Route path="/referral-management" element={<ProtectedRoute element={<ReferralManagementPage />} requiredRole="admin" />} />
+              <Route path="/commission-config" element={<ProtectedRoute element={<CommissionConfigPage />} requiredRole="admin" />} />
+              <Route path="/commission-records" element={<ProtectedRoute element={<CommissionRecordsPage />} requiredRole="admin" />} />
               <Route path="/audit-logs" element={<ProtectedRoute element={<PagePlaceholder title="Audit Logs" />} requiredRole="admin" />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
               <Route path="/forbidden" element={<ForbiddenPage />} />
@@ -110,24 +121,47 @@ function NavLink({ to, label, icon }: { to: string; label: string; icon: string 
 }
 
 function DashboardPlaceholder(): React.ReactElement {
+  const [stats, setStats] = React.useState<any>(null)
+  const [loading, setLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-dashboard-stats')
+        if (error) throw error
+        setStats(data)
+      } catch (error) {
+        console.error('Failed to load dashboard stats:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadStats()
+  }, [])
+
+  if (loading) {
+    return <div className="bg-white rounded-lg shadow p-6">Loading...</div>
+  }
+
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard title="Total Users" value="1,234" />
-        <StatCard title="Active Lotteries" value="12" />
-        <StatCard title="Total Revenue" value="$45,678" />
-        <StatCard title="Pending Orders" value="89" />
+        <StatCard title="Total Users" value={stats?.totalUsers?.toLocaleString() || '0'} subtitle={`+${stats?.todayUsers || 0} today`} />
+        <StatCard title="Active Lotteries" value={stats?.activeLotteries?.toString() || '0'} />
+        <StatCard title="Total Revenue" value={`¥${stats?.totalRevenue || '0'}`} subtitle={`¥${stats?.todayRevenue || '0'} today`} />
+        <StatCard title="Pending Tasks" value={(stats?.pendingOrders + stats?.pendingDeposits + stats?.pendingWithdrawals)?.toString() || '0'} subtitle={`${stats?.pendingDeposits || 0} deposits, ${stats?.pendingWithdrawals || 0} withdrawals`} />
       </div>
     </div>
   )
 }
 
-function StatCard({ title, value }: { title: string; value: string }): React.ReactElement {
+function StatCard({ title, value, subtitle }: { title: string; value: string; subtitle?: string }): React.ReactElement {
   return (
     <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4">
       <p className="text-gray-600 text-sm">{title}</p>
       <p className="text-2xl font-bold text-gray-900">{value}</p>
+      {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
     </div>
   )
 }
