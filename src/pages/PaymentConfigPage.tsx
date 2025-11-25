@@ -6,7 +6,9 @@ import toast from 'react-hot-toast';
 
 interface PaymentConfig {
   id: string;
-  name: string;
+  config_key: string;
+  config_type: string;
+  config_data: Record<string, any>;
   name_i18n: Record<string, string>;
   description_i18n: Record<string, string>;
   config: {
@@ -19,22 +21,27 @@ interface PaymentConfig {
     merchant_id?: string;
     [key: string]: any;
   };
+  is_enabled: boolean;
   is_active: boolean;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }
 
 interface FormData {
-  name: string;
+  config_key: string;
+  config_type: string;
   name_i18n: Record<string, string>;
   description_i18n: Record<string, string>;
   config: Record<string, string>;
-  is_active: boolean;
+  is_enabled: boolean;
+  sort_order: number;
   qr_code_urls: string[];
 }
 
 const initialFormData: FormData = {
-  name: '',
+  config_key: '',
+  config_type: 'payment_method',
   name_i18n: { zh: '', en: '', ru: '', tg: '' },
   description_i18n: { zh: '', en: '', ru: '', tg: '' },
   config: {
@@ -42,7 +49,8 @@ const initialFormData: FormData = {
     account_name: '',
     bank_name: '',
   },
-  is_active: true,
+  is_enabled: true,
+  sort_order: 0,
   qr_code_urls: [],
 };
 
@@ -64,7 +72,8 @@ export const PaymentConfigPage: React.FC = () => {
       const { data, error } = await supabase
         .from('payment_config')
         .select('*')
-        .order('created_at', { ascending: false });
+        .eq('config_type', 'payment_method')
+        .order('sort_order', { ascending: true });
 
       if (error) throw error;
       setConfigs(data || []);
@@ -85,11 +94,13 @@ export const PaymentConfigPage: React.FC = () => {
   const handleEdit = (config: PaymentConfig) => {
     setEditingConfig(config);
     setFormData({
-      name: config.name,
+      config_key: config.config_key,
+      config_type: config.config_type,
       name_i18n: config.name_i18n || { zh: '', en: '', ru: '', tg: '' },
       description_i18n: config.description_i18n || { zh: '', en: '', ru: '', tg: '' },
       config: config.config || {},
-      is_active: config.is_active,
+      is_enabled: config.is_enabled,
+      sort_order: config.sort_order || 0,
       qr_code_urls: config.config?.qr_code_url ? [config.config.qr_code_url] : [],
     });
     setShowModal(true);
@@ -98,8 +109,8 @@ export const PaymentConfigPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim()) {
-      toast.error('请输入支付方式名称');
+    if (!formData.config_key.trim()) {
+      toast.error('请输入支付方式标识');
       return;
     }
 
@@ -111,11 +122,15 @@ export const PaymentConfigPage: React.FC = () => {
       };
 
       const payload = {
-        name: formData.name,
+        config_key: formData.config_key,
+        config_type: formData.config_type,
+        config_data: configWithQR, // 存储到config_data字段
+        config: configWithQR, // 同时存储到config字段（兼容）
         name_i18n: formData.name_i18n,
         description_i18n: formData.description_i18n,
-        config: configWithQR,
-        is_active: formData.is_active,
+        is_enabled: formData.is_enabled,
+        is_active: formData.is_enabled, // 同步到is_active
+        sort_order: formData.sort_order,
         updated_at: new Date().toISOString(),
       };
 
@@ -171,6 +186,7 @@ export const PaymentConfigPage: React.FC = () => {
       const { error } = await supabase
         .from('payment_config')
         .update({ 
+          is_enabled: !currentStatus,
           is_active: !currentStatus,
           updated_at: new Date().toISOString(),
         })
@@ -224,6 +240,9 @@ export const PaymentConfigPage: React.FC = () => {
                 状态
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                排序
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                 更新时间
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -232,62 +251,68 @@ export const PaymentConfigPage: React.FC = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {configs.map((config) => (
-              <tr key={config.id}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{config.name}</div>
-                  <div className="text-xs text-gray-500">
-                    {config.name_i18n?.zh || config.name_i18n?.en || '-'}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900">
-                    {config.config?.account_name && (
-                      <div>户名: {config.config.account_name}</div>
-                    )}
-                    {config.config?.account_number && (
-                      <div>账号: {config.config.account_number}</div>
-                    )}
-                    {config.config?.bank_name && (
-                      <div>银行: {config.config.bank_name}</div>
-                    )}
-                    {config.config?.qr_code_url && (
-                      <div className="text-xs text-blue-600">已上传二维码</div>
-                    )}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    config.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {config.is_active ? '启用' : '禁用'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(config.updated_at || config.created_at).toLocaleString('zh-CN')}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button
-                    onClick={() => handleEdit(config)}
-                    className="text-indigo-600 hover:text-indigo-900 mr-3"
-                  >
-                    编辑
-                  </button>
-                  <button
-                    onClick={() => toggleActive(config.id, config.is_active)}
-                    className="text-blue-600 hover:text-blue-900 mr-3"
-                  >
-                    {config.is_active ? '禁用' : '启用'}
-                  </button>
-                  <button
-                    onClick={() => handleDelete(config.id, config.name)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    删除
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {configs.map((config) => {
+              const configData = config.config || config.config_data || {};
+              return (
+                <tr key={config.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{config.config_key}</div>
+                    <div className="text-xs text-gray-500">
+                      {config.name_i18n?.zh || config.name_i18n?.en || '-'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900">
+                      {configData.account_name && (
+                        <div>户名: {configData.account_name}</div>
+                      )}
+                      {configData.account_number && (
+                        <div>账号: {configData.account_number}</div>
+                      )}
+                      {configData.bank_name && (
+                        <div>银行: {configData.bank_name}</div>
+                      )}
+                      {configData.qr_code_url && (
+                        <div className="text-xs text-blue-600">已上传二维码</div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      config.is_enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {config.is_enabled ? '启用' : '禁用'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {config.sort_order}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(config.updated_at || config.created_at).toLocaleString('zh-CN')}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      onClick={() => handleEdit(config)}
+                      className="text-indigo-600 hover:text-indigo-900 mr-3"
+                    >
+                      编辑
+                    </button>
+                    <button
+                      onClick={() => toggleActive(config.id, config.is_enabled)}
+                      className="text-blue-600 hover:text-blue-900 mr-3"
+                    >
+                      {config.is_enabled ? '禁用' : '启用'}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(config.id, config.config_key)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      删除
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         {configs.length === 0 && (
@@ -315,8 +340,8 @@ export const PaymentConfigPage: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    value={formData.config_key}
+                    onChange={(e) => setFormData({ ...formData, config_key: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg"
                     placeholder="例如: bank_transfer, alipay, wechat_pay"
                     required
@@ -346,6 +371,20 @@ export const PaymentConfigPage: React.FC = () => {
                     onChange={(value) => setFormData({ ...formData, description_i18n: value })}
                     placeholder="支付方式描述"
                     multiline
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    排序顺序
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.sort_order}
+                    onChange={(e) => setFormData({ ...formData, sort_order: Number(e.target.value) })}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    placeholder="数字越小越靠前"
+                    min="0"
                   />
                 </div>
               </div>
@@ -389,7 +428,7 @@ export const PaymentConfigPage: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    收款二维码
+                    收款二维码（选填）
                   </label>
                   <ImageUpload
                     value={formData.qr_code_urls}
@@ -439,12 +478,12 @@ export const PaymentConfigPage: React.FC = () => {
               <div className="flex items-center">
                 <input
                   type="checkbox"
-                  id="is_active"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                  id="is_enabled"
+                  checked={formData.is_enabled}
+                  onChange={(e) => setFormData({ ...formData, is_enabled: e.target.checked })}
                   className="w-4 h-4 text-indigo-600 rounded"
                 />
-                <label htmlFor="is_active" className="ml-2 text-sm font-medium">
+                <label htmlFor="is_enabled" className="ml-2 text-sm font-medium">
                   启用此支付方式
                 </label>
               </div>
