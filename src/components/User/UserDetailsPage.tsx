@@ -10,13 +10,24 @@ import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 type UserProfile = Tables<'users'> & {
-  invited_by_user?: Tables<'users'>;
+  referred_by_user?: Tables<'users'>;
 };
+
+interface ReferralStats {
+  level1_count: number;
+  level2_count: number;
+  total_commission: number;
+}
 
 export const UserDetailsPage: React.FC = () => {
   const { supabase } = useSupabase();
   const { id } = useParams<{ id: string }>();
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [referralStats, setReferralStats] = useState<ReferralStats>({
+    level1_count: 0,
+    level2_count: 0,
+    total_commission: 0
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchUser = useCallback(async () => {
@@ -25,13 +36,16 @@ export const UserDetailsPage: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('*, invited_by_user:invited_by(*)')
+        .select('*, referred_by_user:referred_by_id(*)')
         .eq('id', id)
         .single();
 
       if (error) {throw error;}
 
       setUser(data as UserProfile);
+      
+      // 查询邀请统计
+      await fetchReferralStats(id);
     } catch (error) {
       toast.error(`加载用户详情失败: ${error.message}`);
       console.error('Error loading user:', error);
@@ -39,6 +53,51 @@ export const UserDetailsPage: React.FC = () => {
       setIsLoading(false);
     }
   }, [id, supabase]);
+
+  const fetchReferralStats = async (userId: string) => {
+    try {
+      // 查询一级邀请人数
+      const { data: level1Users, error: level1Error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('referred_by_id', userId);
+
+      if (level1Error) throw level1Error;
+
+      // 查询二级邀请人数
+      let level2Count = 0;
+      if (level1Users && level1Users.length > 0) {
+        const level1Ids = level1Users.map(u => u.id);
+        const { data: level2Users, error: level2Error } = await supabase
+          .from('users')
+          .select('id')
+          .in('referred_by_id', level1Ids);
+
+        if (!level2Error && level2Users) {
+          level2Count = level2Users.length;
+        }
+      }
+
+      // 查询累计佣金
+      const { data: commissions, error: commissionError } = await supabase
+        .from('commissions')
+        .select('amount')
+        .eq('referrer_id', userId);
+
+      let totalCommission = 0;
+      if (!commissionError && commissions) {
+        totalCommission = commissions.reduce((sum, c) => sum + parseFloat(c.amount || '0'), 0);
+      }
+
+      setReferralStats({
+        level1_count: level1Users?.length || 0,
+        level2_count: level2Count,
+        total_commission: totalCommission
+      });
+    } catch (error) {
+      console.error('Error loading referral stats:', error);
+    }
+  };
 
   useEffect(() => {
     fetchUser();
@@ -55,7 +114,7 @@ export const UserDetailsPage: React.FC = () => {
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle>用户详情: {user.telegram_username || user.display_name}</CardTitle>
+        <CardTitle>用户详情: {user.telegram_username || user.first_name + ' ' + user.last_name}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
@@ -72,28 +131,16 @@ export const UserDetailsPage: React.FC = () => {
             <Input value={user.telegram_username || 'N/A'} readOnly />
           </div>
           <div className="space-y-2">
-            <Label>显示名称</Label>
-            <Input value={user.display_name || 'N/A'} readOnly />
-          </div>
-          <div className="space-y-2">
-            <Label>余额 (TJS)</Label>
-            <Input value={user.balance.toFixed(2)} readOnly />
-          </div>
-          <div className="space-y-2">
-            <Label>夺宝币</Label>
-            <Input value={user.lucky_coins.toFixed(2)} readOnly />
-          </div>
-          <div className="space-y-2">
-            <Label>VIP 等级</Label>
-            <Input value={user.vip_level} readOnly />
+            <Label>姓名</Label>
+            <Input value={`${user.first_name || ''} ${user.last_name || ''}`.trim() || 'N/A'} readOnly />
           </div>
           <div className="space-y-2">
             <Label>邀请人</Label>
-            <Input value={user.invited_by_user?.telegram_username || '无'} readOnly />
+            <Input value={user.referred_by_user?.telegram_username || '无'} readOnly />
           </div>
           <div className="space-y-2">
             <Label>邀请码</Label>
-            <Input value={user.invite_code || 'N/A'} readOnly />
+            <Input value={user.referral_code || 'N/A'} readOnly />
           </div>
           <div className="space-y-2">
             <Label>注册时间</Label>
@@ -105,7 +152,6 @@ export const UserDetailsPage: React.FC = () => {
           </div>
         </div>
         
-        {/* 假设这里可以添加编辑用户状态和 KYC 等级的表单 */}
         <div className="pt-4 border-t">
           <h3 className="text-xl font-semibold mb-4">返利设置 (Rebate)</h3>
           <div className="flex space-x-4 items-end">
@@ -129,11 +175,11 @@ export const UserDetailsPage: React.FC = () => {
         <div className="pt-4 border-t">
           <h3 className="text-xl font-semibold mb-4">邀请层级 (Referral Structure)</h3>
           <div className="grid grid-cols-3 gap-4">
-            <StatCard title="一级邀请人数" value="N/A" />
-            <StatCard title="二级邀请人数" value="N/A" />
-            <StatCard title="累计佣金" value="N/A" />
+            <StatCard title="一级邀请人数" value={referralStats.level1_count} />
+            <StatCard title="二级邀请人数" value={referralStats.level2_count} />
+            <StatCard title="累计佣金 (TJS)" value={referralStats.total_commission.toFixed(2)} />
           </div>
-          <Button variant="outline" className="mt-4" onClick={() => toast.error('功能未实现')}>
+          <Button variant="outline" className="mt-4" onClick={() => window.location.href = `/referral-management?search=${user.telegram_id}`}>
             查看邀请列表
           </Button>
         </div>
@@ -141,3 +187,13 @@ export const UserDetailsPage: React.FC = () => {
     </Card>
   );
 };
+
+// StatCard组件定义
+const StatCard: React.FC<{ title: string; value: string | number }> = ({ title, value }) => (
+  <Card>
+    <CardContent className="pt-6">
+      <div className="text-2xl font-bold">{value}</div>
+      <p className="text-xs text-muted-foreground">{title}</p>
+    </CardContent>
+  </Card>
+);

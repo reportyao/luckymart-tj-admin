@@ -43,14 +43,14 @@ export default function ReferralManagementPage() {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .or(`id.eq.${searchTerm},telegram_username.ilike.%${searchTerm}%,referral_code.eq.${searchTerm}`)
+        .or(`id.eq.${searchTerm},telegram_id.eq.${searchTerm},telegram_username.ilike.%${searchTerm}%,referral_code.eq.${searchTerm}`)
         .limit(1);
 
       if (error) {throw error;}
 
       if (data && data.length > 0) {
         setSelectedUser(data[0]);
-        await buildReferralTree(data[0].id);
+        await loadReferralTree(data[0].id);
       } else {
         alert('未找到用户');
       }
@@ -152,7 +152,7 @@ export default function ReferralManagementPage() {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-gray-400" />
-              <span className="font-medium">{node.telegram_username || `${node.first_name} ${node.last_name}`.trim()}</span>
+              <span className="font-medium">{node.telegram_username || `${node.first_name || ''} ${node.last_name || ''}`.trim() || 'N/A'}</span>
               <span className="text-xs text-gray-500">({node.telegram_id})</span>
               <span className="text-xs bg-gray-100 px-2 py-1 rounded">L{level}</span>
             </div>
@@ -219,7 +219,7 @@ export default function ReferralManagementPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <p className="text-sm text-gray-600">用户名</p>
-              <p className="font-medium">{selectedUser.username}</p>
+              <p className="font-medium">{selectedUser.telegram_username || `${selectedUser.first_name || ''} ${selectedUser.last_name || ''}`.trim() || 'N/A'}</p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Telegram ID</p>

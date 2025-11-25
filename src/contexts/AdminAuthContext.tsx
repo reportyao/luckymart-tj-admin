@@ -84,7 +84,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         .eq('role', adminData.role)
         .single();
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       // permissions是JSONB数组，如 ["users.view", "lotteries.view"]
       const permissionIds = rolePermData?.permissions || [];
@@ -168,11 +168,11 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
   // 检查权限
   const hasPermission = (pagePath: string): boolean => {
-    if (!admin) return false;
-    if (admin.role === 'super_admin') return true;
+    if (!admin) {return false;}
+    if (admin.role === 'super_admin') {return true;}
     
     // 根目录总是允许访问
-    if (pagePath === '/') return true;
+    if (pagePath === '/') {return true;}
     
     // 查找哪些权限ID对应这个页面路径
     for (const [permId, paths] of Object.entries(PERMISSION_TO_PATH_MAP)) {
