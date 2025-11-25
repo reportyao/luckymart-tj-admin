@@ -35,7 +35,7 @@ export default function CommissionConfigPage() {
         .select('*')
         .order('level', { ascending: true });
 
-      if (error) throw error;
+      if (error) {throw error;}
       setSettings(data || []);
     } catch (error: any) {
       console.error('加载配置失败:', error);
@@ -60,7 +60,7 @@ export default function CommissionConfigPage() {
         })
         .eq('id', setting.id);
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       alert('保存成功！');
       setEditingLevel(null);

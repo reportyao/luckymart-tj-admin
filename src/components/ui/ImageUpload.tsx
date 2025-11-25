@@ -114,7 +114,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
    */
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
+    if (files.length === 0) {return;}
 
     if (value.length + files.length > maxImages) {
       toast.error(`最多只能上传${maxImages}张图片`);

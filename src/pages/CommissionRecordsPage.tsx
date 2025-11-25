@@ -59,13 +59,13 @@ export default function CommissionRecordsPage() {
 
       const { data: commissionsData, error, count } = await query;
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       // 获取所有相关的用户ID
       const userIds = new Set<string>();
       commissionsData?.forEach(c => {
-        if (c.user_id) userIds.add(c.user_id);
-        if (c.referrer_id) userIds.add(c.referrer_id);
+        if (c.user_id) {userIds.add(c.user_id);}
+        if (c.referrer_id) {userIds.add(c.referrer_id);}
       });
 
       // 查询用户信息
@@ -104,7 +104,7 @@ export default function CommissionRecordsPage() {
         .select('id')
         .or(`username.ilike.%${searchTerm}%,telegram_id.ilike.%${searchTerm}%`);
 
-      if (userError) throw userError;
+      if (userError) {throw userError;}
 
       const userIds = users?.map(u => u.id) || [];
 
@@ -114,7 +114,7 @@ export default function CommissionRecordsPage() {
         .in('user_id', userIds)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       setRecords(data || []);
     } catch (error: any) {
@@ -132,7 +132,7 @@ export default function CommissionRecordsPage() {
     }
 
     const confirmed = confirm(`确定要发放 ${selectedRecords.size} 条返利记录吗？`);
-    if (!confirmed) return;
+    if (!confirmed) {return;}
 
     setLoading(true);
     try {
@@ -140,7 +140,7 @@ export default function CommissionRecordsPage() {
         body: { commission_ids: Array.from(selectedRecords) }
       });
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       alert(`成功发放 ${data.success_count} 条返利，失败 ${data.fail_count} 条`);
       setSelectedRecords(new Set());

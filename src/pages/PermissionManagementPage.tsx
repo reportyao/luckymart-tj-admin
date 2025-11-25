@@ -153,7 +153,7 @@ export default function PermissionManagementPage() {
           })
           .eq('role', selectedRole);
 
-        if (error) throw error;
+        if (error) {throw error;}
       } else {
         // 创建新记录
         const { error } = await supabase
@@ -165,7 +165,7 @@ export default function PermissionManagementPage() {
             updated_at: new Date().toISOString()
           });
 
-        if (error) throw error;
+        if (error) {throw error;}
       }
 
       toast.success('权限配置已保存');

@@ -46,7 +46,7 @@ export default function ReferralManagementPage() {
         .or(`id.eq.${searchTerm},telegram_username.ilike.%${searchTerm}%,referral_code.eq.${searchTerm}`)
         .limit(1);
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       if (data && data.length > 0) {
         setSelectedUser(data[0]);
@@ -69,7 +69,7 @@ export default function ReferralManagementPage() {
         body: { user_id: userId }
       });
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       setReferralTree(data);
       setExpandedNodes(new Set([userId]));

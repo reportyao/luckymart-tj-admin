@@ -30,7 +30,7 @@ const UserManagementPage: React.FC = () => {
         .order('created_at', { ascending: false })
         .limit(100);
 
-      if (error) throw error;
+      if (error) {throw error;}
       setUsers(data || []);
     } catch (error: any) {
       toast.error(`加载用户失败: ${error.message}`);
@@ -47,7 +47,7 @@ const UserManagementPage: React.FC = () => {
         .update({ level: newLevel })
         .eq('id', userId);
 
-      if (error) throw error;
+      if (error) {throw error;}
       toast.success('等级更新成功');
       fetchUsers();
     } catch (error: any) {
@@ -62,7 +62,7 @@ const UserManagementPage: React.FC = () => {
         .update({ commission_rate: newCommissionRate })
         .eq('id', userId);
 
-      if (error) throw error;
+      if (error) {throw error;}
       toast.success('返利率更新成功');
       fetchUsers();
     } catch (error: any) {

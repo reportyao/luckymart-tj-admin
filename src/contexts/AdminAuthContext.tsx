@@ -49,7 +49,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         .eq('role', adminData.role)
         .eq('can_access', true);
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       const permissionPaths = permissions?.map(p => p.page_path) || [];
       
@@ -132,8 +132,8 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
   // 检查权限
   const hasPermission = (pagePath: string): boolean => {
-    if (!admin) return false;
-    if (admin.role === 'super_admin') return true;
+    if (!admin) {return false;}
+    if (admin.role === 'super_admin') {return true;}
     return admin.permissions.includes(pagePath);
   };
 

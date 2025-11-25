@@ -25,7 +25,7 @@ export const OrderService = {
       throw orderError;
     }
 
-    if (!orderData) return null;
+    if (!orderData) {return null;}
 
     // 查询用户信息
     let userData = null;

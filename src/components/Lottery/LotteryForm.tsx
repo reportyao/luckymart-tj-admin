@@ -72,7 +72,7 @@ export const LotteryForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadLottery = useCallback(async () => {
-    if (!id) return;
+    if (!id) {return;}
 
     try {
       const { data, error } = await supabase
@@ -81,7 +81,7 @@ export const LotteryForm: React.FC = () => {
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       if (data) {
         // 如果已开奖，尝试获取开奖轮次信息
@@ -101,7 +101,7 @@ export const LotteryForm: React.FC = () => {
             .eq('lottery_id', id)
             .single();
 
-          if (roundError && roundError.code !== 'PGRST116') throw roundError;
+          if (roundError && roundError.code !== 'PGRST116') {throw roundError;}
           const result = roundData ? { ...roundData, winner: roundData.winner[0] } : null;
           setLotteryRound(result);
         }
@@ -217,7 +217,7 @@ export const LotteryForm: React.FC = () => {
           .select();
       }
 
-      if (result.error) throw result.error;
+      if (result.error) {throw result.error;}
 
       toast.success(isEdit ? '夺宝信息更新成功!' : '夺宝创建成功!');
       navigate('/lotteries');

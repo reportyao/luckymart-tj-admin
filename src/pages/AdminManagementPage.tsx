@@ -56,7 +56,7 @@ export default function AdminManagementPage() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {throw error;}
       setAdmins(data || []);
     } catch (error: any) {
       toast.error('加载管理员列表失败: ' + error.message);
@@ -115,7 +115,7 @@ export default function AdminManagementPage() {
           .update(updateData)
           .eq('id', editingAdmin.id);
 
-        if (error) throw error;
+        if (error) {throw error;}
         toast.success('管理员更新成功');
       } else {
         // 创建新管理员
@@ -139,7 +139,7 @@ export default function AdminManagementPage() {
             created_by: currentAdmin?.id
           });
 
-        if (error) throw error;
+        if (error) {throw error;}
         toast.success('管理员创建成功');
       }
 
@@ -151,7 +151,7 @@ export default function AdminManagementPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('确定要删除此管理员吗？')) return;
+    if (!confirm('确定要删除此管理员吗？')) {return;}
 
     try {
       const { error } = await supabase
@@ -159,7 +159,7 @@ export default function AdminManagementPage() {
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {throw error;}
       toast.success('管理员已删除');
       loadAdmins();
     } catch (error: any) {

@@ -46,7 +46,7 @@ export const UserListPage = () => {
         .order('created_at', { ascending: false })
         .range(from, to);
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       setUsers(data || []);
       setHasMore((data || []).length === LIMIT);

@@ -43,7 +43,7 @@ export default function AlgorithmConfigPageEnhanced() {
         .select('*')
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {throw error;}
       setAlgorithms(data || []);
     } catch (error: any) {
       console.error('加载算法失败:', error);
@@ -68,7 +68,7 @@ export default function AlgorithmConfigPageEnhanced() {
         })
         .eq('id', algorithm.id);
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       // 如果设置为默认，取消其他算法的默认状态
       if (algorithm.is_default) {

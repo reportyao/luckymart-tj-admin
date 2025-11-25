@@ -47,7 +47,7 @@ export default function DrawLogsPage() {
         .order('draw_time', { ascending: false })
         .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
 
-      if (error) throw error;
+      if (error) {throw error;}
       if (!logsData || logsData.length === 0) {
         setLogs([]);
         setTotalCount(0);

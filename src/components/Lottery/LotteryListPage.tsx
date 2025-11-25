@@ -28,9 +28,9 @@ const getStatusColor = (status: LotteryStatus) => {
 };
 
 const getLocalizedText = (jsonb: any, language: string = 'zh', fallbackLanguage: string = 'en'): string => {
-  if (!jsonb || typeof jsonb !== 'object') return '';
-  if (jsonb[language]) return jsonb[language];
-  if (jsonb[fallbackLanguage]) return jsonb[fallbackLanguage];
+  if (!jsonb || typeof jsonb !== 'object') {return '';}
+  if (jsonb[language]) {return jsonb[language];}
+  if (jsonb[fallbackLanguage]) {return jsonb[fallbackLanguage];}
   const firstValue = Object.values(jsonb).find(value => typeof value === 'string' && value.trim() !== '');
   return firstValue as string || '';
 };
@@ -57,7 +57,7 @@ export const LotteryListPage: React.FC = () => {
         .order('created_at', { ascending: false })
         .range(from, to);
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       setLotteries(data || []);
       setHasMore((data || []).length === LIMIT);
@@ -74,13 +74,13 @@ export const LotteryListPage: React.FC = () => {
   }, [fetchLotteries]);
 
 	  const handleDraw = async (id: string) => {
-	    if (!window.confirm('确定要立即开奖吗？开奖后将无法修改。')) return;
+	    if (!window.confirm('确定要立即开奖吗？开奖后将无法修改。')) {return;}
 	
 	    try {
 	      // 假设存在一个 Supabase RPC 或 Edge Function 来执行开奖逻辑
 	      const { data, error } = await supabase.rpc('draw_lottery', { p_lottery_id: id });
 	
-	      if (error) throw error;
+	      if (error) {throw error;}
 	
 	      toast.success(`夺宝 ${id} 开奖成功! 中奖号码: ${(data as any).winning_number}`);
 	      fetchLotteries(); // 刷新列表
@@ -96,7 +96,7 @@ export const LotteryListPage: React.FC = () => {
 	  };
 	
 	  const handleDelete = async (id: string) => {
-    if (!window.confirm('确定要删除这个夺宝吗？')) return;
+    if (!window.confirm('确定要删除这个夺宝吗？')) {return;}
 
     try {
       const { error } = await supabase
@@ -104,7 +104,7 @@ export const LotteryListPage: React.FC = () => {
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       toast.success('夺宝删除成功!');
       fetchLotteries(); // 刷新列表
