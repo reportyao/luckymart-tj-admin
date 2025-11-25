@@ -23,7 +23,7 @@ import DrawLogsPage from './pages/DrawLogsPage';
 import CommissionConfigPage from './pages/CommissionConfigPage';
 import CommissionRecordsPage from './pages/CommissionRecordsPage';
 import ReferralManagementPage from './pages/ReferralManagementPage';
-import BankConfigPage from './pages/BankConfigPage';
+
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import LoginPage from './pages/LoginPage';
 
@@ -49,7 +49,7 @@ function App(): JSX.Element {
             <NavLink to="/orders" label="订单管理" icon="📦" />
             <NavLink to="/deposit-review" label="充值审核" icon="💰" />
             <NavLink to="/withdrawal-review" label="提现审核" icon="💸" />
-            <NavLink to="/bank-config" label="银行配置" icon="💳" />
+
             <NavLink to="/shipping-management" label="物流管理" icon="🚚" />
             <NavLink to="/showoff-review" label="晒单审核" icon="📸" />
             <NavLink to="/resale-management" label="转售管理" icon="🔄" />
@@ -98,7 +98,7 @@ function App(): JSX.Element {
           <Route path="/admin-management" element={<ProtectedRoute element={<AdminManagementPage />} requiredRole="super_admin" />} />
           <Route path="/permission-management" element={<ProtectedRoute element={<PermissionManagementPage />} requiredRole="super_admin" />} />
               <Route path="/payment-config" element={<ProtectedRoute element={<PaymentConfigPage />} requiredRole="admin" />} />
-              <Route path="/bank-config" element={<ProtectedRoute element={<BankConfigPage />} requiredRole="admin" />} />
+
               <Route path="/commission-config" element={<ProtectedRoute element={<CommissionConfigPage />} requiredRole="admin" />} />
               <Route path="/commission-records" element={<ProtectedRoute element={<CommissionRecordsPage />} requiredRole="admin" />} />
 

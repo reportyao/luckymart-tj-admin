@@ -62,7 +62,7 @@ export const UserDetailsPage: React.FC = () => {
         .select('id')
         .eq('referred_by_id', userId);
 
-      if (level1Error) throw level1Error;
+      if (level1Error) {throw level1Error;}
 
       // 查询二级邀请人数
       let level2Count = 0;

@@ -67,7 +67,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     'resale.edit': ['/resale-management'],
     'config.payment': ['/payment-config'],
     'config.algorithm': ['/algorithm-config'],
-    'config.bank': ['/bank-config'],
+
     'admin.view': ['/admin-management'],
     'admin.create': ['/admin-management'],
     'admin.edit': ['/admin-management'],
