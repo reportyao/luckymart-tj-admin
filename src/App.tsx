@@ -18,6 +18,7 @@ import { UnauthorizedPage } from './components/UnauthorizedPage'
 import { ForbiddenPage } from './components/ForbiddenPage'
 import ResaleManagementPage from './pages/ResaleManagementPage';
 import AdminManagementPage from './pages/AdminManagementPage';
+import PermissionManagementPage from './pages/PermissionManagementPage';
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import LoginPage from './pages/LoginPage';
 
@@ -46,8 +47,10 @@ function App(): JSX.Element {
             <NavLink to="/showoff-review" label="晒单审核" icon="📸" />
             <NavLink to="/resale-management" label="转售管理" icon="🔄" />
             <NavLink to="/payment-config" label="支付配置" icon="⚙️" />
-            <NavLink to="/audit-logs" label="审计日志" icon="📋" />
             <NavLink to="/algorithm-config" label="算法配置" icon="🧮" />
+            <NavLink to="/admin-management" label="管理员管理" icon="👨‍💼" />
+            <NavLink to="/permission-management" label="权限管理" icon="🔐" />
+            <NavLink to="/audit-logs" label="审计日志" icon="📋" />
           </nav>
         </div>
 
@@ -81,7 +84,8 @@ function App(): JSX.Element {
               <Route path="/shipping-management" element={<ProtectedRoute element={<ShippingManagementPage />} requiredRole="admin" />} />
               <Route path="/showoff-review" element={<ProtectedRoute element={<ShowoffReviewPage />} requiredRole="admin" />} />
               <Route path="/resale-management" element={<ProtectedRoute element={<ResaleManagementPage />} requiredRole="admin" />} />
-          <Route path="/admin-management" element={<ProtectedRoute element={<AdminManagementPage />} />} />
+          <Route path="/admin-management" element={<ProtectedRoute element={<AdminManagementPage />} requiredRole="super_admin" />} />
+          <Route path="/permission-management" element={<ProtectedRoute element={<PermissionManagementPage />} requiredRole="super_admin" />} />
               <Route path="/payment-config" element={<ProtectedRoute element={<PaymentConfigPage />} requiredRole="admin" />} />
 
               <Route path="/algorithm-config" element={<ProtectedRoute element={<AlgorithmConfigPage />} requiredRole="admin" />} />
