@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSupabase } from '@/contexts/SupabaseContext';
 import { MultiLanguageInput } from '@/components/MultiLanguageInput';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 import toast from 'react-hot-toast';
 
 interface PaymentConfig {
@@ -29,6 +30,7 @@ interface FormData {
   description_i18n: Record<string, string>;
   config: Record<string, string>;
   is_active: boolean;
+  qr_code_urls: string[];
 }
 
 const initialFormData: FormData = {
@@ -39,9 +41,9 @@ const initialFormData: FormData = {
     account_number: '',
     account_name: '',
     bank_name: '',
-    qr_code_url: '',
   },
   is_active: true,
+  qr_code_urls: [],
 };
 
 export const PaymentConfigPage: React.FC = () => {
@@ -88,6 +90,7 @@ export const PaymentConfigPage: React.FC = () => {
       description_i18n: config.description_i18n || { zh: '', en: '', ru: '', tg: '' },
       config: config.config || {},
       is_active: config.is_active,
+      qr_code_urls: config.config?.qr_code_url ? [config.config.qr_code_url] : [],
     });
     setShowModal(true);
   };
@@ -101,11 +104,17 @@ export const PaymentConfigPage: React.FC = () => {
     }
 
     try {
+      // 将二维码URL添加到config中
+      const configWithQR = {
+        ...formData.config,
+        qr_code_url: formData.qr_code_urls[0] || null,
+      };
+
       const payload = {
         name: formData.name,
         name_i18n: formData.name_i18n,
         description_i18n: formData.description_i18n,
-        config: formData.config,
+        config: configWithQR,
         is_active: formData.is_active,
         updated_at: new Date().toISOString(),
       };
@@ -242,6 +251,9 @@ export const PaymentConfigPage: React.FC = () => {
                     {config.config?.bank_name && (
                       <div>银行: {config.config.bank_name}</div>
                     )}
+                    {config.config?.qr_code_url && (
+                      <div className="text-xs text-blue-600">已上传二维码</div>
+                    )}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -376,14 +388,17 @@ export const PaymentConfigPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">二维码URL</label>
-                  <input
-                    type="text"
-                    value={formData.config.qr_code_url || ''}
-                    onChange={(e) => handleConfigChange('qr_code_url', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg"
-                    placeholder="收款二维码图片URL"
+                  <label className="block text-sm font-medium mb-2">
+                    收款二维码
+                  </label>
+                  <ImageUpload
+                    value={formData.qr_code_urls}
+                    onChange={(urls) => setFormData({ ...formData, qr_code_urls: urls })}
+                    maxImages={1}
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    上传收款二维码图片，支持JPG、PNG格式，自动压缩并上传到云存储
+                  </p>
                 </div>
 
                 <div>
