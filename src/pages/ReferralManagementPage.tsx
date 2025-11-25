@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Users, TrendingUp, Download } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { useSupabase } from '../contexts/SupabaseContext';
 
 interface User {
   id: string;
@@ -23,6 +23,7 @@ interface ReferralNode extends User {
 }
 
 export default function ReferralManagementPage() {
+  const { supabase } = useSupabase();
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);

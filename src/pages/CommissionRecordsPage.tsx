@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Download, DollarSign, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { useSupabase } from '../contexts/SupabaseContext';
 
 interface CommissionRecord {
   id: string;
@@ -24,6 +24,7 @@ interface CommissionRecord {
 }
 
 export default function CommissionRecordsPage() {
+  const { supabase } = useSupabase();
   const [records, setRecords] = useState<CommissionRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

@@ -20,6 +20,10 @@ import ResaleManagementPage from './pages/ResaleManagementPage';
 import AdminManagementPage from './pages/AdminManagementPage';
 import PermissionManagementPage from './pages/PermissionManagementPage';
 import DrawLogsPage from './pages/DrawLogsPage';
+import CommissionConfigPage from './pages/CommissionConfigPage';
+import CommissionRecordsPage from './pages/CommissionRecordsPage';
+import ReferralManagementPage from './pages/ReferralManagementPage';
+import BankConfigPage from './pages/BankConfigPage';
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import LoginPage from './pages/LoginPage';
 
@@ -40,14 +44,18 @@ function App(): JSX.Element {
             <NavLink to="/" label="仪表盘" icon="📊" />
             <NavLink to="/users" label="用户列表" icon="👥" />
             <NavLink to="/user-management" label="用户管理" icon="👤" />
+            <NavLink to="/referral-management" label="推荐管理" icon="🌳" />
             <NavLink to="/lotteries" label="夺宝活动" icon="🎰" />
             <NavLink to="/orders" label="订单管理" icon="📦" />
             <NavLink to="/deposit-review" label="充值审核" icon="💰" />
             <NavLink to="/withdrawal-review" label="提现审核" icon="💸" />
+            <NavLink to="/bank-config" label="银行配置" icon="💳" />
             <NavLink to="/shipping-management" label="物流管理" icon="🚚" />
             <NavLink to="/showoff-review" label="晒单审核" icon="📸" />
             <NavLink to="/resale-management" label="转售管理" icon="🔄" />
             <NavLink to="/payment-config" label="支付配置" icon="⚙️" />
+            <NavLink to="/commission-config" label="佣金配置" icon="💵" />
+            <NavLink to="/commission-records" label="佣金记录" icon="📊" />
             <NavLink to="/algorithm-config" label="算法配置" icon="🧮" />
             <NavLink to="/draw-logs" label="开奖管理" icon="🎲" />
             <NavLink to="/admin-management" label="管理员管理" icon="👨‍💼" />
@@ -77,6 +85,7 @@ function App(): JSX.Element {
               <Route path="/users" element={<ProtectedRoute element={<UserListPage />} requiredRole="admin" />} />
               <Route path="/users/:id" element={<ProtectedRoute element={<UserDetailsPage />} requiredRole="admin" />} />
               <Route path="/user-management" element={<ProtectedRoute element={<UserManagementPage />} requiredRole="admin" />} />
+              <Route path="/referral-management" element={<ProtectedRoute element={<ReferralManagementPage />} requiredRole="admin" />} />
               <Route path="/lotteries" element={<ProtectedRoute element={<LotteryListPage />} requiredRole="admin" />} />
               <Route path="/lotteries/new" element={<ProtectedRoute element={<LotteryForm />} requiredRole="admin" />} />
               <Route path="/lotteries/:id" element={<ProtectedRoute element={<LotteryForm />} requiredRole="admin" />} />
@@ -89,6 +98,9 @@ function App(): JSX.Element {
           <Route path="/admin-management" element={<ProtectedRoute element={<AdminManagementPage />} requiredRole="super_admin" />} />
           <Route path="/permission-management" element={<ProtectedRoute element={<PermissionManagementPage />} requiredRole="super_admin" />} />
               <Route path="/payment-config" element={<ProtectedRoute element={<PaymentConfigPage />} requiredRole="admin" />} />
+              <Route path="/bank-config" element={<ProtectedRoute element={<BankConfigPage />} requiredRole="admin" />} />
+              <Route path="/commission-config" element={<ProtectedRoute element={<CommissionConfigPage />} requiredRole="admin" />} />
+              <Route path="/commission-records" element={<ProtectedRoute element={<CommissionRecordsPage />} requiredRole="admin" />} />
 
               <Route path="/algorithm-config" element={<ProtectedRoute element={<AlgorithmConfigPage />} requiredRole="admin" />} />
               <Route path="/draw-logs" element={<ProtectedRoute element={<DrawLogsPage />} requiredRole="admin" />} />

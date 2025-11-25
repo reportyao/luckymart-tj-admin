@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { useSupabase } from '../contexts/SupabaseContext';
 import toast from 'react-hot-toast';
 
 interface BankConfig {
@@ -20,6 +20,7 @@ interface BankConfig {
 }
 
 export default function BankConfigPage() {
+  const { supabase } = useSupabase();
   const [banks, setBanks] = useState<BankConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);

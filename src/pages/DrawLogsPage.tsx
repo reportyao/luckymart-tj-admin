@@ -40,13 +40,40 @@ export default function DrawLogsPage() {
   const loadLogs = async () => {
     setLoading(true);
     try {
-      const { data, error, count } = await supabase
+      // 先查询draw_logs
+      const { data: logsData, error, count } = await supabase
         .from('draw_logs')
-        .select('*, lottery:lotteries(name_i18n), winner:users(username, telegram_id)', { count: 'exact' })
+        .select('*', { count: 'exact' })
         .order('draw_time', { ascending: false })
         .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
 
       if (error) throw error;
+      if (!logsData || logsData.length === 0) {
+        setLogs([]);
+        setTotalCount(0);
+        return;
+      }
+
+      // 手动查询关联数据
+      const lotteryIds = [...new Set(logsData.map(log => log.lottery_id))];
+      const userIds = [...new Set(logsData.map(log => log.winner_user_id).filter(Boolean))];
+
+      const { data: lotteries } = await supabase
+        .from('lotteries')
+        .select('id, name_i18n')
+        .in('id', lotteryIds);
+
+      const { data: users } = await supabase
+        .from('users')
+        .select('id, username, telegram_id')
+        .in('id', userIds);
+
+      // 组装数据
+      const data = logsData.map(log => ({
+        ...log,
+        lottery: lotteries?.find(l => l.id === log.lottery_id),
+        winner: users?.find(u => u.id === log.winner_user_id),
+      }));
 
       setLogs(data || []);
       setTotalCount(count || 0);
