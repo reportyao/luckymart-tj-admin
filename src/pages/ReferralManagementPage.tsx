@@ -98,16 +98,16 @@ export default function ReferralManagementPage() {
 
     const flattenTree = (node: ReferralNode, level: number = 0): any[] => {
       const result = [{
-        用户ID: node.id,
-        用户名: node.username,
-        Telegram ID: node.telegram_id,
-        邀请码: node.referral_code,
-        层级: level,
-        一级邀请数: node.stats.level1_count,
-        二级邀请数: node.stats.level2_count,
-        三级邀请数: node.stats.level3_count,
-        总返利: node.stats.total_commission,
-        注册时间: new Date(node.created_at).toLocaleString('zh-CN')
+        '用户ID': node.id,
+        '用户名': node.username,
+        'Telegram ID': node.telegram_id,
+        '邀请码': node.referral_code,
+        '层级': level,
+        '一级邀请数': node.stats.level1_count,
+        '二级邀请数': node.stats.level2_count,
+        '三级邀请数': node.stats.level3_count,
+        '总返利': node.stats.total_commission,
+        '注册时间': new Date(node.created_at).toLocaleString('zh-CN')
       }];
 
       node.children.forEach(child => {
