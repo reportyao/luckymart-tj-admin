@@ -29,8 +29,6 @@ interface LotteryFormData {
   status: LotteryStatus;
   image_urls: string[];
   start_time: string;
-  end_time: string;
-  draw_time: string;
 }
 
 const initialFormData: LotteryFormData = {
@@ -46,8 +44,6 @@ const initialFormData: LotteryFormData = {
   status: 'PENDING',
   image_urls: [],
   start_time: new Date().toISOString().slice(0, 16),
-  end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-  draw_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString().slice(0, 16),
 };
 
 /**
@@ -123,8 +119,6 @@ export const LotteryForm: React.FC = () => {
           status: data.status,
           image_urls: data.image_url ? [data.image_url] : [],
           start_time: new Date(data.start_time).toISOString().slice(0, 16),
-          end_time: new Date(data.end_time).toISOString().slice(0, 16),
-          draw_time: new Date(data.draw_time).toISOString().slice(0, 16),
         });
       }
     } catch (error: any) {
@@ -185,12 +179,22 @@ export const LotteryForm: React.FC = () => {
         return;
       }
 
+      // 计算结束时间和开奖时间（售罄后180秒自动开奖）
+      const startTime = new Date(formData.start_time);
+      // 结束时间设置为开始后7天（或根据业务需求调整）
+      const endTime = new Date(startTime.getTime() + 7 * 24 * 60 * 60 * 1000);
+      // 开奖时间 = 结束时间 + 180秒
+      const drawTime = new Date(endTime.getTime() + 180 * 1000);
+
       const payload = {
         ...formData,
         image_url: formData.image_urls[0] || null,
         period: isEdit ? formData.period : generatePeriod(),
         max_per_user: formData.unlimited_purchase ? null : Number(formData.max_per_user),
         currency: 'TJS', // 固定为塔吉克索莫尼
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
+        draw_time: drawTime.toISOString(),
         updated_at: new Date().toISOString(),
         ticket_price: Number(formData.ticket_price),
         total_tickets: Number(formData.total_tickets),
@@ -305,7 +309,7 @@ export const LotteryForm: React.FC = () => {
               maxImages={5}
               maxSizeMB={5}
             />
-            <p className="text-sm text-gray-500">支持上传最多5张图片，自动压缩</p>
+            <p className="text-sm text-gray-500">支持上传最多5张图片，自动压缩并上传到云存储</p>
           </div>
 
           {/* 期号（自动生成，仅显示） */}
@@ -371,38 +375,19 @@ export const LotteryForm: React.FC = () => {
             </Label>
           </div>
 
-          {/* 时间设置 */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="start_time">开始时间 *</Label>
-              <Input
-                id="start_time"
-                type="datetime-local"
-                value={formData.start_time}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="end_time">结束时间 *</Label>
-              <Input
-                id="end_time"
-                type="datetime-local"
-                value={formData.end_time}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="draw_time">开奖时间 *</Label>
-              <Input
-                id="draw_time"
-                type="datetime-local"
-                value={formData.draw_time}
-                onChange={handleChange}
-                required
-              />
-            </div>
+          {/* 开始时间 */}
+          <div className="space-y-2">
+            <Label htmlFor="start_time">开始时间 *</Label>
+            <Input
+              id="start_time"
+              type="datetime-local"
+              value={formData.start_time}
+              onChange={handleChange}
+              required
+            />
+            <p className="text-xs text-gray-500">
+              💡 售罄后将自动倒计时180秒开奖
+            </p>
           </div>
 
           {/* 状态 */}
@@ -425,11 +410,18 @@ export const LotteryForm: React.FC = () => {
             </Select>
           </div>
 
-          {/* 货币说明 */}
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded">
-            <p className="text-sm text-blue-800">
-              💡 货币已固定为<strong>塔吉克索莫尼（TJS）</strong>
-            </p>
+          {/* 提示信息 */}
+          <div className="space-y-3">
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+              <p className="text-sm text-blue-800">
+                💡 货币已固定为<strong>塔吉克索莫尼（TJS）</strong>
+              </p>
+            </div>
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-sm text-yellow-800">
+                ⏱️ <strong>自动开奖机制</strong>：售罄后系统将自动倒计时180秒，倒计时结束后自动开奖
+              </p>
+            </div>
           </div>
 
           <Button type="submit" className="w-full" disabled={isSubmitting || isDrawn}>
