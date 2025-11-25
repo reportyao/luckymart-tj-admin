@@ -107,8 +107,9 @@ export const LotteryForm: React.FC = () => {
         }
 
         setFormData({
-          title: data.title as Record<string, string>,
-          description: data.description as Record<string, string> | null,
+          // 优先使用JSONB字段，如果为空则尝试从旧字段读取
+          title: (data.title_i18n as Record<string, string>) || (typeof data.title === 'string' ? { zh: data.title } : {}),
+          description: (data.description_i18n as Record<string, string>) || (typeof data.description === 'string' ? { zh: data.description } : {}),
           details_i18n: data.details_i18n as Record<string, string> | null,
           period: data.period,
           ticket_price: data.ticket_price,
@@ -198,9 +199,15 @@ export const LotteryForm: React.FC = () => {
         updated_at: new Date().toISOString(),
         ticket_price: Number(formData.ticket_price),
         total_tickets: Number(formData.total_tickets),
-        title: formData.title || {},
-        description: formData.description || {},
+        // 使用JSONB字段存储多语言内容
+        title_i18n: formData.title || {},
+        description_i18n: formData.description || {},
         details_i18n: formData.details_i18n || {},
+        // 前端使用name_i18n字段，也需要保存
+        name_i18n: formData.title || {},
+        // 保留旧字段兼容性，使用中文作为默认值
+        title: (formData.title && formData.title.zh) || '',
+        description: (formData.description && formData.description.zh) || '',
       };
 
       let result;

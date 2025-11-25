@@ -40,22 +40,58 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
+  // 权限ID到页面路径的映射
+  const PERMISSION_TO_PATH_MAP: Record<string, string[]> = {
+    'users.view': ['/users', '/user-management'],
+    'users.edit': ['/users', '/user-management'],
+    'users.delete': ['/user-management'],
+    'lotteries.view': ['/lotteries'],
+    'lotteries.create': ['/lotteries/new'],
+    'lotteries.edit': ['/lotteries'],
+    'lotteries.delete': ['/lotteries'],
+    'lotteries.draw': ['/draw-logs'],
+    'orders.view': ['/orders'],
+    'orders.edit': ['/orders'],
+    'orders.cancel': ['/orders'],
+    'finance.view': ['/deposit-review', '/withdrawal-review', '/commission-records'],
+    'finance.deposit.review': ['/deposit-review'],
+    'finance.withdrawal.review': ['/withdrawal-review'],
+    'finance.commission.view': ['/commission-records', '/commission-config'],
+    'finance.commission.edit': ['/commission-config'],
+    'shipping.view': ['/shipping-management'],
+    'shipping.edit': ['/shipping-management'],
+    'showoff.view': ['/showoff-review'],
+    'showoff.review': ['/showoff-review'],
+    'showoff.delete': ['/showoff-review'],
+    'resale.view': ['/resale-management'],
+    'resale.edit': ['/resale-management'],
+    'config.payment': ['/payment-config'],
+    'config.algorithm': ['/algorithm-config'],
+    'config.bank': ['/bank-config'],
+    'admin.view': ['/admin-management'],
+    'admin.create': ['/admin-management'],
+    'admin.edit': ['/admin-management'],
+    'admin.delete': ['/admin-management'],
+    'audit.view': ['/audit-logs'],
+  };
+
   // 加载管理员权限
   const loadAdminPermissions = async (adminData: any) => {
     try {
-      const { data: permissions, error } = await supabase
+      const { data: rolePermData, error } = await supabase
         .from('role_permissions')
-        .select('page_path')
+        .select('permissions')
         .eq('role', adminData.role)
-        .eq('can_access', true);
+        .single();
 
-      if (error) {throw error;}
+      if (error) throw error;
 
-      const permissionPaths = permissions?.map(p => p.page_path) || [];
+      // permissions是JSONB数组，如 ["users.view", "lotteries.view"]
+      const permissionIds = rolePermData?.permissions || [];
       
       setAdmin({
         ...adminData,
-        permissions: permissionPaths
+        permissions: permissionIds
       });
     } catch (error) {
       console.error('Failed to load permissions:', error);
@@ -132,9 +168,22 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
   // 检查权限
   const hasPermission = (pagePath: string): boolean => {
-    if (!admin) {return false;}
-    if (admin.role === 'super_admin') {return true;}
-    return admin.permissions.includes(pagePath);
+    if (!admin) return false;
+    if (admin.role === 'super_admin') return true;
+    
+    // 根目录总是允许访问
+    if (pagePath === '/') return true;
+    
+    // 查找哪些权限ID对应这个页面路径
+    for (const [permId, paths] of Object.entries(PERMISSION_TO_PATH_MAP)) {
+      if (paths.some(p => pagePath.startsWith(p))) {
+        if (admin.permissions.includes(permId)) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
   };
 
   return (
