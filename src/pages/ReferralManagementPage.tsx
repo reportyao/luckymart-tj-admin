@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Search, Users, TrendingUp, Download } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { useSupabase } from '../contexts/SupabaseContext';
 
 interface User {
   id: string;
-  username: string;
+  telegram_username: string;
+  first_name: string;
+  last_name: string;
   telegram_id: string;
   referral_code: string;
   referrer_id: string | null;
@@ -23,6 +25,7 @@ interface ReferralNode extends User {
 }
 
 export default function ReferralManagementPage() {
+  const { supabase } = useSupabase();
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -40,15 +43,14 @@ export default function ReferralManagementPage() {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .or(`id.eq.${searchTerm},username.ilike.%${searchTerm}%,referral_code.eq.${searchTerm}`)
-        .limit(1)
-        .single();
+        .or(`id.eq.${searchTerm},telegram_username.ilike.%${searchTerm}%,referral_code.eq.${searchTerm}`)
+        .limit(1);
 
       if (error) throw error;
 
-      if (data) {
-        setSelectedUser(data);
-        await loadReferralTree(data.id);
+      if (data && data.length > 0) {
+        setSelectedUser(data[0]);
+        await buildReferralTree(data[0].id);
       } else {
         alert('未找到用户');
       }
@@ -97,16 +99,16 @@ export default function ReferralManagementPage() {
 
     const flattenTree = (node: ReferralNode, level: number = 0): any[] => {
       const result = [{
-        用户ID: node.id,
-        用户名: node.username,
-        Telegram ID: node.telegram_id,
-        邀请码: node.referral_code,
-        层级: level,
-        一级邀请数: node.stats.level1_count,
-        二级邀请数: node.stats.level2_count,
-        三级邀请数: node.stats.level3_count,
-        总返利: node.stats.total_commission,
-        注册时间: new Date(node.created_at).toLocaleString('zh-CN')
+        '用户ID': node.id,
+        '用户名': node.telegram_username || `${node.first_name} ${node.last_name}`.trim(),
+        'Telegram ID': node.telegram_id,
+        '邀请码': node.referral_code,
+        '层级': level,
+        '一级邀请数': node.stats.level1_count,
+        '二级邀请数': node.stats.level2_count,
+        '三级邀请数': node.stats.level3_count,
+        '总返利': node.stats.total_commission,
+        '注册时间': new Date(node.created_at).toLocaleString('zh-CN')
       }];
 
       node.children.forEach(child => {
@@ -126,7 +128,7 @@ export default function ReferralManagementPage() {
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `referral_tree_${selectedUser?.username}_${Date.now()}.csv`;
+    link.download = `referral_tree_${selectedUser?.telegram_username || selectedUser?.id}_${Date.now()}.csv`;
     link.click();
   };
 
@@ -150,7 +152,7 @@ export default function ReferralManagementPage() {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-gray-400" />
-              <span className="font-medium">{node.username}</span>
+              <span className="font-medium">{node.telegram_username || `${node.first_name} ${node.last_name}`.trim()}</span>
               <span className="text-xs text-gray-500">({node.telegram_id})</span>
               <span className="text-xs bg-gray-100 px-2 py-1 rounded">L{level}</span>
             </div>

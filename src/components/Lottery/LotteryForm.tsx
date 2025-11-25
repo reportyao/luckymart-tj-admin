@@ -190,7 +190,7 @@ export const LotteryForm: React.FC = () => {
         ...formData,
         image_url: formData.image_urls[0] || null,
         period: isEdit ? formData.period : generatePeriod(),
-        max_per_user: formData.unlimited_purchase ? null : Number(formData.max_per_user),
+        max_per_user: formData.unlimited_purchase ? 999999 : Number(formData.max_per_user),
         currency: 'TJS', // 固定为塔吉克索莫尼
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),

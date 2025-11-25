@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, RefreshCw, Settings, AlertCircle } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { useSupabase } from '../contexts/SupabaseContext';
 
 interface CommissionSetting {
   id: string;
@@ -17,6 +17,7 @@ interface CommissionSetting {
 }
 
 export default function CommissionConfigPage() {
+  const { supabase } = useSupabase();
   const [settings, setSettings] = useState<CommissionSetting[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

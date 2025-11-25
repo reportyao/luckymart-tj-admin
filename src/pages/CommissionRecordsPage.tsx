@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Download, DollarSign, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { useSupabase } from '../contexts/SupabaseContext';
 
 interface CommissionRecord {
   id: string;
@@ -24,6 +24,7 @@ interface CommissionRecord {
 }
 
 export default function CommissionRecordsPage() {
+  const { supabase } = useSupabase();
   const [records, setRecords] = useState<CommissionRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,9 +42,10 @@ export default function CommissionRecordsPage() {
   const loadRecords = async () => {
     setLoading(true);
     try {
+      // 先查询佣金记录
       let query = supabase
         .from('commissions')
-        .select('*, user:users!commissions_user_id_fkey(username, telegram_id), referrer:users!commissions_referrer_id_fkey(username, telegram_id)', { count: 'exact' })
+        .select('*', { count: 'exact' })
         .order('created_at', { ascending: false })
         .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
 
@@ -55,11 +57,31 @@ export default function CommissionRecordsPage() {
         query = query.eq('level', parseInt(levelFilter));
       }
 
-      const { data, error, count } = await query;
+      const { data: commissionsData, error, count } = await query;
 
       if (error) throw error;
 
-      setRecords(data || []);
+      // 获取所有相关的用户ID
+      const userIds = new Set<string>();
+      commissionsData?.forEach(c => {
+        if (c.user_id) userIds.add(c.user_id);
+        if (c.referrer_id) userIds.add(c.referrer_id);
+      });
+
+      // 查询用户信息
+      const { data: usersData } = await supabase
+        .from('users')
+        .select('id, username, telegram_id')
+        .in('id', Array.from(userIds));
+
+      // 组装数据
+      const recordsWithUsers = commissionsData?.map(commission => ({
+        ...commission,
+        user: usersData?.find(u => u.id === commission.user_id) || null,
+        referrer: usersData?.find(u => u.id === commission.referrer_id) || null
+      })) || [];
+
+      setRecords(recordsWithUsers);
       setTotalCount(count || 0);
     } catch (error: any) {
       console.error('加载返利记录失败:', error);

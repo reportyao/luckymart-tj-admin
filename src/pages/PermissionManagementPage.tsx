@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
+import { useSupabase } from '../contexts/SupabaseContext';
 import { toast } from 'react-hot-toast';
 
 // 定义所有可用的权限
@@ -104,8 +105,10 @@ const ROLES = [
 
 export default function PermissionManagementPage() {
   const { admin: currentAdmin } = useAdminAuth();
+  const { supabase } = useSupabase();
   const [selectedRole, setSelectedRole] = useState<string>('admin');
   const [customPermissions, setCustomPermissions] = useState<Set<string>>(new Set());
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     // 加载选中角色的权限
@@ -123,10 +126,55 @@ export default function PermissionManagementPage() {
     setCustomPermissions(newPermissions);
   };
 
-  const handleSave = () => {
-    toast.success('权限配置已保存（演示模式）');
-    console.log('Role:', selectedRole);
-    console.log('Permissions:', Array.from(customPermissions));
+  const handleSave = async () => {
+    if (!supabase) {
+      toast.error('数据库连接未初始化');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // 查询该角色的权限配置是否已存在
+      const { data: existing } = await supabase
+        .from('role_permissions')
+        .select('id')
+        .eq('role', selectedRole)
+        .single();
+
+      const permissionsArray = Array.from(customPermissions);
+
+      if (existing) {
+        // 更新现有记录
+        const { error } = await supabase
+          .from('role_permissions')
+          .update({
+            permissions: permissionsArray,
+            updated_at: new Date().toISOString()
+          })
+          .eq('role', selectedRole);
+
+        if (error) throw error;
+      } else {
+        // 创建新记录
+        const { error } = await supabase
+          .from('role_permissions')
+          .insert({
+            role: selectedRole,
+            permissions: permissionsArray,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        if (error) throw error;
+      }
+
+      toast.success('权限配置已保存');
+    } catch (error: any) {
+      console.error('Save permissions error:', error);
+      toast.error('保存失败: ' + error.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // 按分类分组权限
@@ -182,9 +230,10 @@ export default function PermissionManagementPage() {
           </h2>
           <button
             onClick={handleSave}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            disabled={isSaving}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            保存配置
+            {isSaving ? '保存中...' : '保存配置'}
           </button>
         </div>
 
