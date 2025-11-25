@@ -9,52 +9,41 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { MultiLanguageInput } from '../MultiLanguageInput';
 import { RichTextEditor } from '../RichTextEditor';
-import { ImageUpload } from '../ui/ImageUpload';
 import toast from 'react-hot-toast';
 import { formatDateTime } from '@/lib/utils';
 type LotteryStatus = Enums<'LotteryStatus'>;
 type Currency = Enums<'Currency'>;
 
 interface LotteryFormData {
-  details_i18n: Record<string, string> | null;
+  details: Record<string, string> | null;
   title: Record<string, string> | null;
   description: Record<string, string> | null;
   period: string;
   ticket_price: number;
   total_tickets: number;
   max_per_user: number;
-  unlimited_purchase: boolean;
   currency: Currency;
   status: LotteryStatus;
-  image_urls: string[];
+  image_url: string;
   start_time: string;
   end_time: string;
   draw_time: string;
 }
 
 const initialFormData: LotteryFormData = {
-  details_i18n: { zh: '', ru: '', tg: '' },
+  details: { zh: '', ru: '', tg: '' },
   title: { zh: '', en: '' },
   description: { zh: '', en: '' },
   period: '',
   ticket_price: 0,
   total_tickets: 0,
   max_per_user: 1,
-  unlimited_purchase: true,
-  currency: 'TJS',
+  currency: 'CNY', // 默认使用 CNY，但前端用 TJS，这里先用 CNY
   status: 'PENDING',
-  image_urls: [],
+  image_url: '',
   start_time: new Date().toISOString().slice(0, 16), // YYYY-MM-DDTHH:MM 格式
   end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
   draw_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString().slice(0, 16),
-};
-
-// 生成期号：使用时间戳 + 随机数 + 哈希，避免规律
-const generatePeriod = (): string => {
-  const timestamp = Date.now();
-  const random = Math.floor(Math.random() * 10000);
-  const hash = (timestamp + random).toString(36).toUpperCase();
-  return `LM${hash}`;
 };
 
 export const LotteryForm: React.FC = () => {
@@ -106,14 +95,14 @@ export const LotteryForm: React.FC = () => {
         setFormData({
           title: data.title as Record<string, string>,
           description: data.description as Record<string, string> | null,
-          details_i18n: data.details_i18n as Record<string, string> | null,
+          details: data.details_i18n as Record<string, string> | null,
           period: data.period,
           ticket_price: data.ticket_price,
           total_tickets: data.total_tickets,
           max_per_user: data.max_per_user,
           currency: data.currency,
           status: data.status,
-          image_urls: data.image_url ? [data.image_url] : [],
+          image_url: data.image_url || '',
           start_time: new Date(data.start_time).toISOString().slice(0, 16),
           end_time: new Date(data.end_time).toISOString().slice(0, 16),
           draw_time: new Date(data.draw_time).toISOString().slice(0, 16),
@@ -164,17 +153,15 @@ export const LotteryForm: React.FC = () => {
     try {
       const payload = {
         ...formData,
-        image_url: formData.image_urls[0] || null,
-        period: isEdit ? formData.period : generatePeriod(),
-        max_per_user: formData.unlimited_purchase ? null : Number(formData.max_per_user),
         updated_at: new Date().toISOString(),
         // 确保数字类型正确
         ticket_price: Number(formData.ticket_price),
         total_tickets: Number(formData.total_tickets),
+        max_per_user: Number(formData.max_per_user),
         // 确保 JSONB 字段非空
         title: formData.title || {},
         description: formData.description || {},
-        details_i18n: formData.details_i18n || {},
+        details_i18n: formData.details || {},
       };
 
       let result;

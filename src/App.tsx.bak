@@ -13,13 +13,9 @@ import { ShippingManagementPage } from './components/Order/ShippingManagementPag
 import { ShowoffReviewPage } from './components/Showoff/ShowoffReviewPage'
 import { Toaster } from 'react-hot-toast'
 import { useState } from 'react'
-import ProtectedRoute from './components/ProtectedRoute'
+import { ProtectedRoute } from './components/ProtectedRoute'
 import { UnauthorizedPage } from './components/UnauthorizedPage'
 import { ForbiddenPage } from './components/ForbiddenPage'
-import ResaleManagementPage from './pages/ResaleManagementPage';
-import AdminManagementPage from './pages/AdminManagementPage';
-import { AdminAuthProvider } from './contexts/AdminAuthContext';
-import LoginPage from './pages/LoginPage';
 
 // Simplified Admin Dashboard
 function App(): JSX.Element {
@@ -27,7 +23,6 @@ function App(): JSX.Element {
 
   return (
     <Router>
-      <AdminAuthProvider>
       <div className="flex h-screen bg-gray-100">
         {/* Sidebar */}
         <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gray-900 text-white transition-all duration-300 overflow-hidden`}>
@@ -35,19 +30,19 @@ function App(): JSX.Element {
             <h1 className="font-bold text-xl">LuckyMart Admin</h1>
           </div>
           <nav className="mt-4 space-y-2 px-2">
-            <NavLink to="/" label="仪表盘" icon="📊" />
-            <NavLink to="/users" label="用户列表" icon="👥" />
-            <NavLink to="/user-management" label="用户管理" icon="👤" />
-            <NavLink to="/lotteries" label="夺宝活动" icon="🎰" />
-            <NavLink to="/orders" label="订单管理" icon="📦" />
-            <NavLink to="/deposit-review" label="充值审核" icon="💰" />
-            <NavLink to="/withdrawal-review" label="提现审核" icon="💸" />
-            <NavLink to="/shipping-management" label="物流管理" icon="🚚" />
-            <NavLink to="/showoff-review" label="晒单审核" icon="📸" />
-            <NavLink to="/resale-management" label="转售管理" icon="🔄" />
-            <NavLink to="/payment-config" label="支付配置" icon="⚙️" />
-            <NavLink to="/audit-logs" label="审计日志" icon="📋" />
-            <NavLink to="/algorithm-config" label="算法配置" icon="🧮" />
+            <NavLink to="/" label="Dashboard" icon="📊" />
+            <NavLink to="/users" label="Users" icon="👥" />
+            <NavLink to="/user-management" label="User Management" icon="👤" />
+            <NavLink to="/lotteries" label="Lotteries" icon="🎰" />
+            <NavLink to="/orders" label="Orders" icon="📦" />
+            <NavLink to="/deposit-review" label="Deposits" icon="💰" />
+            <NavLink to="/withdrawal-review" label="Withdrawals" icon="💸" />
+            <NavLink to="/shipping-management" label="Shipping" icon="🚚" />
+            <NavLink to="/showoff-review" label="Showoff" icon="📸" />
+            <NavLink to="/resale-management" label="Resale" icon="🔄" />
+            <NavLink to="/payment-config" label="Payment Config" icon="⚙️" />
+            <NavLink to="/audit-logs" label="Audit Logs" icon="📋" />
+            <NavLink to="/algorithm-config" label="Algorithm Config" icon="🧮" />
           </nav>
         </div>
 
@@ -67,7 +62,6 @@ function App(): JSX.Element {
           {/* Content */}
           <div className="flex-1 overflow-auto p-6">
             <Routes>
-          <Route path="/login" element={<LoginPage />} />
               <Route path="/" element={<ProtectedRoute element={<DashboardPlaceholder />} />} />
               <Route path="/users" element={<ProtectedRoute element={<UserListPage />} requiredRole="admin" />} />
               <Route path="/users/:id" element={<ProtectedRoute element={<UserDetailsPage />} requiredRole="admin" />} />
@@ -80,8 +74,7 @@ function App(): JSX.Element {
               <Route path="/withdrawal-review" element={<ProtectedRoute element={<WithdrawalReviewPage />} requiredRole="admin" />} />
               <Route path="/shipping-management" element={<ProtectedRoute element={<ShippingManagementPage />} requiredRole="admin" />} />
               <Route path="/showoff-review" element={<ProtectedRoute element={<ShowoffReviewPage />} requiredRole="admin" />} />
-              <Route path="/resale-management" element={<ProtectedRoute element={<ResaleManagementPage />} requiredRole="admin" />} />
-          <Route path="/admin-management" element={<ProtectedRoute element={<AdminManagementPage />} />} />
+              <Route path="/resale-management" element={<ProtectedRoute element={<PagePlaceholder title="Resale Management" />} requiredRole="admin" />} />
               <Route path="/payment-config" element={<ProtectedRoute element={<PaymentConfigPage />} requiredRole="admin" />} />
 
               <Route path="/algorithm-config" element={<ProtectedRoute element={<AlgorithmConfigPage />} requiredRole="admin" />} />
@@ -94,7 +87,6 @@ function App(): JSX.Element {
       </div>
 
       <Toaster position="top-center" />
-          </AdminAuthProvider>
     </Router>
   )
 }
@@ -114,12 +106,12 @@ function NavLink({ to, label, icon }: { to: string; label: string; icon: string 
 function DashboardPlaceholder(): JSX.Element {
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h1 className="text-3xl font-bold mb-4">仪表盘</h1>
+      <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard title="总用户数" value="1,234" />
-        <StatCard title="进行中的活动" value="12" />
-        <StatCard title="总收入" value="$45,678" />
-        <StatCard title="待处理订单" value="89" />
+        <StatCard title="Total Users" value="1,234" />
+        <StatCard title="Active Lotteries" value="12" />
+        <StatCard title="Total Revenue" value="$45,678" />
+        <StatCard title="Pending Orders" value="89" />
       </div>
     </div>
   )
@@ -139,7 +131,7 @@ function PagePlaceholder({ title }: { title: string }): JSX.Element {
     <div className="bg-white rounded-lg shadow p-6">
       <h1 className="text-3xl font-bold mb-4">{title}</h1>
       <div className="bg-gray-50 rounded p-4 text-center text-gray-500">
-        <p>页面内容即将推出...</p>
+        <p>Page content coming soon...</p>
       </div>
     </div>
   )

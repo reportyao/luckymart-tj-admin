@@ -1,49 +1,53 @@
-import React from 'react'
-import { Navigate } from 'react-router-dom'
-import { useAuth } from '@/hooks/useAuth'
-
-// 假设 useAuth hook 存在并返回 { user: { role: string, permissions: string[] } | null, loading: boolean }
-// 假设 LoadingSpinner, UnauthorizedPage, ForbiddenPage 存在
+import React from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAdminAuth } from '../contexts/AdminAuthContext';
 
 interface ProtectedRouteProps {
-  element: React.ReactElement
-  requiredRole?: string
-  requiredPermission?: string
+  element: React.ReactElement;
 }
 
-// 占位组件
-const LoadingSpinner = () => <div>Loading...</div>
+export default function ProtectedRoute({ element }: ProtectedRouteProps) {
+  const { admin, loading, hasPermission } = useAdminAuth();
+  const location = useLocation();
 
-
-
-export function ProtectedRoute({
-  element,
-  requiredRole,
-}: ProtectedRouteProps) {
-  const { user, isLoading } = useAuth()
-
-  if (isLoading) {
-    return <LoadingSpinner />
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <p className="mt-4 text-gray-600">加载中...</p>
+        </div>
+      </div>
+    );
   }
 
-  // 检查用户是否已认证
-  // 假设未认证用户会被 useAuth 自动重定向到 /login 或 user 为 null
-  if (!user) {
-    // 假设 /login 路由在 App.tsx 中被定义
-    return <Navigate to="/login" replace />
+  if (!admin) {
+    // 未登录，重定向到登录页
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // 检查角色
-  if (requiredRole && user.role !== requiredRole) {
-    return <Navigate to="/unauthorized" replace />
+  // 检查页面权限
+  if (!hasPermission(location.pathname)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-red-100 rounded-full mb-4">
+            <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">权限不足</h2>
+          <p className="text-gray-600 mb-6">您没有访问此页面的权限</p>
+          <button
+            onClick={() => window.history.back()}
+            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+          >
+            返回上一页
+          </button>
+        </div>
+      </div>
+    );
   }
 
-  // 检查权限
-43	  // 检查权限
-44	  // 假设 user.permissions 是一个字符串数组，但 profiles 表中没有该字段，暂时跳过权限检查
-45	  // if (requiredPermission && (!user.permissions || !user.permissions.includes(requiredPermission))) {
-46	  //   return <Navigate to="/forbidden" replace />
-47	  // }
-
-	  return element
-	}
+  return element;
+}

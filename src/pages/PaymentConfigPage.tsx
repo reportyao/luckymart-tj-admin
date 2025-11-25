@@ -1,294 +1,118 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import React, { useState, useEffect } from 'react';
+import { useSupabase } from '@/contexts/SupabaseContext';
+import toast from 'react-hot-toast';
 
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from '@/components/ui/table'
-import { PaymentConfigService } from '@/services/PaymentConfigService'
-import { Tables, TablesInsert, TablesUpdate } from '@/types/supabase'
-import { useToast } from '@/components/ui/use-toast'
-import { useTranslation } from 'react-i18next'
-import { ConfirmDialog } from '@/components/common/ConfirmDialog'
-
-type PaymentConfig = Tables<'payment_config'>
-type PaymentConfigInsert = TablesInsert<'payment_config'>
-
-const initialFormState: PaymentConfigInsert = {
-  alipay_app_id: null,
-  alipay_private_key: null,
-  alipay_public_key: null,
-  wechat_app_id: null,
-  wechat_mch_id: null,
-  wechat_api_key: null,
-  wechat_cert_path: null,
-  wechat_key_path: null,
+interface PaymentConfig {
+  id: string;
+  name: string;
+  config: any;
+  is_active: boolean;
+  created_at: string;
 }
 
 export const PaymentConfigPage: React.FC = () => {
-  const { t } = useTranslation()
-  const { toast } = useToast()
-  const [configs, setConfigs] = useState<PaymentConfig[]>([])
-  const [form, setForm] = useState<any>(initialFormState)
-  const [isEditing, setIsEditing] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
-  const [configToDelete, setConfigToDelete] = useState<string | null>(null)
-
-  const fetchConfigs = useCallback(async () => {
-    setLoading(true)
-    try {
-      const data = await PaymentConfigService.getAll()
-      setConfigs(data)
-    } catch (error) {
-      toast({
-        title: t('Error'),
-        description: t('Failed to fetch payment configurations.'),
-        variant: 'destructive',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }, [t, toast])
+  const { supabase } = useSupabase();
+  const [configs, setConfigs] = useState<PaymentConfig[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchConfigs()
-  }, [fetchConfigs])
+    fetchConfigs();
+  }, []);
 
-  
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setForm((prev: any) => ({ ...prev, [name]: value }))
-  }
-
-  
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
+  const fetchConfigs = async () => {
     try {
-      if (isEditing && form.id) {
-        const updateData: TablesUpdate<'payment_config'> = {
-          alipay_app_id: form.alipay_app_id,
-          alipay_private_key: form.alipay_private_key,
-          alipay_public_key: form.alipay_public_key,
-          wechat_app_id: form.wechat_app_id,
-          wechat_mch_id: form.wechat_mch_id,
-          wechat_api_key: form.wechat_api_key,
-          wechat_cert_path: form.wechat_cert_path,
-          wechat_key_path: form.wechat_key_path,
-          updated_at: new Date().toISOString(),
-        }
-        const updatedConfig = await PaymentConfigService.update(form.id, updateData as any)
-        setConfigs((prev) =>
-          prev.map((c) => (c.id === updatedConfig.id ? updatedConfig : c))
-        )
-        toast({
-          title: t('Success'),
-          description: t('Payment configuration updated successfully.'),
-        })
-      } else {
-       const newConfig = await PaymentConfigService.create(form)
-        setConfigs((prev) => [newConfig, ...prev])
-        toast({
-          title: t('Success'),
-          description: t('Payment configuration created successfully.'),
-        })
-      }
-      resetForm()
-    } catch (error) {
-      toast({
-        title: t('Error'),
-        description: t('Failed to save payment configuration.'),
-        variant: 'destructive',
-      })
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('payment_config')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setConfigs(data || []);
+    } catch (error: any) {
+      toast.error(`加载支付配置失败: ${error.message}`);
+      console.error('Error fetching payment configs:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-const handleEdit = (config: PaymentConfig) => {
-    setForm(config as any);
-    setIsEditing(true);
-  }
-
-  const handleDeleteClick = (id: string) => {
-    setConfigToDelete(id)
-    setIsConfirmOpen(true)
-  }
-
-  const handleConfirmDelete = async () => {
-    if (!configToDelete) {return}
-    setLoading(true)
+  const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      await PaymentConfigService.delete(configToDelete)
-      setConfigs((prev) => prev.filter((c) => c.id.toString() !== configToDelete))
-      toast({
-        title: t('Success'),
-        description: t('Payment configuration deleted successfully.'),
-      })
-    } catch (error) {
-      toast({
-        title: t('Error'),
-        description: t('Failed to delete payment configuration.'),
-        variant: 'destructive',
-      })
-    } finally {
-      setLoading(false)
-      setIsConfirmOpen(false)
-      setConfigToDelete(null)
-    }
-  }
+      const { error } = await supabase
+        .from('payment_config')
+        .update({ is_active: !currentStatus })
+        .eq('id', id);
 
-  const resetForm = () => {
-    setForm(initialFormState)
-    setIsEditing(false)
+      if (error) throw error;
+      toast.success('状态更新成功');
+      fetchConfigs();
+    } catch (error: any) {
+      toast.error(`更新失败: ${error.message}`);
+    }
+  };
+
+  if (loading) {
+    return <div className="p-6">加载中...</div>;
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <h1 className="text-3xl font-bold">{t('Payment Configuration Management')}</h1>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{isEditing ? t('Edit Payment Configuration') : t('Create New Payment Configuration')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            
-
-            <div className="space-y-2">
-              <Label>{t('Configuration Details')}</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="alipay_app_id">Alipay App ID</Label>
-                  <Input id="alipay_app_id" name="alipay_app_id" value={form.alipay_app_id || ''} onChange={handleInputChange} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="alipay_private_key">Alipay Private Key</Label>
-                  <Input id="alipay_private_key" name="alipay_private_key" value={form.alipay_private_key || ''} onChange={handleInputChange} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="alipay_public_key">Alipay Public Key</Label>
-                  <Input id="alipay_public_key" name="alipay_public_key" value={form.alipay_public_key || ''} onChange={handleInputChange} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="wechat_app_id">WeChat App ID</Label>
-                  <Input id="wechat_app_id" name="wechat_app_id" value={form.wechat_app_id || ''} onChange={handleInputChange} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="wechat_mch_id">WeChat MCH ID</Label>
-                  <Input id="wechat_mch_id" name="wechat_mch_id" value={form.wechat_mch_id || ''} onChange={handleInputChange} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="wechat_api_key">WeChat API Key</Label>
-                  <Input id="wechat_api_key" name="wechat_api_key" value={form.wechat_api_key || ''} onChange={handleInputChange} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="wechat_cert_path">WeChat Cert Path</Label>
-                  <Input id="wechat_cert_path" name="wechat_cert_path" value={form.wechat_cert_path || ''} onChange={handleInputChange} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="wechat_key_path">WeChat Key Path</Label>
-                  <Input id="wechat_key_path" name="wechat_key_path" value={form.wechat_key_path || ''} onChange={handleInputChange} />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={resetForm} disabled={loading}>
-                {t('Cancel')}
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? t('Saving...') : isEditing ? t('Update Configuration') : t('Create Configuration')}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('Existing Configurations')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Alipay App ID</TableHead>
-                  <TableHead>WeChat App ID</TableHead>
-                  <TableHead>Alipay Public Key</TableHead>
-                  <TableHead>{t('Created At')}</TableHead>
-                  <TableHead>{t('Actions')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {configs.map((config) => (
-                  <TableRow key={config.id}>
-                    <TableCell className="font-medium">{config.alipay_app_id}</TableCell>
-                    <TableCell>{config.wechat_app_id}</TableCell>
-                    <TableCell className="text-xs max-w-xs truncate">{config.alipay_public_key}</TableCell>
-                    <TableCell>
-                      {new Date(config.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(config)}
-                      >
-                        {t('Edit')}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteClick(config.id.toString())}
-                      >
-                        {t('Delete')}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+    <div className="p-6 bg-white rounded-lg shadow">
+      <h1 className="text-2xl font-bold mb-6">支付配置</h1>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                名称
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                状态
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                创建时间
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                操作
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {configs.map((config) => (
+              <tr key={config.id}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {config.name}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                    config.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {config.is_active ? '启用' : '禁用'}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {new Date(config.created_at).toLocaleString('zh-CN')}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <button
+                    onClick={() => toggleActive(config.id, config.is_active)}
+                    className="text-indigo-600 hover:text-indigo-900 mr-4"
+                  >
+                    {config.is_active ? '禁用' : '启用'}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {configs.length === 0 && (
+          <div className="text-center py-10 text-gray-500">
+            暂无支付配置
           </div>
-          {configs.length === 0 && !loading && (
-            <p className="text-center py-4 text-muted-foreground">
-              {t('No payment configurations found.')}
-            </p>
-          )}
-          {loading && (
-            <p className="text-center py-4 text-muted-foreground">
-              {t('Loading...')}
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      <ConfirmDialog
-        open={isConfirmOpen}
-        onOpenChange={setIsConfirmOpen}
-        onConfirm={handleConfirmDelete}
-        title={t('Confirm Deletion')}
-        description={t('Are you sure you want to delete this payment configuration? This action cannot be undone.')}
-        confirmText={t('Delete')}
-      />
+        )}
+      </div>
     </div>
-  )
-}
+  );
+};
 
-export default PaymentConfigPage
+export default PaymentConfigPage;

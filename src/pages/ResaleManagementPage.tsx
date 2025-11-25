@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Eye, TrendingUp, DollarSign, Package, Search } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { useSupabase } from '@/contexts/SupabaseContext';
 import toast from 'react-hot-toast';
 
 interface Resale {
@@ -33,6 +33,7 @@ interface Resale {
 }
 
 export default function ResaleManagementPage() {
+  const { supabase } = useSupabase();
   const [resales, setResales] = useState<Resale[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'on_sale' | 'sold' | 'cancelled'>('all');
@@ -54,15 +55,7 @@ export default function ResaleManagementPage() {
       setLoading(true);
       let query = supabase
         .from('resales')
-        .select(`
-          *,
-          seller:users!resales_seller_id_fkey(telegram_username, first_name),
-          buyer:users!resales_buyer_id_fkey(telegram_username, first_name),
-          prize:prizes!resales_prize_id_fkey(
-            lottery_id,
-            lottery:lotteries(title, image_url)
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (filter !== 'all') {
@@ -101,7 +94,7 @@ export default function ResaleManagementPage() {
     return (
       resale.seller?.telegram_username?.toLowerCase().includes(searchLower) ||
       resale.buyer?.telegram_username?.toLowerCase().includes(searchLower) ||
-      resale.prize?.lottery?.title?.toLowerCase().includes(searchLower)
+      resale.lottery?.title?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -290,7 +283,7 @@ export default function ResaleManagementPage() {
                 <tr key={resale.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center">
-                      {resale.prize?.lottery?.image_url && (
+                      {resale.lottery?.image_url && (
                         <img
                           src={resale.prize.lottery.image_url}
                           alt=""
@@ -299,7 +292,7 @@ export default function ResaleManagementPage() {
                       )}
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {resale.prize?.lottery?.title || '未知商品'}
+                          {`夺宝活动 ${resale.lottery_id?.substring(0, 8)}`}
                         </div>
                         <div className="text-xs text-gray-500">
                           ID: {resale.prize_id.slice(0, 8)}...

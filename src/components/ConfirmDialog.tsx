@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from './ui/button'; // 假设存在 Button 组件
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog'; // 假设存在 Dialog 组件
 
 interface ConfirmDialogProps {
   isOpen: boolean;

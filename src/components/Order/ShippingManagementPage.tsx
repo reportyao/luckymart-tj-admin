@@ -35,7 +35,7 @@ export const ShippingManagementPage: React.FC = () => {
       const { data, error } = await supabase
         .from('orders')
         .select('*')
-        .in('status', ['PAID', 'SHIPPED'])
+        
         .order('created_at', { ascending: false });
 
       if (error) {throw error;}

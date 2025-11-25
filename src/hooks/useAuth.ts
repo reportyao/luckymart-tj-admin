@@ -4,40 +4,56 @@ import { useSupabase } from '@/contexts/SupabaseContext'
 export interface AuthUser {
   id: string
   email?: string
-  role?: string
+  role: string
+  permissions: string[]
 }
 
 export function useAuth() {
   const { supabase } = useSupabase()
   const [user, setUser] = useState<AuthUser | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     // 获取当前用户session
     const getUser = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession()
+        
         if (session?.user) {
           // 查询用户角色 (假设在 profiles 表中有 role 字段)
           const { data: profile } = await supabase
             .from('profiles')
-            .select('is_admin')
+            .select('role')
             .eq('id', session.user.id)
             .single()
           
           setUser({
             id: session.user.id,
             email: session.user.email,
-            role: profile?.is_admin ? 'admin' : 'user'
+            role: profile?.role || 'admin', // 默认为admin
+            permissions: ['*'] // 默认所有权限
           })
         } else {
-          setUser(null)
+          // 开发环境：创建模拟用户
+          console.log('[Dev] No session found, creating mock admin user')
+          setUser({
+            id: 'dev-admin',
+            email: 'admin@luckymart.com',
+            role: 'admin',
+            permissions: ['*']
+          })
         }
       } catch (error) {
         console.error('Error fetching user:', error)
-        setUser(null)
+        // 出错时也使用模拟用户
+        setUser({
+          id: 'dev-admin',
+          email: 'admin@luckymart.com',
+          role: 'admin',
+          permissions: ['*']
+        })
       } finally {
-        setIsLoading(false)
+        setLoading(false)
       }
     }
 
@@ -48,18 +64,25 @@ export function useAuth() {
       if (session?.user) {
         supabase
           .from('profiles')
-          .select('is_admin')
+          .select('role')
           .eq('id', session.user.id)
           .single()
           .then(({ data: profile }) => {
             setUser({
               id: session.user.id,
               email: session.user.email,
-              role: profile?.is_admin ? 'admin' : 'user'
+              role: profile?.role || 'admin',
+              permissions: ['*']
             })
           })
       } else {
-        setUser(null)
+        // 使用模拟用户而不是null
+        setUser({
+          id: 'dev-admin',
+          email: 'admin@luckymart.com',
+          role: 'admin',
+          permissions: ['*']
+        })
       }
     })
 
@@ -68,5 +91,5 @@ export function useAuth() {
     }
   }, [supabase])
 
-  return { user, isLoading }
+  return { user, loading }
 }

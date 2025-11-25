@@ -1,5 +1,4 @@
 import { supabase } from './supabase'
-import imageCompression from 'browser-image-compression'
 
 /**
  * 上传图片到Supabase Storage
@@ -10,42 +9,22 @@ import imageCompression from 'browser-image-compression'
  */
 export async function uploadImage(
   file: File,
-  compress: boolean = true,
   bucket: string = 'payment-proofs',
   folder?: string
 ): Promise<string> {
   try {
-    let fileToUpload = file
-    let contentType = file.type
-    const fileExt = file.name.split('.').pop()
-    let fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
-
-    if (compress && file.type.startsWith('image/')) {
-      // 1. 压缩和 WebP 转换
-      const compressedFile = await imageCompression(file, {
-        maxSizeMB: 1, // 最大文件大小 1MB
-        maxWidthOrHeight: 1920, // 最大分辨率 1920px
-        useWebWorker: true,
-        fileType: 'image/webp', // 转换为 WebP 格式
-      })
-
-      fileToUpload = compressedFile
-      contentType = 'image/webp'
-      fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`
-    }
-
     // 生成唯一文件名
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
     const filePath = folder ? `${folder}/${fileName}` : fileName
 
     // 上传文件
     const { error } = await supabase.storage
       .from(bucket)
-      .upload(filePath, fileToUpload, {
+      .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: false,
-        contentType: contentType,
+        upsert: false
       })
-
 
     if (error) {
       throw error
@@ -72,11 +51,10 @@ export async function uploadImage(
  */
 export async function uploadImages(
   files: File[],
-  compress: boolean = true,
   bucket: string = 'payment-proofs',
   folder?: string
 ): Promise<string[]> {
-  const uploadPromises = files.map(file => uploadImage(file, bucket, folder, compress))
+  const uploadPromises = files.map(file => uploadImage(file, bucket, folder))
   return Promise.all(uploadPromises)
 }
 
