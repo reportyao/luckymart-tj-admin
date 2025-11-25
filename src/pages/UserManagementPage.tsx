@@ -25,7 +25,7 @@ const UserManagementPage: React.FC = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('profiles')
+        .from('users')
         .select('id, telegram_id, telegram_username, first_name, last_name, level, commission_rate')
         .order('created_at', { ascending: false })
         .limit(100);
@@ -43,7 +43,7 @@ const UserManagementPage: React.FC = () => {
   const handleLevelChange = async (userId: string, newLevel: number) => {
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .update({ level: newLevel })
         .eq('id', userId);
 
@@ -58,7 +58,7 @@ const UserManagementPage: React.FC = () => {
   const handleCommissionRateChange = async (userId: string, newCommissionRate: number) => {
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .update({ commission_rate: newCommissionRate })
         .eq('id', userId);
 
