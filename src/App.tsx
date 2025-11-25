@@ -19,6 +19,7 @@ import { ForbiddenPage } from './components/ForbiddenPage'
 import ResaleManagementPage from './pages/ResaleManagementPage';
 import AdminManagementPage from './pages/AdminManagementPage';
 import PermissionManagementPage from './pages/PermissionManagementPage';
+import DrawLogsPage from './pages/DrawLogsPage';
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import LoginPage from './pages/LoginPage';
 
@@ -48,6 +49,7 @@ function App(): JSX.Element {
             <NavLink to="/resale-management" label="转售管理" icon="🔄" />
             <NavLink to="/payment-config" label="支付配置" icon="⚙️" />
             <NavLink to="/algorithm-config" label="算法配置" icon="🧮" />
+            <NavLink to="/draw-logs" label="开奖管理" icon="🎲" />
             <NavLink to="/admin-management" label="管理员管理" icon="👨‍💼" />
             <NavLink to="/permission-management" label="权限管理" icon="🔐" />
             <NavLink to="/audit-logs" label="审计日志" icon="📋" />
@@ -89,6 +91,7 @@ function App(): JSX.Element {
               <Route path="/payment-config" element={<ProtectedRoute element={<PaymentConfigPage />} requiredRole="admin" />} />
 
               <Route path="/algorithm-config" element={<ProtectedRoute element={<AlgorithmConfigPage />} requiredRole="admin" />} />
+              <Route path="/draw-logs" element={<ProtectedRoute element={<DrawLogsPage />} requiredRole="admin" />} />
               <Route path="/audit-logs" element={<ProtectedRoute element={<PagePlaceholder title="Audit Logs" />} requiredRole="admin" />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
               <Route path="/forbidden" element={<ForbiddenPage />} />

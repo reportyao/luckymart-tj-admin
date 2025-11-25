@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Download, Eye, Calendar } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { useSupabase } from '../contexts/SupabaseContext';
 
 interface DrawLog {
   id: string;
@@ -24,6 +24,7 @@ interface DrawLog {
 }
 
 export default function DrawLogsPage() {
+  const { supabase } = useSupabase();
   const [logs, setLogs] = useState<DrawLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLog, setSelectedLog] = useState<DrawLog | null>(null);
