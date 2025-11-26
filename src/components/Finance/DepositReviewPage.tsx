@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 // import { useNavigate } from 'react-router-dom';
 import { useSupabase } from '@/contexts/SupabaseContext';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { Tables, Enums } from '@/types/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -26,6 +27,7 @@ const getStatusColor = (status: DepositStatus) => {
 
 export const DepositReviewPage: React.FC = () => {
   const { supabase } = useSupabase();
+  const { admin } = useAdminAuth();
   // const navigate = useNavigate();
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,7 +41,6 @@ export const DepositReviewPage: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) {throw error;}
-
       setDeposits(data || []);
     } catch (error: any) {
       toast.error(`加载充值列表失败: ${error.message}`);
@@ -53,18 +54,130 @@ export const DepositReviewPage: React.FC = () => {
     fetchDeposits();
   }, [fetchDeposits]);
 
-  const handleReview = async (id: string, status: 'APPROVED' | 'REJECTED') => {
-    if (!window.confirm(`确定要${status === 'APPROVED' ? '批准' : '拒绝'}这笔充值吗？`)) {return;}
+  const handleReview = async (depositRequest: Deposit, action: 'APPROVED' | 'REJECTED') => {
+    console.log('handleReview called:', depositRequest.id, action);
+    // if (!window.confirm(`确定要${action === 'APPROVED' ? '批准' : '拒绝'}这笔充值吗？`)) {
+    //   return;
+    // }
+
+    if (!admin) {
+      toast.error('未登录管理员账户');
+      return;
+    }
 
     try {
-      const { error } = await supabase
+      // 1. 更新充值请求状态
+      const { error: updateError } = await supabase
         .from('deposit_requests')
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq('id', id);
+        .update({
+          status: action,
+          processed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', depositRequest.id);
 
-      if (error) {throw error;}
+      if (updateError) {
+        throw updateError;
+      }
 
-      toast.success(`充值已${status === 'APPROVED' ? '批准' : '拒绝'}!`);
+      // 2. 如果批准，更新用户钱包余额
+      if (action === 'APPROVED') {
+        // 获取用户钱包
+        const { data: wallet, error: walletError } = await supabase
+          .from('wallets')
+          .select('*')
+          .eq('user_id', depositRequest.user_id)
+          .eq('type', 'BALANCE')
+          .eq('currency', depositRequest.currency)
+          .single();
+
+        if (walletError || !wallet) {
+          throw new Error('未找到用户钱包');
+        }
+
+        const newBalance = parseFloat(wallet.balance) + parseFloat(depositRequest.amount);
+        const newTotalDeposits = parseFloat(wallet.total_deposits) + parseFloat(depositRequest.amount);
+
+        // 更新钱包余额
+        const { error: updateWalletError } = await supabase
+          .from('wallets')
+          .update({
+            balance: newBalance,
+            total_deposits: newTotalDeposits,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', wallet.id);
+
+        if (updateWalletError) {
+          throw new Error('更新钱包余额失败');
+        }
+
+        // 3. 创建交易记录
+        const { error: transactionError } = await supabase
+          .from('transactions')
+          .insert({
+            user_id: depositRequest.user_id,
+            type: 'deposit',
+            amount: depositRequest.amount,
+            currency: depositRequest.currency,
+            status: 'completed',
+            related_id: depositRequest.id,
+            related_type: 'deposit_request',
+            balance_before: wallet.balance,
+            balance_after: newBalance,
+            notes: `充值审核通过 - 订单号: ${depositRequest.order_number}`,
+          });
+
+        if (transactionError) {
+          console.error('创建交易记录失败:', transactionError);
+        }
+
+        // 4. 尝试发送通知
+        try {
+          await supabase.from('notifications').insert({
+            user_id: depositRequest.user_id,
+            type: 'PAYMENT_SUCCESS',
+            title: '充值成功',
+            content: `您的充值申请已审核通过,金额${depositRequest.amount} ${depositRequest.currency}已到账`,
+            related_id: depositRequest.id,
+            related_type: 'DEPOSIT_REQUEST',
+          });
+        } catch (e) {
+          console.log('发送通知失败，跳过');
+        }
+      } else {
+        // 拒绝时发送通知
+        try {
+          await supabase.from('notifications').insert({
+            user_id: depositRequest.user_id,
+            type: 'PAYMENT_FAILED',
+            title: '充值失败',
+            content: `您的充值申请已被拒绝`,
+            related_id: depositRequest.id,
+            related_type: 'DEPOSIT_REQUEST',
+          });
+        } catch (e) {
+          console.log('发送通知失败，跳过');
+        }
+      }
+
+      // 5. 记录审计日志
+      try {
+        await supabase.from('admin_audit_logs').insert({
+          admin_id: admin.id,
+          action: action === 'APPROVED' ? 'approve_deposit' : 'reject_deposit',
+          details: {
+            deposit_request_id: depositRequest.id,
+            amount: depositRequest.amount,
+            currency: depositRequest.currency,
+            user_id: depositRequest.user_id,
+          },
+        });
+      } catch (e) {
+        console.log('记录审计日志失败，跳过');
+      }
+
+      toast.success(`充值已${action === 'APPROVED' ? '批准' : '拒绝'}!`);
       fetchDeposits(); // 刷新列表
     } catch (error: any) {
       toast.error(`审核失败: ${error.message}`);
@@ -110,10 +223,10 @@ export const DepositReviewPage: React.FC = () => {
                     <TableCell className="flex space-x-2">
                       {deposit.status === 'PENDING' && (
                         <>
-                          <Button size="sm" onClick={() => handleReview(deposit.id, 'APPROVED')}>
+                          <Button size="sm" onClick={() => handleReview(deposit, 'APPROVED')}>
                             批准
                           </Button>
-                          <Button variant="destructive" size="sm" onClick={() => handleReview(deposit.id, 'REJECTED')}>
+                          <Button variant="destructive" size="sm" onClick={() => handleReview(deposit, 'REJECTED')}>
                             拒绝
                           </Button>
                         </>
