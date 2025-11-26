@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
-type Deposit = Tables<'deposits'>;
+type Deposit = Tables<'deposit_requests'>;
 type DepositStatus = Enums<'DepositStatus'>;
 
 const getStatusColor = (status: DepositStatus) => {
@@ -34,7 +34,7 @@ export const DepositReviewPage: React.FC = () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('deposits')
+        .from('deposit_requests')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -58,7 +58,7 @@ export const DepositReviewPage: React.FC = () => {
 
     try {
       const { error } = await supabase
-        .from('deposits')
+        .from('deposit_requests')
         .update({ status, updated_at: new Date().toISOString() })
         .eq('id', id);
 
