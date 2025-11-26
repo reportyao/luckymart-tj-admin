@@ -59,12 +59,32 @@ export const WithdrawalReviewPage: React.FC = () => {
     if (!window.confirm(`确定要将这笔提现标记为 ${status} 吗？`)) {return;}
 
     try {
-      const { error } = await supabase
-        .from('withdrawal_requests')
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq('id', id);
+      // 调用 Edge Function 处理提现审核
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('未登录');
+      }
 
-      if (error) {throw error;}
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/approve-withdrawal`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            requestId: id,
+            action: status,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || '审核失败');
+      }
 
       toast.success(`提现状态已更新为 ${status}!`);
       fetchWithdrawals(); // 刷新列表
