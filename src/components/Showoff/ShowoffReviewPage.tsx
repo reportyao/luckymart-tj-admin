@@ -51,7 +51,7 @@ export const ShowoffReviewPage: React.FC = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {throw error;}
       setShowoffs(data || []);
     } catch (error: any) {
       toast.error(`加载晒单列表失败: ${error.message}`);
@@ -73,73 +73,36 @@ export const ShowoffReviewPage: React.FC = () => {
   };
 
   const handleReview = async (status: 'APPROVED' | 'REJECTED') => {
-    if (!selectedShowoff) return;
+    if (!selectedShowoff) {return;}
 
     try {
-      const updateData: any = {
-        status,
-        reviewed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        admin_note: adminNote || null,
-      };
-
-      // 只有批准时才设置奖励
-      if (status === 'APPROVED') {
-        updateData.reward_coins = rewardCoins;
+      // 调用 Edge Function 处理晒单审核
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('未登录');
       }
 
-      const { error } = await supabase
-        .from('showoffs')
-        .update(updateData)
-        .eq('id', selectedShowoff.id);
-
-      if (error) throw error;
-
-      // 如果批准且有奖励，给用户增加幸运币
-      if (status === 'APPROVED' && rewardCoins > 0) {
-        try {
-          // 查询用户的幸运币钱包
-          const { data: wallet, error: walletError } = await supabase
-            .from('wallets')
-            .select('*')
-            .eq('user_id', selectedShowoff.user_id)
-            .eq('type', 'LUCKY_COIN')
-            .single();
-
-          if (walletError) {
-            console.error('查询幸运币钱包失败:', walletError);
-          } else if (wallet) {
-            // 更新钱包余额
-            const newBalance = parseFloat(wallet.balance) + rewardCoins;
-            const { error: updateWalletError } = await supabase
-              .from('wallets')
-              .update({
-                balance: newBalance,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', wallet.id);
-
-            if (updateWalletError) {
-              console.error('更新幸运币余额失败:', updateWalletError);
-            }
-
-            // 创建交易记录
-            await supabase.from('transactions').insert({
-              user_id: selectedShowoff.user_id,
-              type: 'reward',
-              amount: rewardCoins,
-              currency: 'LUCKY_COIN',
-              status: 'completed',
-              related_id: selectedShowoff.id,
-              related_type: 'showoff',
-              balance_before: wallet.balance,
-              balance_after: newBalance,
-              notes: `晒单审核通过奖励 - ${rewardCoins} 幸运币`,
-            });
-          }
-        } catch (e) {
-          console.error('处理幸运币奖励失败:', e);
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/approve-showoff`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            showoffId: selectedShowoff.id,
+            action: status,
+            rewardCoins: status === 'APPROVED' ? rewardCoins : 0,
+            adminNote: adminNote || null,
+          }),
         }
+      );
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || '审核失败');
       }
 
       toast.success(`晒单已${status === 'APPROVED' ? '批准' : '拒绝'}!`);

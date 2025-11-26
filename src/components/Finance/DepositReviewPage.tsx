@@ -47,7 +47,7 @@ export const DepositReviewPage: React.FC = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {throw error;}
       setDeposits(data || []);
     } catch (error: any) {
       toast.error(`加载充值记录失败: ${error.message}`);
@@ -95,114 +95,31 @@ export const DepositReviewPage: React.FC = () => {
     }
 
     try {
-      // 1. 更新充值请求状态
-      const { error: updateError } = await supabase
-        .from('deposit_requests')
-        .update({
-          status: action,
-          processed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', depositRequest.id);
-
-      if (updateError) {
-        throw updateError;
+      // 调用 Edge Function 处理充值审核
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('未登录');
       }
 
-      // 2. 如果批准，更新钱包余额
-      if (action === 'APPROVED') {
-        // 查询用户钱包
-        const { data: wallet, error: walletError } = await supabase
-          .from('wallets')
-          .select('*')
-          .eq('user_id', depositRequest.user_id)
-          .eq('type', 'BALANCE')
-          .eq('currency', depositRequest.currency)
-          .single();
-
-        if (walletError || !wallet) {
-          throw new Error('未找到用户钱包');
-        }
-
-        const newBalance = parseFloat(wallet.balance) + parseFloat(depositRequest.amount.toString());
-        const newTotalDeposits = parseFloat(wallet.total_deposits) + parseFloat(depositRequest.amount.toString());
-
-        const { error: updateWalletError } = await supabase
-          .from('wallets')
-          .update({
-            balance: newBalance,
-            total_deposits: newTotalDeposits,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', wallet.id);
-
-        if (updateWalletError) {
-          throw new Error('更新钱包余额失败');
-        }
-
-        // 3. 创建交易记录
-        const { error: transactionError } = await supabase
-          .from('transactions')
-          .insert({
-            user_id: depositRequest.user_id,
-            type: 'deposit',
-            amount: depositRequest.amount,
-            currency: depositRequest.currency,
-            status: 'completed',
-            related_id: depositRequest.id,
-            related_type: 'deposit_request',
-            balance_before: wallet.balance,
-            balance_after: newBalance,
-            notes: `充值审核通过 - 订单号: ${depositRequest.order_number}`,
-          });
-
-        if (transactionError) {
-          console.error('创建交易记录失败:', transactionError);
-        }
-
-        // 4. 尝试发送通知
-        try {
-          await supabase.from('notifications').insert({
-            user_id: depositRequest.user_id,
-            type: 'PAYMENT_SUCCESS',
-            title: '充值成功',
-            content: `您的充值申请已审核通过,金额${depositRequest.amount} ${depositRequest.currency}已到账`,
-            related_id: depositRequest.id,
-            related_type: 'DEPOSIT_REQUEST',
-          });
-        } catch (e) {
-          console.log('发送通知失败，跳过');
-        }
-      } else {
-        // 拒绝时发送通知
-        try {
-          await supabase.from('notifications').insert({
-            user_id: depositRequest.user_id,
-            type: 'PAYMENT_FAILED',
-            title: '充值失败',
-            content: `您的充值申请已被拒绝`,
-            related_id: depositRequest.id,
-            related_type: 'DEPOSIT_REQUEST',
-          });
-        } catch (e) {
-          console.log('发送通知失败，跳过');
-        }
-      }
-
-      // 5. 记录审计日志
-      try {
-        await supabase.from('admin_audit_logs').insert({
-          admin_id: admin.id,
-          action: action === 'APPROVED' ? 'approve_deposit' : 'reject_deposit',
-          details: {
-            deposit_request_id: depositRequest.id,
-            amount: depositRequest.amount,
-            currency: depositRequest.currency,
-            user_id: depositRequest.user_id,
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/approve-deposit`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
           },
-        });
-      } catch (e) {
-        console.log('记录审计日志失败，跳过');
+          body: JSON.stringify({
+            requestId: depositRequest.id,
+            action: action,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || '审核失败');
       }
 
       toast.success(`充值已${action === 'APPROVED' ? '批准' : '拒绝'}!`);
