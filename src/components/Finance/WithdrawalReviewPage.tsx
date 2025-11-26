@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
-type Withdrawal = Tables<'withdrawals'>;
+type Withdrawal = Tables<'withdrawal_requests'>;
 type WithdrawalStatus = Enums<'WithdrawalStatus'>;
 
 const getStatusColor = (status: WithdrawalStatus) => {
@@ -36,7 +36,7 @@ export const WithdrawalReviewPage: React.FC = () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('withdrawals')
+        .from('withdrawal_requests')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -60,7 +60,7 @@ export const WithdrawalReviewPage: React.FC = () => {
 
     try {
       const { error } = await supabase
-        .from('withdrawals')
+        .from('withdrawal_requests')
         .update({ status, updated_at: new Date().toISOString() })
         .eq('id', id);
 
@@ -102,7 +102,21 @@ export const WithdrawalReviewPage: React.FC = () => {
                     <TableCell className="font-medium">{withdrawal.id.substring(0, 8)}...</TableCell>
                     <TableCell>{withdrawal.user_id.substring(0, 8)}...</TableCell>
                     <TableCell>{withdrawal.amount} {withdrawal.currency}</TableCell>
-                    <TableCell>{withdrawal.withdrawal_address}</TableCell>
+                    <TableCell>
+                      {withdrawal.withdrawal_method === 'BANK_TRANSFER' && (
+                        <div className="text-sm">
+                          <div>{withdrawal.bank_name}</div>
+                          <div>{withdrawal.bank_account_number}</div>
+                          <div>{withdrawal.bank_account_name}</div>
+                        </div>
+                      )}
+                      {withdrawal.withdrawal_method === 'MOBILE_WALLET' && (
+                        <div className="text-sm">
+                          <div>{withdrawal.mobile_wallet_name}</div>
+                          <div>{withdrawal.mobile_wallet_number}</div>
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(withdrawal.status)}`}>
                         {withdrawal.status}
