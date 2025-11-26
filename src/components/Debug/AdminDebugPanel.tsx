@@ -66,12 +66,12 @@ export function AdminDebugPanel() {
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const isTopRight = e.clientX > window.innerWidth - 100 && e.clientY < 100;
-      if (!isTopRight) return;
+      if (!isTopRight) {return;}
 
       const newCount = clickCount + 1;
       setClickCount(newCount);
 
-      if (clickTimer) clearTimeout(clickTimer);
+      if (clickTimer) {clearTimeout(clickTimer);}
       const timer = setTimeout(() => setClickCount(0), 1000);
       setClickTimer(timer);
 
@@ -214,7 +214,7 @@ export function AdminDebugPanel() {
     }));
   };
 
-  if (!isVisible) return null;
+  if (!isVisible) {return null;}
 
   return (
     <div className="fixed top-0 left-0 right-0 z-[9999] bg-gray-900 text-white shadow-lg">
@@ -274,7 +274,7 @@ export function AdminDebugPanel() {
                   {debugInfo.requests.map((req, i) => {
                     // 解析Supabase REST API URL
                     let table = '';
-                    let operation = req.method;
+                    const operation = req.method;
                     try {
                       const urlObj = new URL(req.url);
                       const pathParts = urlObj.pathname.split('/');

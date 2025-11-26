@@ -4,10 +4,10 @@ import { DB } from '@/types/supabase'
 
 // 确保环境变量存在
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseServiceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Supabase URL and Anon Key must be provided in environment variables.')
+if (!supabaseUrl || !supabaseServiceRoleKey) {
+  throw new Error('Supabase URL and Service Role Key must be provided in environment variables.')
 }
 
 interface SupabaseContextType {
@@ -18,7 +18,13 @@ const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined
 
 export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const supabase = useMemo(() => {
-    return createClient<DB>(supabaseUrl, supabaseAnonKey)
+    // 管理后台使用Service Role Key，绕过RLS限制
+    return createClient<DB>(supabaseUrl, supabaseServiceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
   }, [])
 
   return (
