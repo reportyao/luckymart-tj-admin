@@ -94,7 +94,7 @@ export const LotteryForm: React.FC = () => {
                 winner:tickets!lottery_results_winner_id_fkey (
                   ticket_number,
                   user_id,
-                  profiles:user_profiles (username, avatar_url)
+                  user:users (telegram_username, first_name, last_name, avatar_url)
                 )
               `
             )

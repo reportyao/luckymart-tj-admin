@@ -555,7 +555,7 @@ export type Database = {
       }
     }
     Enums: {
-      Currency: 'CNY' | 'USD' | 'EUR' | 'VND'
+      Currency: 'TJS' | 'USD'
       DepositStatus: 'PENDING' | 'APPROVED' | 'REJECTED'
       KycLevel: 'NONE' | 'LEVEL_1' | 'LEVEL_2'
       LotteryStatus: 'PENDING' | 'ACTIVE' | 'DRAWN' | 'CANCELLED'
