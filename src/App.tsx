@@ -26,6 +26,7 @@ import ReferralManagementPage from './pages/ReferralManagementPage';
 
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import LoginPage from './pages/LoginPage';
+import { AdminDebugPanel } from './components/Debug/AdminDebugPanel';
 
 // Simplified Admin Dashboard
 function App(): JSX.Element {
@@ -34,6 +35,7 @@ function App(): JSX.Element {
   return (
     <Router>
       <AdminAuthProvider>
+      <AdminDebugPanel />
       <div className="flex h-screen bg-gray-100">
         {/* Sidebar */}
         <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gray-900 text-white transition-all duration-300 overflow-hidden`}>
