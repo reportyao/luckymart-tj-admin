@@ -12,12 +12,6 @@ interface DebugInfo {
     username: string | null;
     role: string | null;
   };
-  database: {
-    connected: boolean;
-    lastQuery: string | null;
-    lastResult: any;
-    lastError: string | null;
-  };
   system: {
     userAgent: string;
     viewport: { width: number; height: number };
@@ -37,19 +31,10 @@ interface DebugInfo {
     error?: string;
     duration: number;
   }>;
-  queries: Array<{
-    time: string;
-    table: string;
-    operation: string;
-    success: boolean;
-    rowCount: number | null;
-    error?: string;
-    duration: number;
-  }>;
 }
 
 export function AdminDebugPanel() {
-  const { supabase, user } = useSupabase();
+  const { user } = useSupabase();
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
   const [clickCount, setClickCount] = useState(0);
@@ -66,12 +51,6 @@ export function AdminDebugPanel() {
       username: null,
       role: null,
     },
-    database: {
-      connected: false,
-      lastQuery: null,
-      lastResult: null,
-      lastError: null,
-    },
     system: {
       userAgent: navigator.userAgent,
       viewport: {
@@ -81,19 +60,18 @@ export function AdminDebugPanel() {
     },
     logs: [],
     requests: [],
-    queries: [],
   });
 
   // 监听右上角点击3次
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const isTopRight = e.clientX > window.innerWidth - 100 && e.clientY < 100;
-      if (!isTopRight) {return;}
+      if (!isTopRight) return;
 
       const newCount = clickCount + 1;
       setClickCount(newCount);
 
-      if (clickTimer) {clearTimeout(clickTimer);}
+      if (clickTimer) clearTimeout(clickTimer);
       const timer = setTimeout(() => setClickCount(0), 1000);
       setClickTimer(timer);
 
@@ -201,71 +179,6 @@ export function AdminDebugPanel() {
     };
   }, []);
 
-  // 拦截Supabase查询
-  useEffect(() => {
-    if (!supabase) {return;}
-
-    const originalFrom = supabase.from.bind(supabase);
-    supabase.from = (table: string) => {
-      const builder = originalFrom(table);
-      const originalSelect = builder.select.bind(builder);
-      const originalInsert = builder.insert.bind(builder);
-      const originalUpdate = builder.update.bind(builder);
-      const originalDelete = builder.delete.bind(builder);
-
-      const wrapQuery = (operation: string, fn: Function) => {
-        return async (...args: any[]) => {
-          const startTime = Date.now();
-          try {
-            const result = await fn(...args);
-            const duration = Date.now() - startTime;
-            
-            addQuery({
-              time: new Date().toLocaleTimeString('zh-CN'),
-              table,
-              operation,
-              success: !result.error,
-              rowCount: result.data?.length ?? result.count ?? null,
-              error: result.error?.message,
-              duration,
-            });
-
-            setDebugInfo(prev => ({
-              ...prev,
-              database: {
-                connected: true,
-                lastQuery: `${operation} from ${table}`,
-                lastResult: result.data,
-                lastError: result.error?.message || null,
-              },
-            }));
-
-            return result;
-          } catch (err: any) {
-            const duration = Date.now() - startTime;
-            addQuery({
-              time: new Date().toLocaleTimeString('zh-CN'),
-              table,
-              operation,
-              success: false,
-              rowCount: null,
-              error: err.message,
-              duration,
-            });
-            throw err;
-          }
-        };
-      };
-
-      builder.select = wrapQuery('SELECT', originalSelect);
-      builder.insert = wrapQuery('INSERT', originalInsert);
-      builder.update = wrapQuery('UPDATE', originalUpdate);
-      builder.delete = wrapQuery('DELETE', originalDelete);
-
-      return builder;
-    };
-  }, [supabase]);
-
   const addLog = (level: 'info' | 'warn' | 'error', message: string, data?: any) => {
     setDebugInfo(prev => ({
       ...prev,
@@ -288,13 +201,6 @@ export function AdminDebugPanel() {
     }));
   };
 
-  const addQuery = (query: DebugInfo['queries'][0]) => {
-    setDebugInfo(prev => ({
-      ...prev,
-      queries: [query, ...prev.queries.slice(0, 19)],
-    }));
-  };
-
   const copyToClipboard = () => {
     navigator.clipboard.writeText(JSON.stringify(debugInfo, null, 2));
     alert('调试信息已复制到剪贴板');
@@ -305,11 +211,10 @@ export function AdminDebugPanel() {
       ...prev,
       logs: [],
       requests: [],
-      queries: [],
     }));
   };
 
-  if (!isVisible) {return null;}
+  if (!isVisible) return null;
 
   return (
     <div className="fixed top-0 left-0 right-0 z-[9999] bg-gray-900 text-white shadow-lg">
@@ -361,60 +266,44 @@ export function AdminDebugPanel() {
               </div>
             </div>
 
-            {/* Database Info */}
-            <div>
-              <div className="font-bold text-purple-400 mb-1">💾 数据库状态</div>
-              <div className="bg-gray-800 rounded p-2 space-y-1">
-                <div>连接状态: {debugInfo.database.connected ? '✅ 已连接' : '❌ 未连接'}</div>
-                <div>最后查询: {debugInfo.database.lastQuery || '无'}</div>
-                {debugInfo.database.lastError && (
-                  <div className="text-red-400">错误: {debugInfo.database.lastError}</div>
-                )}
-                {debugInfo.database.lastResult && (
-                  <div className="text-green-400">
-                    结果: {Array.isArray(debugInfo.database.lastResult) ? `${debugInfo.database.lastResult.length} 条记录` : 'OK'}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Database Queries */}
-            {debugInfo.queries.length > 0 && (
-              <div>
-                <div className="font-bold text-blue-400 mb-1">🔍 数据库查询记录</div>
-                <div className="bg-gray-800 rounded p-2 space-y-2 max-h-40 overflow-y-auto">
-                  {debugInfo.queries.map((query, i) => (
-                    <div key={i} className={`p-2 rounded ${query.success ? 'bg-green-900/30' : 'bg-red-900/30'}`}>
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono">{query.time} {query.operation} {query.table}</span>
-                        <span className="text-gray-400">{query.duration}ms</span>
-                      </div>
-                      {query.success ? (
-                        <div className="text-green-400">✅ {query.rowCount !== null ? `${query.rowCount} 行` : '成功'}</div>
-                      ) : (
-                        <div className="text-red-400">❌ {query.error}</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Network Requests */}
             {debugInfo.requests.length > 0 && (
               <div>
-                <div className="font-bold text-yellow-400 mb-1">🌐 网络请求</div>
-                <div className="bg-gray-800 rounded p-2 space-y-2 max-h-40 overflow-y-auto">
-                  {debugInfo.requests.map((req, i) => (
-                    <div key={i} className={`p-2 rounded ${req.status && req.status < 400 ? 'bg-green-900/30' : 'bg-red-900/30'}`}>
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono">{req.time} {req.method} {req.status || 'ERR'}</span>
-                        <span className="text-gray-400">{req.duration}ms</span>
+                <div className="font-bold text-yellow-400 mb-1">🌐 网络请求（Supabase REST API）</div>
+                <div className="bg-gray-800 rounded p-2 space-y-2 max-h-60 overflow-y-auto">
+                  {debugInfo.requests.map((req, i) => {
+                    // 解析Supabase REST API URL
+                    let table = '';
+                    let operation = req.method;
+                    try {
+                      const urlObj = new URL(req.url);
+                      const pathParts = urlObj.pathname.split('/');
+                      table = pathParts[pathParts.length - 1] || '';
+                      if (table.includes('?')) {
+                        table = table.split('?')[0];
+                      }
+                    } catch {}
+
+                    const isSuccess = req.status && req.status < 400;
+                    
+                    return (
+                      <div key={i} className={`p-2 rounded ${isSuccess ? 'bg-green-900/30' : 'bg-red-900/30'}`}>
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono">
+                            {req.time} {operation} {table || 'API'}
+                            {isSuccess ? ' ✅' : ' ❌'}
+                          </span>
+                          <span className="text-gray-400">{req.duration}ms</span>
+                        </div>
+                        <div className="text-gray-400 truncate text-xs mt-1">{req.url}</div>
+                        {req.error && (
+                          <div className="text-red-400 mt-1 text-xs whitespace-pre-wrap">
+                            {req.error}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-gray-400 truncate">{req.url}</div>
-                      {req.error && <div className="text-red-400 mt-1">{req.error}</div>}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -432,6 +321,17 @@ export function AdminDebugPanel() {
                 </div>
               </div>
             )}
+
+            {/* Help */}
+            <div className="bg-blue-900/30 rounded p-3 text-xs">
+              <div className="font-bold text-blue-300 mb-1">💡 提示</div>
+              <div className="text-gray-300 space-y-1">
+                <div>• 网络请求会显示Supabase REST API调用</div>
+                <div>• 查看URL可以知道查询的表名</div>
+                <div>• 查看错误详情可以知道具体问题</div>
+                <div>• 点击"复制"可以复制完整调试信息</div>
+              </div>
+            </div>
           </div>
         )}
       </div>
