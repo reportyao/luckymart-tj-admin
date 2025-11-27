@@ -27,7 +27,7 @@ const getStatusColor = (status: WithdrawalStatus) => {
 };
 
 export const WithdrawalReviewPage: React.FC = () => {
-  const { supabase } = useSupabase();
+  const { supabase, supabaseAuth } = useSupabase();
   // const navigate = useNavigate();
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,7 +60,7 @@ export const WithdrawalReviewPage: React.FC = () => {
 
     try {
       // 调用 Edge Function 处理提现审核
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await supabaseAuth.auth.getSession();
       if (!session) {
         throw new Error('未登录');
       }

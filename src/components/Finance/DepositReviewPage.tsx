@@ -29,7 +29,7 @@ interface DepositRequest {
 }
 
 export const DepositReviewPage: React.FC = () => {
-  const { supabase } = useSupabase();
+  const { supabase, supabaseAuth } = useSupabase();
   const { admin } = useAdminAuth();
   const [deposits, setDeposits] = useState<DepositRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -96,7 +96,7 @@ export const DepositReviewPage: React.FC = () => {
 
     try {
       // 调用 Edge Function 处理充值审核
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await supabaseAuth.auth.getSession();
       if (!session) {
         throw new Error('未登录');
       }

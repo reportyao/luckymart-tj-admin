@@ -35,7 +35,7 @@ const getStatusColor = (status: ShowoffStatus) => {
 };
 
 export const ShowoffReviewPage: React.FC = () => {
-  const { supabase } = useSupabase();
+  const { supabase, supabaseAuth } = useSupabase();
   const [showoffs, setShowoffs] = useState<Showoff[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedShowoff, setSelectedShowoff] = useState<Showoff | null>(null);
@@ -77,7 +77,7 @@ export const ShowoffReviewPage: React.FC = () => {
 
     try {
       // 调用 Edge Function 处理晒单审核
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await supabaseAuth.auth.getSession();
       if (!session) {
         throw new Error('未登录');
       }
