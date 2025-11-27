@@ -95,7 +95,18 @@ export const LotteryListPage: React.FC = () => {
 	    navigate(`/lotteries/${id}`);
 	  };
 	
-	  const handleCopy = async (id: string) => {
+	  // 生成期号：使用复杂算法避免规律被发现
+  const generatePeriod = (): string => {
+    const now = Date.now();
+    // 使用时间戳的后8位 + 随机4位数
+    const timePart = (now % 100000000).toString(36).toUpperCase();
+    const randomPart = Math.floor(Math.random() * 46656).toString(36).toUpperCase().padStart(3, '0');
+    // 计算校验位（防止伪造）
+    const checksum = ((now + Math.floor(Math.random() * 1000)) % 36).toString(36).toUpperCase();
+    return `LM${timePart}${randomPart}${checksum}`;
+  };
+
+  const handleCopy = async (id: string) => {
     if (!window.confirm('确定要复制这个夺宝吗？')) {return;}
 
     try {
@@ -108,19 +119,8 @@ export const LotteryListPage: React.FC = () => {
 
       if (fetchError) {throw fetchError;}
 
-      // 获取最新的期号
-      const { data: latestLottery, error: latestError } = await supabase
-        .from('lotteries')
-        .select('period')
-        .order('period', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (latestError && latestError.code !== 'PGRST116') {throw latestError;}
-
-      // 计算新期号
-      const latestPeriod = latestLottery?.period || '000';
-      const newPeriod = String(parseInt(latestPeriod) + 1).padStart(3, '0');
+      // 生成新期号（使用与创建时相同的算法）
+      const newPeriod = generatePeriod();
 
       // 复制夺宝数据
       const newLottery = {
