@@ -24,9 +24,9 @@ interface LotteryDetail extends Tables<'lotteries'> {
 }
 
 const getLocalizedText = (jsonb: any, language: string = 'zh', fallbackLanguage: string = 'en'): string => {
-  if (!jsonb || typeof jsonb !== 'object') return '';
-  if (jsonb[language]) return jsonb[language];
-  if (jsonb[fallbackLanguage]) return jsonb[fallbackLanguage];
+  if (!jsonb || typeof jsonb !== 'object') {return '';}
+  if (jsonb[language]) {return jsonb[language];}
+  if (jsonb[fallbackLanguage]) {return jsonb[fallbackLanguage];}
   const firstValue = Object.values(jsonb).find(value => typeof value === 'string' && value.trim() !== '');
   return firstValue as string || '';
 };
@@ -77,7 +77,7 @@ export const LotteryDetailPage: React.FC = () => {
         .eq('id', id)
         .single();
 
-      if (lotteryError) throw lotteryError;
+      if (lotteryError) {throw lotteryError;}
 
       // 如果有中奖用户，获取用户信息
       if (lotteryData.winning_user_id) {
@@ -124,7 +124,7 @@ export const LotteryDetailPage: React.FC = () => {
         .order('ticket_number', { ascending: true })
         .range(from, to);
 
-      if (ticketsError) throw ticketsError;
+      if (ticketsError) {throw ticketsError;}
 
       setTickets(ticketsData || []);
       setTicketsHasMore((ticketsData || []).length === TICKETS_LIMIT);
