@@ -95,7 +95,62 @@ export const LotteryListPage: React.FC = () => {
 	    navigate(`/lotteries/${id}`);
 	  };
 	
-	  const handleDelete = async (id: string) => {
+	  const handleCopy = async (id: string) => {
+    if (!window.confirm('确定要复制这个夺宝吗？')) {return;}
+
+    try {
+      // 获取原夺宝数据
+      const { data: originalLottery, error: fetchError } = await supabase
+        .from('lotteries')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) {throw fetchError;}
+
+      // 获取最新的期号
+      const { data: latestLottery, error: latestError } = await supabase
+        .from('lotteries')
+        .select('period')
+        .order('period', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (latestError && latestError.code !== 'PGRST116') {throw latestError;}
+
+      // 计算新期号
+      const latestPeriod = latestLottery?.period || '000';
+      const newPeriod = String(parseInt(latestPeriod) + 1).padStart(3, '0');
+
+      // 复制夺宝数据
+      const newLottery = {
+        ...originalLottery,
+        id: undefined, // 让数据库生成新 ID
+        period: newPeriod,
+        status: 'ACTIVE' as LotteryStatus,
+        sold_tickets: 0,
+        winning_ticket_number: null,
+        winning_user_id: null,
+        draw_time: null,
+        created_at: undefined,
+        updated_at: undefined
+      };
+
+      const { error: insertError } = await supabase
+        .from('lotteries')
+        .insert(newLottery);
+
+      if (insertError) {throw insertError;}
+
+      toast.success(`夺宝复制成功! 新期号: ${newPeriod}`);
+      fetchLotteries(); // 刷新列表
+    } catch (error: any) {
+      toast.error(`复制失败: ${error.message}`);
+      console.error('Error copying lottery:', error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
     if (!window.confirm('确定要删除这个夺宝吗？')) {return;}
 
     try {
@@ -147,7 +202,7 @@ export const LotteryListPage: React.FC = () => {
                     <TableCell className="font-medium">{lottery.period}</TableCell>
                     <TableCell>{getLocalizedText(lottery.title_i18n, 'zh')}</TableCell>
                     <TableCell>{lottery.ticket_price} {lottery.currency}</TableCell>
-                    <TableCell>{lottery.total_tickets}</TableCell>
+                    <TableCell>{lottery.total_tickets}/{lottery.sold_tickets || 0}</TableCell>
                     <TableCell>
 	                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lottery.status)}`}>
 	                        {lottery.status}
@@ -165,13 +220,19 @@ export const LotteryListPage: React.FC = () => {
 	                          查看结果
 	                        </Button>
 	                      )}
-	                      <Button variant="outline" size="sm" onClick={() => navigate(`/lotteries/${lottery.id}`)}>
-	                        编辑
-	                      </Button>
-	                      <Button variant="destructive" size="sm" onClick={() => handleDelete(lottery.id)}>
-	                        删除
-	                      </Button>
-		                    </TableCell>
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/lotteries/${lottery.id}/detail`)}>
+                        查看详情
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/lotteries/${lottery.id}`)}>
+                        编辑
+                      </Button>
+                      <Button variant="secondary" size="sm" onClick={() => handleCopy(lottery.id)}>
+                        复制
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(lottery.id)}>
+                        删除
+                      </Button>
+                    </TableCell>
 	                  </TableRow>
                 ))}
               </TableBody>

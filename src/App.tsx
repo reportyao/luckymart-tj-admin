@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
 import { LotteryForm } from './components/Lottery/LotteryForm'
 import { LotteryListPage } from './components/Lottery/LotteryListPage'
+import { LotteryDetailPage } from './components/Lottery/LotteryDetailPage'
 import { UserListPage } from './components/User/UserListPage'
 import UserManagementPage from './pages/UserManagementPage'
 import { UserDetailsPage } from './components/User/UserDetailsPage'
@@ -90,6 +91,7 @@ function App(): JSX.Element {
               <Route path="/referral-management" element={<ProtectedRoute element={<ReferralManagementPage />} requiredRole="admin" />} />
               <Route path="/lotteries" element={<ProtectedRoute element={<LotteryListPage />} requiredRole="admin" />} />
               <Route path="/lotteries/new" element={<ProtectedRoute element={<LotteryForm />} requiredRole="admin" />} />
+              <Route path="/lotteries/:id/detail" element={<ProtectedRoute element={<LotteryDetailPage />} requiredRole="admin" />} />
               <Route path="/lotteries/:id" element={<ProtectedRoute element={<LotteryForm />} requiredRole="admin" />} />
               <Route path="/orders" element={<ProtectedRoute element={<OrderListPage />} requiredRole="admin" />} />
               <Route path="/deposit-review" element={<ProtectedRoute element={<DepositReviewPage />} requiredRole="admin" />} />
