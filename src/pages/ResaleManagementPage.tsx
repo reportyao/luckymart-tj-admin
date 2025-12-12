@@ -5,16 +5,16 @@ import toast from 'react-hot-toast';
 
 interface Resale {
   id: string;
-  prize_id: string;
+  ticket_id: string;
   seller_id: string;
-  price: number;
+  buyer_id: string | null;
+  lottery_id: string;
+  resale_price: number;
   original_price: number;
-  discount_rate: number;
   status: string;
   created_at: string;
   updated_at: string;
   sold_at: string | null;
-  buyer_id: string | null;
   seller?: {
     telegram_username: string;
     first_name: string;
@@ -23,12 +23,13 @@ interface Resale {
     telegram_username: string;
     first_name: string;
   };
-  prize?: {
-    lottery_id: string;
-    lottery?: {
-      title: string;
-      image_url: string;
-    };
+  lotteries?: {
+    title: string;
+    title_i18n?: { zh?: string };
+    image_url: string;
+  };
+  ticket?: {
+    ticket_number: number;
   };
 }
 
@@ -55,11 +56,23 @@ export default function ResaleManagementPage() {
       setLoading(true);
       let query = supabase
         .from('resales')
-        .select('*')
+        .select(`
+          *,
+          seller:users!resales_seller_id_fkey(telegram_username, first_name),
+          buyer:users!resales_buyer_id_fkey(telegram_username, first_name),
+          lotteries(*),
+          ticket:tickets!resales_ticket_id_fkey(ticket_number)
+        `)
         .order('created_at', { ascending: false });
 
       if (filter !== 'all') {
-        query = query.eq('status', filter.toUpperCase());
+        // 映射过滤器到实际状态值
+        const statusMap: Record<string, string> = {
+          'on_sale': 'ACTIVE',
+          'sold': 'SOLD',
+          'cancelled': 'CANCELLED'
+        };
+        query = query.eq('status', statusMap[filter] || filter.toUpperCase());
       }
 
       const { data, error } = await query;
@@ -71,13 +84,17 @@ export default function ResaleManagementPage() {
 
       // 计算统计数据
       const total = resaleData.length;
-      const onSale = resaleData.filter((r) => r.status === 'ON_SALE').length;
+      const onSale = resaleData.filter((r) => r.status === 'ACTIVE').length;
       const sold = resaleData.filter((r) => r.status === 'SOLD').length;
       const totalRevenue = resaleData
         .filter((r) => r.status === 'SOLD')
-        .reduce((sum, r) => sum + r.price, 0);
-      const avgDiscount = resaleData.length > 0
-        ? resaleData.reduce((sum, r) => sum + r.discount_rate, 0) / resaleData.length
+        .reduce((sum, r) => sum + (r.resale_price || 0), 0);
+      // 计算平均折扣率
+      const avgDiscount = resaleData.length > 0 && resaleData.some(r => r.original_price > 0)
+        ? resaleData
+            .filter(r => r.original_price > 0)
+            .reduce((sum, r) => sum + (1 - r.resale_price / r.original_price), 0) / 
+          resaleData.filter(r => r.original_price > 0).length
         : 0;
 
       setStats({ total, onSale, sold, totalRevenue, avgDiscount });
@@ -91,21 +108,23 @@ export default function ResaleManagementPage() {
   const filteredResales = resales.filter((resale) => {
     if (!searchTerm) {return true;}
     const searchLower = searchTerm.toLowerCase();
+    const lotteryTitle = resale.lotteries?.title_i18n?.zh || resale.lotteries?.title || '';
     return (
       resale.seller?.telegram_username?.toLowerCase().includes(searchLower) ||
       resale.buyer?.telegram_username?.toLowerCase().includes(searchLower) ||
-      resale.lottery?.title?.toLowerCase().includes(searchLower)
+      lotteryTitle.toLowerCase().includes(searchLower)
     );
   });
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
+    const statusConfig: Record<string, { color: string; text: string }> = {
+      ACTIVE: { color: 'bg-green-100 text-green-800', text: '在售' },
       ON_SALE: { color: 'bg-green-100 text-green-800', text: '在售' },
       SOLD: { color: 'bg-blue-100 text-blue-800', text: '已售出' },
       CANCELLED: { color: 'bg-gray-100 text-gray-800', text: '已取消' },
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.ON_SALE;
+    const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800', text: status };
     return (
       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${config.color}`}>
         {config.text}
@@ -279,23 +298,29 @@ export default function ResaleManagementPage() {
                 </td>
               </tr>
             ) : (
-              filteredResales.map((resale) => (
+              filteredResales.map((resale) => {
+                const discountRate = resale.original_price > 0 
+                  ? (1 - resale.resale_price / resale.original_price) 
+                  : 0;
+                const lotteryTitle = resale.lotteries?.title_i18n?.zh || resale.lotteries?.title || '未知商品';
+                
+                return (
                 <tr key={resale.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center">
-                      {resale.lottery?.image_url && (
+                      {resale.lotteries?.image_url && (
                         <img
-                          src={resale.prize.lottery.image_url}
+                          src={resale.lotteries.image_url}
                           alt=""
                           className="w-12 h-12 rounded-md object-cover mr-3"
                         />
                       )}
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {`夺宝活动 ${resale.lottery_id?.substring(0, 8)}`}
+                          {lotteryTitle}
                         </div>
                         <div className="text-xs text-gray-500">
-                          ID: {resale.prize_id.slice(0, 8)}...
+                          票号: #{resale.ticket?.ticket_number || '-'}
                         </div>
                       </div>
                     </div>
@@ -312,10 +337,10 @@ export default function ResaleManagementPage() {
                     {resale.buyer ? (
                       <>
                         <div className="text-sm text-gray-900">
-                          {resale.buyer.first_name}
+                          {resale.buyer.first_name || '买家'}
                         </div>
                         <div className="text-xs text-gray-500">
-                          @{resale.buyer.telegram_username}
+                          @{resale.buyer.telegram_username || 'unknown'}
                         </div>
                       </>
                     ) : (
@@ -324,15 +349,15 @@ export default function ResaleManagementPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-500 line-through">
-                      ¥{resale.original_price.toFixed(2)}
+                      TJS {(resale.original_price || 0).toFixed(2)}
                     </div>
                     <div className="text-sm font-semibold text-gray-900">
-                      ¥{resale.price.toFixed(2)}
+                      TJS {(resale.resale_price || 0).toFixed(2)}
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                      -{(resale.discount_rate * 100).toFixed(0)}%
+                      -{(discountRate * 100).toFixed(0)}%
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -361,7 +386,7 @@ export default function ResaleManagementPage() {
                     </button>
                   </td>
                 </tr>
-              ))
+              )}))
             )}
           </tbody>
         </table>
