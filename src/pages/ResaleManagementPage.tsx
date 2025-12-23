@@ -54,15 +54,10 @@ export default function ResaleManagementPage() {
   const fetchResales = async () => {
     try {
       setLoading(true);
+      // 首先获取转售记录
       let query = supabase
         .from('resales')
-        .select(`
-          *,
-          seller:users!resales_seller_id_fkey(telegram_username, first_name),
-          buyer:users!resales_buyer_id_fkey(telegram_username, first_name),
-          lotteries(*),
-          ticket:tickets!resales_ticket_id_fkey(ticket_number)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (filter !== 'all') {
@@ -80,6 +75,47 @@ export default function ResaleManagementPage() {
       if (error) {throw error;}
       
       const resaleData = data || [];
+      
+      // 手动获取关联数据
+      if (resaleData.length > 0) {
+        const sellerIds = [...new Set(resaleData.map(r => r.seller_id).filter(Boolean))];
+        const buyerIds = [...new Set(resaleData.map(r => r.buyer_id).filter(Boolean))];
+        const lotteryIds = [...new Set(resaleData.map(r => r.lottery_id).filter(Boolean))];
+        const ticketIds = [...new Set(resaleData.map(r => r.ticket_id).filter(Boolean))];
+
+        // 获取卖家信息
+        const { data: sellers } = await supabase
+          .from('users')
+          .select('id, telegram_username, first_name')
+          .in('id', sellerIds);
+
+        // 获取买家信息
+        const { data: buyers } = await supabase
+          .from('users')
+          .select('id, telegram_username, first_name')
+          .in('id', buyerIds);
+
+        // 获取夺宝信息
+        const { data: lotteries } = await supabase
+          .from('lotteries')
+          .select('id, title, title_i18n, image_url')
+          .in('id', lotteryIds);
+
+        // 获取票据信息
+        const { data: tickets } = await supabase
+          .from('tickets')
+          .select('id, ticket_number')
+          .in('id', ticketIds);
+
+        // 组装数据
+        resaleData.forEach((resale: any) => {
+          resale.seller = sellers?.find(s => s.id === resale.seller_id);
+          resale.buyer = buyers?.find(b => b.id === resale.buyer_id);
+          resale.lotteries = lotteries?.find(l => l.id === resale.lottery_id);
+          resale.ticket = tickets?.find(t => t.id === resale.ticket_id);
+        });
+      }
+      
       setResales(resaleData);
 
       // 计算统计数据

@@ -24,6 +24,7 @@ import DrawLogsPage from './pages/DrawLogsPage';
 import CommissionConfigPage from './pages/CommissionConfigPage';
 import CommissionRecordsPage from './pages/CommissionRecordsPage';
 import ReferralManagementPage from './pages/ReferralManagementPage';
+import DashboardPage from './pages/DashboardPage';
 
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import LoginPage from './pages/LoginPage';
@@ -84,7 +85,7 @@ function App(): JSX.Element {
           <div className="flex-1 overflow-auto p-6">
             <Routes>
           <Route path="/login" element={<LoginPage />} />
-              <Route path="/" element={<ProtectedRoute element={<DashboardPlaceholder />} />} />
+              <Route path="/" element={<ProtectedRoute element={<DashboardPage />} />} />
               <Route path="/users" element={<ProtectedRoute element={<UserListPage />} requiredRole="admin" />} />
               <Route path="/users/:id" element={<ProtectedRoute element={<UserDetailsPage />} requiredRole="admin" />} />
               <Route path="/user-management" element={<ProtectedRoute element={<UserManagementPage />} requiredRole="admin" />} />
@@ -134,28 +135,7 @@ function NavLink({ to, label, icon }: { to: string; label: string; icon: string 
   )
 }
 
-function DashboardPlaceholder(): JSX.Element {
-  return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h1 className="text-3xl font-bold mb-4">仪表盘</h1>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard title="总用户数" value="1,234" />
-        <StatCard title="进行中的活动" value="12" />
-        <StatCard title="总收入" value="$45,678" />
-        <StatCard title="待处理订单" value="89" />
-      </div>
-    </div>
-  )
-}
-
-function StatCard({ title, value }: { title: string; value: string }): JSX.Element {
-  return (
-    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4">
-      <p className="text-gray-600 text-sm">{title}</p>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-    </div>
-  )
-}
+// Dashboard component moved to pages/DashboardPage.tsx
 
 function PagePlaceholder({ title }: { title: string }): JSX.Element {
   return (
