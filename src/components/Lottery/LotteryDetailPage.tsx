@@ -271,7 +271,7 @@ export const LotteryDetailPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <div className="text-sm text-gray-500">中奖票号</div>
-                <div className="text-2xl font-bold text-yellow-600">#{lottery.winning_ticket_number}</div>
+                <div className="text-2xl font-bold text-yellow-600">#{String(lottery.winning_ticket_number).padStart(7, '0')}</div>
               </div>
               {lottery.winning_user && (
                 <div>
@@ -319,8 +319,8 @@ export const LotteryDetailPage: React.FC = () => {
                     <TableCell>{user.count} 张</TableCell>
                     <TableCell className="text-sm text-gray-600">
                       {user.tickets.length > 3
-                        ? `#${Math.min(...user.tickets)} - #${Math.max(...user.tickets)}`
-                        : user.tickets.map(t => `#${t}`).join(', ')
+                        ? `#${String(Math.min(...user.tickets)).padStart(7, '0')} - #${String(Math.max(...user.tickets)).padStart(7, '0')}`
+                        : user.tickets.map(t => `#${String(t).padStart(7, '0')}`).join(', ')
                       }
                     </TableCell>
                   </TableRow>
@@ -360,7 +360,7 @@ export const LotteryDetailPage: React.FC = () => {
                       className={ticket.is_winning ? 'bg-yellow-50' : ''}
                     >
                       <TableCell className="font-medium">
-                        #{ticket.ticket_number}
+                        #{String(ticket.ticket_number).padStart(7, '0')}
                         {ticket.is_winning && (
                           <Trophy className="inline ml-2 h-4 w-4 text-yellow-500" />
                         )}

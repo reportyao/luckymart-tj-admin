@@ -155,7 +155,7 @@ export default function DrawLogsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-lg font-bold text-blue-600">
-                      #{log.winning_number}
+                      #{String(log.winning_number).padStart(7, '0')}
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -240,7 +240,7 @@ export default function DrawLogsPage() {
                 <div className="bg-gray-50 p-4 rounded space-y-2 text-sm">
                   <p><span className="font-medium">开奖时间:</span> {new Date(selectedLog.draw_time).toLocaleString('zh-CN')}</p>
                   <p><span className="font-medium">算法:</span> {selectedLog.algorithm_name}</p>
-                  <p><span className="font-medium">中奖号码:</span> <span className="text-lg font-bold text-blue-600">#{selectedLog.winning_number}</span></p>
+                  <p><span className="font-medium">中奖号码:</span> <span className="text-lg font-bold text-blue-600">#{String(selectedLog.winning_number).padStart(7, '0')}</span></p>
                 </div>
               </div>
 
