@@ -108,6 +108,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       // 暂时简化：只验证用户名，不验证密码
       // TODO: 后续配置HTTPS后启用完整的密码验证
       console.log('登录请求:', username);
+      console.log('Supabase URL:', supabase.supabaseUrl);
 
       // 查询管理员账户（不验证密码）
       const { data: adminUser, error } = await supabase
@@ -116,9 +117,11 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         .eq('username', username)
         .single();
 
+      console.log('查询结果:', { adminUser, error });
+
       if (error || !adminUser) {
         console.error('用户不存在:', error);
-        throw new Error('用户名不存在');
+        throw new Error('用户名不存在: ' + (error?.message || '未知错误'));
       }
 
       if (adminUser.status !== 'active') {
