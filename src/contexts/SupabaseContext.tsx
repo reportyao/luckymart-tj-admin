@@ -25,6 +25,12 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       auth: {
         autoRefreshToken: false,
         persistSession: false
+      },
+      global: {
+        headers: {
+          'apikey': supabaseServiceRoleKey,
+          'Authorization': `Bearer ${supabaseServiceRoleKey}`
+        }
       }
     })
 
