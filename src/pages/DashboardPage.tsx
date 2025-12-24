@@ -52,7 +52,7 @@ export default function DashboardPage() {
         .from('users')
         .select('*', { count: 'exact', head: true });
       
-      if (usersError) throw usersError;
+      if (usersError) {throw usersError;}
 
       // 获取活跃用户数 (最近7天有登录)
       const sevenDaysAgo = new Date();
@@ -67,7 +67,7 @@ export default function DashboardPage() {
         .from('lotteries')
         .select('*', { count: 'exact', head: true });
       
-      if (lotteriesError) throw lotteriesError;
+      if (lotteriesError) {throw lotteriesError;}
 
       const { count: activeLotteries, error: activeLotteriesError } = await supabase
         .from('lotteries')

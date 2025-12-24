@@ -64,7 +64,7 @@ export default function GroupBuySessionManagementPage() {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {throw error;}
       setSessions(data || []);
     } catch (error) {
       console.error('Failed to fetch sessions:', error);
@@ -80,7 +80,7 @@ export default function GroupBuySessionManagementPage() {
         .from('group_buy_sessions')
         .select('status');
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       const stats = {
         total: data.length,
@@ -116,7 +116,7 @@ export default function GroupBuySessionManagementPage() {
     const expires = new Date(expiresAt);
     const diff = expires.getTime() - now.getTime();
 
-    if (diff <= 0) return '已过期';
+    if (diff <= 0) {return '已过期';}
 
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
