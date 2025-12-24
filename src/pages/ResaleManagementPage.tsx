@@ -422,7 +422,7 @@ export default function ResaleManagementPage() {
                     </button>
                   </td>
                 </tr>
-              )}))
+              )})
             )}
           </tbody>
         </table>
