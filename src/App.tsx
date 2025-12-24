@@ -25,6 +25,8 @@ import CommissionConfigPage from './pages/CommissionConfigPage';
 import CommissionRecordsPage from './pages/CommissionRecordsPage';
 import ReferralManagementPage from './pages/ReferralManagementPage';
 import DashboardPage from './pages/DashboardPage';
+import GroupBuyProductManagementPage from './pages/GroupBuyProductManagementPage';
+import GroupBuySessionManagementPage from './pages/GroupBuySessionManagementPage';
 
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import LoginPage from './pages/LoginPage';
@@ -50,6 +52,8 @@ function App(): JSX.Element {
             <NavLink to="/user-management" label="用户管理" icon="👤" />
             <NavLink to="/referral-management" label="推荐管理" icon="🌳" />
             <NavLink to="/lotteries" label="夺宝活动" icon="🎰" />
+            <NavLink to="/group-buy-products" label="拼团商品" icon="🛒" />
+            <NavLink to="/group-buy-sessions" label="拼团会话" icon="👥" />
             <NavLink to="/orders" label="订单管理" icon="📦" />
             <NavLink to="/deposit-review" label="充值审核" icon="💰" />
             <NavLink to="/withdrawal-review" label="提现审核" icon="💸" />
@@ -94,6 +98,8 @@ function App(): JSX.Element {
               <Route path="/lotteries/new" element={<ProtectedRoute element={<LotteryForm />} requiredRole="admin" />} />
               <Route path="/lotteries/:id/detail" element={<ProtectedRoute element={<LotteryDetailPage />} requiredRole="admin" />} />
               <Route path="/lotteries/:id" element={<ProtectedRoute element={<LotteryForm />} requiredRole="admin" />} />
+              <Route path="/group-buy-products" element={<ProtectedRoute element={<GroupBuyProductManagementPage />} requiredRole="admin" />} />
+              <Route path="/group-buy-sessions" element={<ProtectedRoute element={<GroupBuySessionManagementPage />} requiredRole="admin" />} />
               <Route path="/orders" element={<ProtectedRoute element={<OrderListPage />} requiredRole="admin" />} />
               <Route path="/deposit-review" element={<ProtectedRoute element={<DepositReviewPage />} requiredRole="admin" />} />
               <Route path="/withdrawal-review" element={<ProtectedRoute element={<WithdrawalReviewPage />} requiredRole="admin" />} />
