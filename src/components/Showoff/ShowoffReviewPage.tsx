@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSupabase } from '@/contexts/SupabaseContext';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { Tables, Enums } from '@/types/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -35,7 +36,8 @@ const getStatusColor = (status: ShowoffStatus) => {
 };
 
 export const ShowoffReviewPage: React.FC = () => {
-  const { supabase, supabaseAuth } = useSupabase();
+  const { supabase } = useSupabase();
+  const { admin } = useAdminAuth();
   const [showoffs, setShowoffs] = useState<Showoff[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedShowoff, setSelectedShowoff] = useState<Showoff | null>(null);
@@ -77,8 +79,7 @@ export const ShowoffReviewPage: React.FC = () => {
 
     try {
       // 调用 Edge Function 处理晒单审核
-      const { data: { session } } = await supabaseAuth.auth.getSession();
-      if (!session) {
+      if (!admin) {
         throw new Error('未登录');
       }
 
@@ -88,7 +89,7 @@ export const ShowoffReviewPage: React.FC = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
+            'x-admin-id': admin.id,
           },
           body: JSON.stringify({
             showoffId: selectedShowoff.id,
@@ -273,9 +274,23 @@ export const ShowoffReviewPage: React.FC = () => {
                       onChange={(e) => setRewardCoins(parseInt(e.target.value) || 0)}
                       className="w-32"
                     />
-                    <span className="text-sm text-gray-600">币（建议范围: 10-100）</span>
+                    <span className="text-sm text-gray-600">币（建议范围: 1-100）</span>
                   </div>
                   <div className="flex space-x-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setRewardCoins(2)}
+                    >
+                      2币
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setRewardCoins(5)}
+                    >
+                      5币
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline"
@@ -289,20 +304,6 @@ export const ShowoffReviewPage: React.FC = () => {
                       onClick={() => setRewardCoins(20)}
                     >
                       20币
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setRewardCoins(50)}
-                    >
-                      50币
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setRewardCoins(100)}
-                    >
-                      100币
                     </Button>
                   </div>
                 </div>

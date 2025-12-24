@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSupabase } from '@/contexts/SupabaseContext';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
@@ -37,7 +38,8 @@ const getStatusColor = (status: string) => {
 };
 
 export const ShippingManagementPage: React.FC = () => {
-  const { supabase, supabaseAuth } = useSupabase();
+  const { supabase } = useSupabase();
+  const { admin } = useAdminAuth();
   const [shippings, setShippings] = useState<Shipping[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -72,8 +74,7 @@ export const ShippingManagementPage: React.FC = () => {
 
     try {
       // 调用 Edge Function 处理发货
-      const { data: { session } } = await supabaseAuth.auth.getSession();
-      if (!session) {
+      if (!admin) {
         throw new Error('未登录');
       }
 
@@ -83,7 +84,7 @@ export const ShippingManagementPage: React.FC = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
+            'x-admin-id': admin.id,
           },
           body: JSON.stringify({
             shippingId: shippingId,
@@ -113,8 +114,7 @@ export const ShippingManagementPage: React.FC = () => {
 
     try {
       // 调用 Edge Function 处理送达
-      const { data: { session } } = await supabaseAuth.auth.getSession();
-      if (!session) {
+      if (!admin) {
         throw new Error('未登录');
       }
 
@@ -124,7 +124,7 @@ export const ShippingManagementPage: React.FC = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
+            'x-admin-id': admin.id,
           },
           body: JSON.stringify({
             shippingId: shippingId,

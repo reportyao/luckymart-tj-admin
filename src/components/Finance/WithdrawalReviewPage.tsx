@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 // import { useNavigate } from 'react-router-dom';
 import { useSupabase } from '@/contexts/SupabaseContext';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { Tables, Enums } from '@/types/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -27,7 +28,8 @@ const getStatusColor = (status: WithdrawalStatus) => {
 };
 
 export const WithdrawalReviewPage: React.FC = () => {
-  const { supabase, supabaseAuth } = useSupabase();
+  const { supabase } = useSupabase();
+  const { admin } = useAdminAuth();
   // const navigate = useNavigate();
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,8 +62,7 @@ export const WithdrawalReviewPage: React.FC = () => {
 
     try {
       // 调用 Edge Function 处理提现审核
-      const { data: { session } } = await supabaseAuth.auth.getSession();
-      if (!session) {
+      if (!admin) {
         throw new Error('未登录');
       }
 
@@ -71,7 +72,7 @@ export const WithdrawalReviewPage: React.FC = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
+            'x-admin-id': admin.id,
           },
           body: JSON.stringify({
             requestId: id,

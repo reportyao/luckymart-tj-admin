@@ -73,29 +73,29 @@ export const LotteryListPage: React.FC = () => {
     fetchLotteries();
   }, [fetchLotteries]);
 
-	  const handleDraw = async (id: string) => {
-	    if (!window.confirm('确定要立即开奖吗？开奖后将无法修改。')) {return;}
-	
-	    try {
-	      // 假设存在一个 Supabase RPC 或 Edge Function 来执行开奖逻辑
-	      const { data, error } = await supabase.rpc('draw_lottery', { p_lottery_id: id });
-	
-	      if (error) {throw error;}
-	
-	      toast.success(`夺宝 ${id} 开奖成功! 中奖号码: ${(data as any).winning_number}`);
-	      fetchLotteries(); // 刷新列表
-	    } catch (error: any) {
-	      toast.error(`开奖失败: ${error.message}`);
-	      console.error('Error drawing lottery:', error);
-	    }
-	  };
-	
-	  const handleViewResult = (id: string) => {
-	    // 在管理后台，我们跳转到编辑页面，并在编辑页面显示结果
-	    navigate(`/lotteries/${id}`);
-	  };
-	
-	  // 生成期号：使用复杂算法避免规律被发现
+  const handleDraw = async (id: string) => {
+    if (!window.confirm('确定要立即开奖吗？开奖后将无法修改。')) {return;}
+
+    try {
+      // 假设存在一个 Supabase RPC 或 Edge Function 来执行开奖逻辑
+      const { data, error } = await supabase.rpc('draw_lottery', { p_lottery_id: id });
+
+      if (error) {throw error;}
+
+      toast.success(`夺宝 ${id} 开奖成功! 中奖号码: ${(data as any).winning_number}`);
+      fetchLotteries(); // 刷新列表
+    } catch (error: any) {
+      toast.error(`开奖失败: ${error.message}`);
+      console.error('Error drawing lottery:', error);
+    }
+  };
+
+  const handleViewResult = (id: string) => {
+    // 在管理后台，我们跳转到编辑页面，并在编辑页面显示结果
+    navigate(`/lotteries/${id}`);
+  };
+
+  // 生成期号：使用复杂算法避免规律被发现
   const generatePeriod = (): string => {
     const now = Date.now();
     // 使用时间戳的后8位 + 随机4位数
@@ -122,7 +122,13 @@ export const LotteryListPage: React.FC = () => {
       // 生成新期号（使用与创建时相同的算法）
       const newPeriod = generatePeriod();
 
-      // 复制夺宝数据
+      // 计算新的开始和结束时间（保持原有时长，从现在开始）
+      const now = new Date();
+      const originalDuration = new Date(originalLottery.end_time).getTime() - new Date(originalLottery.start_time).getTime();
+      const newStartTime = now.toISOString();
+      const newEndTime = new Date(now.getTime() + originalDuration).toISOString();
+      
+      // 复制夺宝数据（重置所有状态相关字段）
       const newLottery = {
         ...originalLottery,
         id: undefined, // 让数据库生成新 ID
@@ -132,6 +138,14 @@ export const LotteryListPage: React.FC = () => {
         winning_ticket_number: null,
         winning_user_id: null,
         draw_time: null,
+        actual_draw_time: null,
+        start_time: newStartTime,
+        end_time: newEndTime,
+        vrf_seed: null,
+        vrf_proof: null,
+        vrf_timestamp: null,
+        winning_numbers: null,
+        draw_algorithm_data: null,
         created_at: undefined,
         updated_at: undefined
       };
@@ -173,9 +187,9 @@ export const LotteryListPage: React.FC = () => {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-2xl font-bold">夺宝管理</CardTitle>
-	        <Button onClick={() => navigate('/lotteries/new')}>
-	          创建新夺宝
-	        </Button>
+        <Button onClick={() => navigate('/lotteries/new')}>
+          创建新夺宝
+        </Button>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -204,22 +218,22 @@ export const LotteryListPage: React.FC = () => {
                     <TableCell>{lottery.ticket_price} {lottery.currency}</TableCell>
                     <TableCell>{lottery.total_tickets}/{lottery.sold_tickets || 0}</TableCell>
                     <TableCell>
-	                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lottery.status)}`}>
-	                        {lottery.status}
-	                      </span>
-	                    </TableCell>
-	                    <TableCell>{formatDateTime(lottery.start_time)}</TableCell>
-	                    <TableCell className="flex space-x-2">
-	                      {(lottery.status === 'ACTIVE' && new Date(lottery.end_time) < new Date()) && !lottery.status.includes('DRAWN') && (
-	                        <Button variant="default" size="sm" onClick={() => handleDraw(lottery.id)}>
-	                          立即开奖
-	                        </Button>
-	                      )}
-	                      {lottery.status === 'DRAWN' && (
-	                        <Button variant="outline" size="sm" onClick={() => handleViewResult(lottery.id)}>
-	                          查看结果
-	                        </Button>
-	                      )}
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lottery.status)}`}>
+                        {lottery.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>{formatDateTime(lottery.start_time)}</TableCell>
+                    <TableCell className="flex space-x-2">
+                      {(lottery.status === 'ACTIVE' && new Date(lottery.end_time) < new Date()) && !lottery.status.includes('DRAWN') && (
+                        <Button variant="default" size="sm" onClick={() => handleDraw(lottery.id)}>
+                          立即开奖
+                        </Button>
+                      )}
+                      {lottery.status === 'DRAWN' && (
+                        <Button variant="outline" size="sm" onClick={() => handleViewResult(lottery.id)}>
+                          查看结果
+                        </Button>
+                      )}
                       <Button variant="outline" size="sm" onClick={() => navigate(`/lotteries/${lottery.id}/detail`)}>
                         查看详情
                       </Button>
@@ -233,7 +247,7 @@ export const LotteryListPage: React.FC = () => {
                         删除
                       </Button>
                     </TableCell>
-	                  </TableRow>
+                  </TableRow>
                 ))}
               </TableBody>
             </Table>
