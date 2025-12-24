@@ -89,6 +89,7 @@ export const ShowoffReviewPage: React.FC = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
             'x-admin-id': admin.id,
           },
           body: JSON.stringify({
