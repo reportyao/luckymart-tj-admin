@@ -46,7 +46,7 @@ export default function BannerManagementPage() {
         .select('*')
         .order('sort_order', { ascending: true });
 
-      if (error) throw error;
+      if (error) {throw error;}
       setBanners(data || []);
     } catch (error: any) {
       console.error('Failed to fetch banners:', error);
@@ -78,14 +78,14 @@ export default function BannerManagementPage() {
           .update(bannerData)
           .eq('id', editingBanner.id);
 
-        if (error) throw error;
+        if (error) {throw error;}
         toast.success('Banner更新成功');
       } else {
         const { error } = await supabase
           .from('banners')
           .insert([bannerData]);
 
-        if (error) throw error;
+        if (error) {throw error;}
         toast.success('Banner创建成功');
       }
 
@@ -114,7 +114,7 @@ export default function BannerManagementPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('确定要删除这个Banner吗？')) return;
+    if (!confirm('确定要删除这个Banner吗？')) {return;}
 
     try {
       const { error } = await supabase
@@ -122,7 +122,7 @@ export default function BannerManagementPage() {
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {throw error;}
       toast.success('Banner删除成功');
       fetchBanners();
     } catch (error: any) {
@@ -138,7 +138,7 @@ export default function BannerManagementPage() {
         .update({ is_active: !banner.is_active, updated_at: new Date().toISOString() })
         .eq('id', banner.id);
 
-      if (error) throw error;
+      if (error) {throw error;}
       toast.success(banner.is_active ? 'Banner已隐藏' : 'Banner已显示');
       fetchBanners();
     } catch (error: any) {
@@ -151,7 +151,7 @@ export default function BannerManagementPage() {
     const currentIndex = banners.findIndex(b => b.id === banner.id);
     const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
     
-    if (targetIndex < 0 || targetIndex >= banners.length) return;
+    if (targetIndex < 0 || targetIndex >= banners.length) {return;}
 
     const targetBanner = banners[targetIndex];
     
