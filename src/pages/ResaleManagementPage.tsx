@@ -28,8 +28,8 @@ interface Resale {
     title_i18n?: { zh?: string };
     image_url: string;
   };
-  ticket?: {
-    ticket_number: number;
+  entry?: {
+    numbers: string; // 7位数开奖码
   };
 }
 
@@ -101,10 +101,10 @@ export default function ResaleManagementPage() {
           .select('id, title, title_i18n, image_url')
           .in('id', lotteryIds);
 
-        // 获取票据信息
-        const { data: tickets } = await supabase
-          .from('tickets')
-          .select('id, ticket_number')
+        // 获取参与记录信息（使用 lottery_entries 表）
+        const { data: entries } = await supabase
+          .from('lottery_entries')
+          .select('id, numbers')
           .in('id', ticketIds);
 
         // 组装数据
@@ -112,7 +112,7 @@ export default function ResaleManagementPage() {
           resale.seller = sellers?.find(s => s.id === resale.seller_id);
           resale.buyer = buyers?.find(b => b.id === resale.buyer_id);
           resale.lotteries = lotteries?.find(l => l.id === resale.lottery_id);
-          resale.ticket = tickets?.find(t => t.id === resale.ticket_id);
+          resale.entry = entries?.find(e => e.id === resale.ticket_id);
         });
       }
       
@@ -356,7 +356,7 @@ export default function ResaleManagementPage() {
                           {lotteryTitle}
                         </div>
                         <div className="text-xs text-gray-500">
-                          票号: #{resale.ticket?.ticket_number || '-'}
+                          票号: #{resale.entry?.numbers ? String(resale.entry.numbers).replace(/"/g, '').padStart(7, '0') : '-'}
                         </div>
                       </div>
                     </div>

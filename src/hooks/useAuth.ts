@@ -20,9 +20,9 @@ export function useAuth() {
         const { data: { session } } = await supabase.auth.getSession()
         
         if (session?.user) {
-          // 查询用户角色 (假设在 profiles 表中有 role 字段)
-          const { data: profile } = await supabase
-            .from('profiles')
+          // 查询管理员角色 (使用 admin_users 表)
+          const { data: adminUser } = await supabase
+            .from('admin_users')
             .select('role')
             .eq('id', session.user.id)
             .single()
@@ -30,7 +30,7 @@ export function useAuth() {
           setUser({
             id: session.user.id,
             email: session.user.email,
-            role: profile?.role || 'admin', // 默认为admin
+            role: adminUser?.role || 'admin', // 默认为admin
             permissions: ['*'] // 默认所有权限
           })
         } else {
@@ -63,15 +63,15 @@ export function useAuth() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         supabase
-          .from('profiles')
+          .from('admin_users')
           .select('role')
           .eq('id', session.user.id)
           .single()
-          .then(({ data: profile }) => {
+          .then(({ data: adminUser }) => {
             setUser({
               id: session.user.id,
               email: session.user.email,
-              role: profile?.role || 'admin',
+              role: adminUser?.role || 'admin',
               permissions: ['*']
             })
           })
