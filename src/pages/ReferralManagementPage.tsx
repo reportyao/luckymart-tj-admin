@@ -8,9 +8,8 @@ interface User {
   first_name: string;
   last_name: string;
   telegram_id: string;
-  referral_code: string;
-  referrer_id: string | null;
-  referral_level: number;
+  invite_code: string;
+  referred_by_id: string | null;
   created_at: string;
 }
 
@@ -43,7 +42,7 @@ export default function ReferralManagementPage() {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .or(`id.eq.${searchTerm},telegram_id.eq.${searchTerm},telegram_username.ilike.%${searchTerm}%,referral_code.eq.${searchTerm}`)
+        .or(`id.eq.${searchTerm},telegram_id.eq.${searchTerm},telegram_username.ilike.%${searchTerm}%,invite_code.eq.${searchTerm}`)
         .limit(1);
 
       if (error) {throw error;}
@@ -102,7 +101,7 @@ export default function ReferralManagementPage() {
         '用户ID': node.id,
         '用户名': node.telegram_username || `${node.first_name} ${node.last_name}`.trim(),
         'Telegram ID': node.telegram_id,
-        '邀请码': node.referral_code,
+        '邀请码': node.invite_code,
         '层级': level,
         '一级邀请数': node.stats.level1_count,
         '二级邀请数': node.stats.level2_count,
@@ -157,7 +156,7 @@ export default function ReferralManagementPage() {
               <span className="text-xs bg-gray-100 px-2 py-1 rounded">L{level}</span>
             </div>
             <div className="text-sm text-gray-600 mt-1">
-              邀请码: {node.referral_code} | 
+              邀请码: {node.invite_code} | 
               邀请: {node.stats.level1_count}人 (L1) / {node.stats.level2_count}人 (L2) / {node.stats.level3_count}人 (L3) |
               返利: ¥{node.stats.total_commission.toFixed(2)}
             </div>
@@ -227,11 +226,11 @@ export default function ReferralManagementPage() {
             </div>
             <div>
               <p className="text-sm text-gray-600">邀请码</p>
-              <p className="font-medium">{selectedUser.referral_code}</p>
+              <p className="font-medium">{selectedUser.invite_code}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">层级</p>
-              <p className="font-medium">L{selectedUser.referral_level}</p>
+              <p className="text-sm text-gray-600">注册时间</p>
+              <p className="font-medium">{new Date(selectedUser.created_at).toLocaleString('zh-CN')}</p>
             </div>
           </div>
         </div>

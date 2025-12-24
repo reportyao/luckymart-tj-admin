@@ -27,6 +27,7 @@ import ReferralManagementPage from './pages/ReferralManagementPage';
 import DashboardPage from './pages/DashboardPage';
 import GroupBuyProductManagementPage from './pages/GroupBuyProductManagementPage';
 import GroupBuySessionManagementPage from './pages/GroupBuySessionManagementPage';
+import BannerManagementPage from './pages/BannerManagementPage';
 
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import LoginPage from './pages/LoginPage';
@@ -37,7 +38,7 @@ function App(): JSX.Element {
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   return (
-    <Router>
+    <Router basename="/admin">
       <AdminAuthProvider>
       <AdminDebugPanel />
       <div className="flex h-screen bg-gray-100">
@@ -68,6 +69,7 @@ function App(): JSX.Element {
             <NavLink to="/draw-logs" label="开奖管理" icon="🎲" />
             <NavLink to="/admin-management" label="管理员管理" icon="👨‍💼" />
             <NavLink to="/permission-management" label="权限管理" icon="🔐" />
+            <NavLink to="/banner-management" label="Banner管理" icon="🖼️" />
             <NavLink to="/audit-logs" label="审计日志" icon="📋" />
           </nav>
         </div>
@@ -115,6 +117,7 @@ function App(): JSX.Element {
 
               <Route path="/algorithm-config" element={<ProtectedRoute element={<AlgorithmConfigPage />} requiredRole="admin" />} />
               <Route path="/draw-logs" element={<ProtectedRoute element={<DrawLogsPage />} requiredRole="admin" />} />
+              <Route path="/banner-management" element={<ProtectedRoute element={<BannerManagementPage />} requiredRole="admin" />} />
               <Route path="/audit-logs" element={<ProtectedRoute element={<PagePlaceholder title="Audit Logs" />} requiredRole="admin" />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
               <Route path="/forbidden" element={<ForbiddenPage />} />
