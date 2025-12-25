@@ -30,7 +30,7 @@ export function getLotteryStatusText(status: string): string {
     'UPCOMING': '即将开始',
     'COMPLETED': '已完成',
     'SOLD_OUT': '已售完',
-    'DRAWN': '已开奖',
+    'DRAWING': '开奖中',
     'CANCELLED': '已取消'
   };
   return statusMap[status] || status;
@@ -43,7 +43,7 @@ export function getLotteryStatusColor(status: string): string {
     'UPCOMING': 'bg-blue-100 text-blue-700',
     'COMPLETED': 'bg-gray-100 text-gray-700',
     'SOLD_OUT': 'bg-red-100 text-red-700',
-    'DRAWN': 'bg-purple-100 text-purple-700',
+    'DRAWING': 'bg-purple-100 text-purple-700',
     'CANCELLED': 'bg-gray-100 text-gray-500'
   };
   return colorMap[status] || 'bg-gray-100 text-gray-700';

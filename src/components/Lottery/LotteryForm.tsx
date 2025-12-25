@@ -85,7 +85,7 @@ export const LotteryForm: React.FC = () => {
 
       if (data) {
         // 如果已开奖，尝试获取开奖轮次信息
-        if (data.status === 'DRAWN') {
+        if (data.status === 'COMPLETED') {
           const { data: roundData, error: roundError } = await supabase
             .from('lottery_results')
             .select(
@@ -240,7 +240,7 @@ export const LotteryForm: React.FC = () => {
     return <div className="text-center py-10">加载中...</div>;
   }
 
-  const isDrawn = formData.status === 'DRAWN';
+  const isDrawn = formData.status === 'COMPLETED';
 
   const verificationData = lotteryRound
     ? [

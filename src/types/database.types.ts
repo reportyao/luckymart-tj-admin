@@ -558,7 +558,7 @@ export type Database = {
       Currency: 'TJS' | 'USD'
       DepositStatus: 'PENDING' | 'APPROVED' | 'REJECTED'
       KycLevel: 'NONE' | 'LEVEL_1' | 'LEVEL_2'
-      LotteryStatus: 'PENDING' | 'ACTIVE' | 'DRAWN' | 'CANCELLED'
+      LotteryStatus: 'PENDING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED'
       OrderStatus: 'PENDING' | 'PAID' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'
       ShowoffStatus: 'PENDING' | 'APPROVED' | 'REJECTED'
       UserStatus: 'ACTIVE' | 'INACTIVE' | 'BANNED'

@@ -44,7 +44,7 @@ const getStatusColor = (status: string) => {
       return 'bg-green-100 text-green-800';
     case 'PENDING':
       return 'bg-yellow-100 text-yellow-800';
-    case 'DRAWN':
+    case 'COMPLETED':
       return 'bg-blue-100 text-blue-800';
     case 'SOLD_OUT':
       return 'bg-purple-100 text-purple-800';
@@ -284,7 +284,7 @@ export const LotteryDetailPage: React.FC = () => {
       </Card>
 
       {/* 中奖信息 */}
-      {lottery.status === 'DRAWN' && winningTicketNumber && (
+      {lottery.status === 'COMPLETED' && winningTicketNumber && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">

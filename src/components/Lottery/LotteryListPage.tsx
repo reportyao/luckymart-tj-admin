@@ -18,7 +18,7 @@ const getStatusColor = (status: LotteryStatus) => {
       return 'bg-green-100 text-green-800';
     case 'PENDING':
       return 'bg-yellow-100 text-yellow-800';
-    case 'DRAWN':
+    case 'COMPLETED':
       return 'bg-blue-100 text-blue-800';
     case 'CANCELLED':
       return 'bg-red-100 text-red-800';
@@ -224,12 +224,12 @@ export const LotteryListPage: React.FC = () => {
                     </TableCell>
                     <TableCell>{formatDateTime(lottery.start_time)}</TableCell>
                     <TableCell className="flex space-x-2">
-                      {(lottery.status === 'ACTIVE' && new Date(lottery.end_time) < new Date()) && !lottery.status.includes('DRAWN') && (
+                      {(lottery.status === 'ACTIVE' && new Date(lottery.end_time) < new Date()) && !lottery.status.includes('COMPLETED') && (
                         <Button variant="default" size="sm" onClick={() => handleDraw(lottery.id)}>
                           立即开奖
                         </Button>
                       )}
-                      {lottery.status === 'DRAWN' && (
+                      {lottery.status === 'COMPLETED' && (
                         <Button variant="outline" size="sm" onClick={() => handleViewResult(lottery.id)}>
                           查看结果
                         </Button>
