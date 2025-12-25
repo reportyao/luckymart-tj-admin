@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye, EyeOff, ArrowUp, ArrowDown } from 'lucide-react';
 import { useSupabase } from '../contexts/SupabaseContext';
 import toast from 'react-hot-toast';
-import { ImageUpload } from '@/components/ui/ImageUpload';
+import { SingleImageUpload } from '@/components/SingleImageUpload';
 
 interface Banner {
   id: string;
@@ -340,8 +340,7 @@ export default function BannerManagementPage() {
                         <span className="font-bold text-red-700">中文版 Banner</span>
                         <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded">Chinese</span>
                       </div>
-                      <ImageUpload
-                        label=""
+                      <SingleImageUpload
                         bucket="banners"
                         folder="zh"
                         imageUrl={formData.image_url_zh}
@@ -356,8 +355,7 @@ export default function BannerManagementPage() {
                         <span className="font-bold text-blue-700">俄语版 Banner</span>
                         <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">Русский</span>
                       </div>
-                      <ImageUpload
-                        label=""
+                      <SingleImageUpload
                         bucket="banners"
                         folder="ru"
                         imageUrl={formData.image_url_ru}
@@ -372,8 +370,7 @@ export default function BannerManagementPage() {
                         <span className="font-bold text-green-700">塔吉克语版 Banner</span>
                         <span className="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded">Тоҷикӣ</span>
                       </div>
-                      <ImageUpload
-                        label=""
+                      <SingleImageUpload
                         bucket="banners"
                         folder="tg"
                         imageUrl={formData.image_url_tg}
