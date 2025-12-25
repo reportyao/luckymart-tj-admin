@@ -9,7 +9,7 @@ interface User {
   first_name?: string | null;
   last_name?: string | null;
   level: number;
-  commission_rate: number;
+
 }
 
 const UserManagementPage: React.FC = () => {
@@ -26,7 +26,7 @@ const UserManagementPage: React.FC = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('users')
-        .select('id, telegram_id, telegram_username, first_name, last_name, level, commission_rate')
+        .select('id, telegram_id, telegram_username, first_name, last_name, level')
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -55,20 +55,7 @@ const UserManagementPage: React.FC = () => {
     }
   };
 
-  const handleCommissionRateChange = async (userId: string, newCommissionRate: number) => {
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ commission_rate: newCommissionRate })
-        .eq('id', userId);
 
-      if (error) {throw error;}
-      toast.success('返利率更新成功');
-      fetchUsers();
-    } catch (error: any) {
-      toast.error(`更新失败: ${error.message}`);
-    }
-  };
 
   if (loading) {
     return <div className="p-6">加载中...</div>;
@@ -93,9 +80,7 @@ const UserManagementPage: React.FC = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 等级
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                返利率 (%)
-              </th>
+
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -118,15 +103,7 @@ const UserManagementPage: React.FC = () => {
                     onBlur={(e) => handleLevelChange(user.id, parseInt(e.target.value, 10))}
                   />
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="w-24 px-2 py-1 border border-gray-300 rounded"
-                    defaultValue={user.commission_rate}
-                    onBlur={(e) => handleCommissionRateChange(user.id, parseFloat(e.target.value))}
-                  />
-                </td>
+
               </tr>
             ))}
           </tbody>

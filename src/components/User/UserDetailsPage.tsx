@@ -151,26 +151,7 @@ export const UserDetailsPage: React.FC = () => {
             <Input value={user.last_login_at ? formatDateTime(user.last_login_at) : 'N/A'} readOnly />
           </div>
         </div>
-        
-        <div className="pt-4 border-t">
-          <h3 className="text-xl font-semibold mb-4">返利设置 (Rebate)</h3>
-          <div className="flex space-x-4 items-end">
-            <div className="space-y-2 flex-1">
-              <Label htmlFor="commission_rate">佣金比例 (%)</Label>
-              <Input
-                id="commission_rate"
-                type="number"
-                value={user.commission_rate || 0}
-	                onChange={() => {
-	                  // 仅用于展示，实际修改需要一个单独的表单提交
-	                }}
-              />
-            </div>
-            <Button onClick={() => toast.error('功能未实现')}>
-              保存比例
-            </Button>
-          </div>
-        </div>
+
         
         <div className="pt-4 border-t">
           <h3 className="text-xl font-semibold mb-4">邀请层级 (Referral Structure)</h3>
@@ -179,7 +160,7 @@ export const UserDetailsPage: React.FC = () => {
             <StatCard title="二级邀请人数" value={referralStats.level2_count} />
             <StatCard title="累计佣金 (TJS)" value={referralStats.total_commission.toFixed(2)} />
           </div>
-          <Button variant="outline" className="mt-4" onClick={() => window.location.href = `/referral-management?search=${user.telegram_id}`}>
+          <Button variant="outline" className="mt-4" onClick={() => window.location.href = `/admin/referral-management?search=${user.telegram_id}`}>
             查看邀请列表
           </Button>
         </div>

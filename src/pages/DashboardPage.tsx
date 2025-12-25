@@ -218,13 +218,13 @@ export default function DashboardPage() {
             <PendingItem
               title="待审核充值"
               count={stats.pendingDeposits}
-              link="/deposit-review"
+              link="/admin/deposit-review"
               color="yellow"
             />
             <PendingItem
               title="待审核提现"
               count={stats.pendingWithdrawals}
-              link="/withdrawal-review"
+              link="/admin/withdrawal-review"
               color="red"
             />
           </div>
