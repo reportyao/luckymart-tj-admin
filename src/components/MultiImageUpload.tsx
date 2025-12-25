@@ -1,12 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
-import { Button } from './ui/button';
-import { Upload, X, Loader2, GripVertical } from 'lucide-react';
+import { Upload, X, Loader2, GripVertical, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { uploadImage } from '@/lib/uploadImage';
-import { SortableContainer, SortableElement, SortableHandle } from 'react-sortable-hoc';
-import { arrayMoveImmutable as arrayMove } from 'array-move';
 
 interface MultiImageUploadProps {
   label: string;
@@ -17,42 +14,6 @@ interface MultiImageUploadProps {
   onImageUrlsChange: (urls: string[]) => void;
 }
 
-interface SortableItemProps {
-  url: string;
-  index: number;
-  onRemove: (index: number) => void;
-}
-
-const DragHandle = SortableHandle(() => (
-  <span className="absolute top-1 left-1 p-1 cursor-grab bg-black bg-opacity-50 rounded-full text-white hover:bg-opacity-70 transition-colors z-10">
-    <GripVertical className="w-4 h-4" />
-  </span>
-));
-
-const SortableItem: React.FC<SortableItemProps> = SortableElement(({ url, index, onRemove }: SortableItemProps) => (
-  <div className="relative aspect-square rounded-lg overflow-hidden border border-gray-300">
-    <DragHandle />
-    <img src={url} alt={`Image ${index + 1}`} className="w-full h-full object-cover" />
-    <button
-      type="button"
-      onClick={() => onRemove(index)}
-      className="absolute top-1 right-1 p-1 bg-red-500 rounded-full text-white hover:bg-red-600 transition-colors z-10"
-    >
-      <X className="w-4 h-4" />
-    </button>
-  </div>
-));
-
-const SortableList = SortableContainer(({ items, onRemove }: { items: string[], onRemove: (index: number) => void }) => {
-  return (
-    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-      {items.map((url, index) => (
-        <SortableItem key={`item-${index}`} index={index} url={url} onRemove={onRemove} />
-      ))}
-    </div>
-  );
-});
-
 export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
   label,
   bucket,
@@ -62,10 +23,12 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
   onImageUrlsChange,
 }) => {
   const [isUploading, setIsUploading] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0) {return;}
+    if (!files || files.length === 0) return;
 
     const newFiles = Array.from(files);
     const availableSlots = maxImages - imageUrls.length;
@@ -87,7 +50,7 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
       console.error('Image upload error:', error);
     } finally {
       setIsUploading(false);
-      e.target.value = ''; // 清空文件输入框
+      e.target.value = '';
     }
   };
 
@@ -96,14 +59,124 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
     onImageUrlsChange(newUrls);
   };
 
-  const onSortEnd = ({ oldIndex, newIndex }: { oldIndex: number, newIndex: number }) => {
-    onImageUrlsChange(arrayMove(imageUrls, oldIndex, newIndex));
+  const handleMoveLeft = (index: number) => {
+    if (index === 0) return;
+    const newUrls = [...imageUrls];
+    [newUrls[index - 1], newUrls[index]] = [newUrls[index], newUrls[index - 1]];
+    onImageUrlsChange(newUrls);
+  };
+
+  const handleMoveRight = (index: number) => {
+    if (index === imageUrls.length - 1) return;
+    const newUrls = [...imageUrls];
+    [newUrls[index], newUrls[index + 1]] = [newUrls[index + 1], newUrls[index]];
+    onImageUrlsChange(newUrls);
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const newUrls = [...imageUrls];
+    const [draggedItem] = newUrls.splice(draggedIndex, 1);
+    newUrls.splice(dropIndex, 0, draggedItem);
+    onImageUrlsChange(newUrls);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
-      <SortableList items={imageUrls} onSortEnd={onSortEnd} onRemove={handleRemove} axis="xy" useDragHandle />
+      
+      {imageUrls.length > 0 && (
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+          {imageUrls.map((url, index) => (
+            <div
+              key={`image-${index}-${url.slice(-20)}`}
+              className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                dragOverIndex === index ? 'border-blue-500 scale-105' : 'border-gray-300'
+              } ${draggedIndex === index ? 'opacity-50' : ''}`}
+              draggable
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, index)}
+              onDragEnd={handleDragEnd}
+            >
+              {/* Drag handle indicator */}
+              <span className="absolute top-1 left-1 p-1 cursor-grab bg-black bg-opacity-50 rounded-full text-white hover:bg-opacity-70 transition-colors z-10">
+                <GripVertical className="w-4 h-4" />
+              </span>
+              
+              {/* Image */}
+              <img src={url} alt={`Image ${index + 1}`} className="w-full h-full object-cover" />
+              
+              {/* Main image badge */}
+              {index === 0 && (
+                <span className="absolute bottom-1 left-1 px-2 py-0.5 bg-orange-500 text-white text-xs rounded z-10">
+                  主图
+                </span>
+              )}
+              
+              {/* Remove button */}
+              <button
+                type="button"
+                onClick={() => handleRemove(index)}
+                className="absolute top-1 right-1 p-1 bg-red-500 rounded-full text-white hover:bg-red-600 transition-colors z-10"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              
+              {/* Move buttons */}
+              <div className="absolute bottom-1 right-1 flex gap-1 z-10">
+                {index > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => handleMoveLeft(index)}
+                    className="p-1 bg-black bg-opacity-50 rounded text-white hover:bg-opacity-70 transition-colors"
+                  >
+                    <ChevronLeft className="w-3 h-3" />
+                  </button>
+                )}
+                {index < imageUrls.length - 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleMoveRight(index)}
+                    className="p-1 bg-black bg-opacity-50 rounded text-white hover:bg-opacity-70 transition-colors"
+                  >
+                    <ChevronRight className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       
       {imageUrls.length < maxImages && (
         <label className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors bg-gray-50">
@@ -129,7 +202,7 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
         </label>
       )}
       <p className="text-xs text-gray-500">
-        图片将自动压缩并转换为 WebP 格式 (最大 1MB, 1920px)。拖动图片可排序。
+        图片将自动压缩并转换为 WebP 格式 (最大 1MB, 1920px)。拖动图片可排序，第一张为主图。
       </p>
     </div>
   );

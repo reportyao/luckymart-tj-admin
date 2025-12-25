@@ -322,37 +322,64 @@ export default function BannerManagementPage() {
                 </div>
 
                 <div className="border-t pt-4">
-                  <p className="text-sm text-gray-600 mb-3">
-                    📐 建议尺寸: 1200x400px (3:1比例)
-                  </p>
-                  <p className="text-xs text-gray-500 mb-4">
-                    💡 提示: 上传不同语言版本的Banner图片，系统会根据用户语言自动切换显示
-                  </p>
+                  <h3 className="text-lg font-semibold mb-2">🖼️ 多语言Banner图片</h3>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                    <p className="text-sm text-blue-800">
+                      📐 <strong>建议尺寸:</strong> 1200×400px (3:1比例)
+                    </p>
+                    <p className="text-xs text-blue-600 mt-1">
+                      💡 上传不同语言版本的Banner图片，系统会根据用户语言自动切换显示。至少上传一种语言版本。
+                    </p>
+                  </div>
                   
-                  <div className="space-y-4">
-                    <ImageUpload
-                      label="Banner图片 - 中文版"
-                      bucket="banners"
-                      folder="zh"
-                      imageUrl={formData.image_url_zh}
-                      onImageUrlChange={(url) => setFormData({ ...formData, image_url_zh: url })}
-                    />
+                  <div className="space-y-6">
+                    {/* 中文版 */}
+                    <div className="border border-red-200 rounded-lg p-4 bg-red-50">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-2xl">🇨🇳</span>
+                        <span className="font-bold text-red-700">中文版 Banner</span>
+                        <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded">Chinese</span>
+                      </div>
+                      <ImageUpload
+                        label=""
+                        bucket="banners"
+                        folder="zh"
+                        imageUrl={formData.image_url_zh}
+                        onImageUrlChange={(url) => setFormData({ ...formData, image_url_zh: url })}
+                      />
+                    </div>
                     
-                    <ImageUpload
-                      label="Banner图片 - 俄语版"
-                      bucket="banners"
-                      folder="ru"
-                      imageUrl={formData.image_url_ru}
-                      onImageUrlChange={(url) => setFormData({ ...formData, image_url_ru: url })}
-                    />
+                    {/* 俄语版 */}
+                    <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-2xl">🇷🇺</span>
+                        <span className="font-bold text-blue-700">俄语版 Banner</span>
+                        <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">Русский</span>
+                      </div>
+                      <ImageUpload
+                        label=""
+                        bucket="banners"
+                        folder="ru"
+                        imageUrl={formData.image_url_ru}
+                        onImageUrlChange={(url) => setFormData({ ...formData, image_url_ru: url })}
+                      />
+                    </div>
                     
-                    <ImageUpload
-                      label="Banner图片 - 塔吉克语版"
-                      bucket="banners"
-                      folder="tg"
-                      imageUrl={formData.image_url_tg}
-                      onImageUrlChange={(url) => setFormData({ ...formData, image_url_tg: url })}
-                    />
+                    {/* 塔吉克语版 */}
+                    <div className="border border-green-200 rounded-lg p-4 bg-green-50">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-2xl">🇹🇯</span>
+                        <span className="font-bold text-green-700">塔吉克语版 Banner</span>
+                        <span className="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded">Тоҷикӣ</span>
+                      </div>
+                      <ImageUpload
+                        label=""
+                        bucket="banners"
+                        folder="tg"
+                        imageUrl={formData.image_url_tg}
+                        onImageUrlChange={(url) => setFormData({ ...formData, image_url_tg: url })}
+                      />
+                    </div>
                   </div>
                 </div>
 

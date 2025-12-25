@@ -202,7 +202,7 @@ export default function GroupBuySessionManagementPage() {
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <h3 className="font-bold text-lg">{session.product.title.zh}</h3>
+                      <h3 className="font-bold text-lg">{session.product?.title?.zh || '未知商品'}</h3>
                       <p className="text-sm text-gray-600">会话编号: {session.session_code}</p>
                     </div>
                     {getStatusBadge(session.status)}
@@ -255,7 +255,7 @@ export default function GroupBuySessionManagementPage() {
                               <Trophy className="w-4 h-4" />
                             )}
                             <span className="font-medium">{index + 1}.</span>
-                            <span>{order.username}</span>
+                            <span>用户 #{index + 1}</span>
                           </div>
                         ))}
                       </div>
