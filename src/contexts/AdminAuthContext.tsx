@@ -26,18 +26,23 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   // 从localStorage恢复登录状态
+  // 从localStorage恢复登录状态
   useEffect(() => {
-    const storedAdmin = localStorage.getItem('admin_user');
-    if (storedAdmin) {
-      try {
-        const adminData = JSON.parse(storedAdmin);
-        loadAdminPermissions(adminData);
-      } catch (error) {
-        console.error('Failed to restore admin session:', error);
-        localStorage.removeItem('admin_user');
+    const initAuth = async () => {
+      const storedAdmin = localStorage.getItem('admin_user');
+      if (storedAdmin) {
+        try {
+          const adminData = JSON.parse(storedAdmin);
+          await loadAdminPermissions(adminData); // 等待权限加载完成
+        } catch (error) {
+          console.error('Failed to restore admin session:', error);
+          localStorage.removeItem('admin_user');
+        }
       }
-    }
-    setLoading(false);
+      setLoading(false); // 在所有异步操作完成后再结束加载状态
+    };
+    
+    initAuth();
   }, []);
 
   // 权限ID到页面路径的映射
@@ -180,7 +185,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     // 查找哪些权限ID对应这个页面路径
     for (const [permId, paths] of Object.entries(PERMISSION_TO_PATH_MAP)) {
       if (paths.some(p => pagePath.startsWith(p))) {
-        if (admin.permissions.includes(permId)) {
+        if (admin.permissions && admin.permissions.includes(permId)) {
           return true;
         }
       }
