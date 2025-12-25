@@ -24,7 +24,7 @@ export const SingleImageUpload: React.FC<SingleImageUploadProps> = ({
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {return;}
 
     // 验证文件类型
     if (!file.type.startsWith('image/')) {

@@ -28,7 +28,7 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0) {return;}
 
     const newFiles = Array.from(files);
     const availableSlots = maxImages - imageUrls.length;
@@ -39,7 +39,7 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
     }
 
     setIsUploading(true);
-    const uploadPromises = newFiles.map(file => uploadImage(file, true, bucket, folder));
+    const uploadPromises = newFiles.map(file => uploadImage(file, bucket, folder));
 
     try {
       const newUrls = await Promise.all(uploadPromises);
@@ -60,14 +60,14 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
   };
 
   const handleMoveLeft = (index: number) => {
-    if (index === 0) return;
+    if (index === 0) {return;}
     const newUrls = [...imageUrls];
     [newUrls[index - 1], newUrls[index]] = [newUrls[index], newUrls[index - 1]];
     onImageUrlsChange(newUrls);
   };
 
   const handleMoveRight = (index: number) => {
-    if (index === imageUrls.length - 1) return;
+    if (index === imageUrls.length - 1) {return;}
     const newUrls = [...imageUrls];
     [newUrls[index], newUrls[index + 1]] = [newUrls[index + 1], newUrls[index]];
     onImageUrlsChange(newUrls);
