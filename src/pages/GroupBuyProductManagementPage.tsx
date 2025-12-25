@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Plus, Edit, Copy, Trash2, Eye, EyeOff } from 'lucide-react';
+import { MultiImageUpload } from '@/components/MultiImageUpload';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
@@ -414,28 +415,15 @@ export default function GroupBuyProductManagementPage() {
                   />
                 </div>
 
-                {/* 图片URL */}
-                <div>
-                  <label className="block text-sm font-medium mb-1">商品图片URL *</label>
-                  <input
-                    type="url"
-                    value={formData.image_url}
-                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="https://example.com/image.jpg"
-                    required
-                  />
-                  {formData.image_url && (
-                    <img
-                      src={formData.image_url}
-                      alt="预览"
-                      className="mt-2 w-32 h-32 object-cover rounded"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  )}
-                </div>
+                {/* 图片上传 */}
+                <MultiImageUpload
+                  label="商品图片 (最多5张)"
+                  bucket="group-buy-products"
+                  folder="products"
+                  maxImages={5}
+                  imageUrls={formData.image_url ? [formData.image_url] : []}
+                  onImageUrlsChange={(urls) => setFormData({ ...formData, image_url: urls[0] || '' })}
+                />
 
                 {/* 价格和参数 */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

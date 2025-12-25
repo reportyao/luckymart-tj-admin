@@ -24,7 +24,6 @@ interface GroupBuySession {
   orders: Array<{
     id: string;
     user_id: string;
-    username: string;
     amount: number;
     created_at: string;
   }>;
@@ -54,7 +53,7 @@ export default function GroupBuySessionManagementPage() {
         .select(`
           *,
           product:group_buy_products(title, image_url, price_per_person),
-          orders:group_buy_orders(id, user_id, username, amount, created_at)
+          orders:group_buy_orders(id, user_id, amount, created_at)
         `)
         .order('created_at', { ascending: false });
 
