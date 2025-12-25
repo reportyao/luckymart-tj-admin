@@ -5,11 +5,11 @@ import { useSupabase } from '../contexts/SupabaseContext';
 interface CommissionRecord {
   id: string;
   user_id: string;
-  referrer_id: string;
+  from_user_id: string;
   level: number;
   rate: number;
   amount: number;
-  source_order_id: string;
+  related_order_id: string;
   status: string;
   created_at: string;
   paid_at: string | null;
@@ -17,7 +17,7 @@ interface CommissionRecord {
     username: string;
     telegram_id: string;
   };
-  referrer?: {
+  from_user?: {
     username: string;
     telegram_id: string;
   };
@@ -65,7 +65,7 @@ export default function CommissionRecordsPage() {
       const userIds = new Set<string>();
       commissionsData?.forEach(c => {
         if (c.user_id) {userIds.add(c.user_id);}
-        if (c.referrer_id) {userIds.add(c.referrer_id);}
+        if (c.from_user_id) {userIds.add(c.from_user_id);}
       });
 
       // 查询用户信息
@@ -78,7 +78,7 @@ export default function CommissionRecordsPage() {
       const recordsWithUsers = commissionsData?.map(commission => ({
         ...commission,
         user: usersData?.find(u => u.id === commission.user_id) || null,
-        referrer: usersData?.find(u => u.id === commission.referrer_id) || null
+        from_user: usersData?.find(u => u.id === commission.from_user_id) || null
       })) || [];
 
       setRecords(recordsWithUsers);
@@ -110,7 +110,7 @@ export default function CommissionRecordsPage() {
 
       const { data, error } = await supabase
         .from('commissions')
-        .select('*, user:users!commissions_user_id_fkey(username, telegram_id), referrer:users!commissions_referrer_id_fkey(username, telegram_id)')
+        .select('*')
         .in('user_id', userIds)
         .order('created_at', { ascending: false });
 
@@ -329,8 +329,8 @@ export default function CommissionRecordsPage() {
                     <div className="text-xs text-gray-500">{record.user?.telegram_id}</div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="text-sm font-medium text-gray-900">{record.referrer?.username}</div>
-                    <div className="text-xs text-gray-500">{record.referrer?.telegram_id}</div>
+                    <div className="text-sm font-medium text-gray-900">{record.from_user?.username}</div>
+                    <div className="text-xs text-gray-500">{record.from_user?.telegram_id}</div>
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-sm text-gray-900">L{record.level}</span>

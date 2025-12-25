@@ -82,7 +82,7 @@ export const UserDetailsPage: React.FC = () => {
       const { data: commissions, error: commissionError } = await supabase
         .from('commissions')
         .select('amount')
-        .eq('referrer_id', userId);
+        .eq('user_id', userId);
 
       let totalCommission = 0;
       if (!commissionError && commissions) {
