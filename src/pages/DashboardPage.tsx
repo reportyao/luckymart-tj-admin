@@ -111,7 +111,7 @@ export default function DashboardPage() {
         .from('deposit_requests')
         .select('amount')
         .eq('status', 'APPROVED')
-        .gte('approved_at', today.toISOString());
+        .gte('processed_at', today.toISOString());
 
       const todayRevenue = todayRevenueData?.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0) || 0;
 
