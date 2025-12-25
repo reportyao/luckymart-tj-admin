@@ -12,6 +12,7 @@ interface GroupBuyProduct {
   title: { zh: string; ru: string; tg: string };
   description: { zh: string; ru: string; tg: string };
   image_url: string;
+  images?: string[]; // 多张图片
   original_price: number;
   price_per_person: number;
   group_size: number; // 数据库字段名
@@ -35,6 +36,7 @@ export default function GroupBuyProductManagementPage() {
     description_ru: '',
     description_tg: '',
     image_url: '',
+    images: [] as string[],
     original_price: 0,
     group_size: 3,
     timeout_hours: 24,
@@ -80,6 +82,7 @@ export default function GroupBuyProductManagementPage() {
         tg: formData.description_tg,
       },
       image_url: formData.image_url,
+      images: formData.images, // 保存多张图片
       original_price: formData.original_price,
       price_per_person: Math.round((formData.original_price / formData.group_size) * 100) / 100,
       group_size: formData.group_size, // 使用正确的数据库字段名
@@ -129,6 +132,7 @@ export default function GroupBuyProductManagementPage() {
       description_ru: product.description?.ru || '',
       description_tg: product.description?.tg || '',
       image_url: product.image_url || '',
+      images: product.images || [],
       original_price: product.original_price || 0,
       group_size: product.group_size || 3,
       timeout_hours: product.timeout_hours || 24,
@@ -149,6 +153,7 @@ export default function GroupBuyProductManagementPage() {
       description_ru: product.description?.ru || '',
       description_tg: product.description?.tg || '',
       image_url: product.image_url || '',
+      images: product.images || [],
       original_price: product.original_price || 0,
       group_size: product.group_size || 3,
       timeout_hours: product.timeout_hours || 24,
@@ -214,6 +219,7 @@ export default function GroupBuyProductManagementPage() {
       description_ru: '',
       description_tg: '',
       image_url: '',
+      images: [],
       original_price: 0,
       group_size: 3,
       timeout_hours: 24,
@@ -421,8 +427,8 @@ export default function GroupBuyProductManagementPage() {
                   bucket="group-buy-products"
                   folder="products"
                   maxImages={5}
-                  imageUrls={formData.image_url ? [formData.image_url] : []}
-                  onImageUrlsChange={(urls) => setFormData({ ...formData, image_url: urls[0] || '' })}
+                  imageUrls={formData.images}
+                  onImageUrlsChange={(urls) => setFormData({ ...formData, images: urls, image_url: urls[0] || '' })}
                 />
 
                 {/* 价格和参数 */}
