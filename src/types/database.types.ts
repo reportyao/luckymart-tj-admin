@@ -111,6 +111,7 @@ export type Database = {
           title: Json
           title_i18n: Json | null
           total_tickets: number
+          sold_tickets: number
           updated_at: string
         }
         Insert: {
@@ -131,6 +132,7 @@ export type Database = {
           title: Json
           title_i18n?: Json | null
           total_tickets: number
+          sold_tickets?: number
           updated_at?: string
         }
         Update: {
@@ -151,6 +153,7 @@ export type Database = {
           title?: Json
           title_i18n?: Json | null
           total_tickets?: number
+          sold_tickets?: number
           updated_at?: string
         }
         Relationships: []

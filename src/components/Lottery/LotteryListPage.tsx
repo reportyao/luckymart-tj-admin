@@ -224,12 +224,12 @@ export const LotteryListPage: React.FC = () => {
                     </TableCell>
                     <TableCell>{formatDateTime(lottery.start_time)}</TableCell>
                     <TableCell className="flex space-x-2">
-                      {(lottery.status === 'ACTIVE' && new Date(lottery.end_time) < new Date()) && !lottery.status.includes('COMPLETED') && (
+                      {(lottery.status === 'ACTIVE' && new Date(lottery.end_time) < new Date()) && lottery.status !== 'DRAWN' && (
                         <Button variant="default" size="sm" onClick={() => handleDraw(lottery.id)}>
                           立即开奖
                         </Button>
                       )}
-                      {lottery.status === 'COMPLETED' && (
+                      {lottery.status === 'DRAWN' && (
                         <Button variant="outline" size="sm" onClick={() => handleViewResult(lottery.id)}>
                           查看结果
                         </Button>

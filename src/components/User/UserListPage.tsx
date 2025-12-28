@@ -105,6 +105,9 @@ export const UserListPage = () => {
                       <Button variant="outline" size="sm" onClick={() => navigate(`/users/${user.id}`)}>
                         详情
                       </Button>
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/users/${user.id}/financial`)}>
+                        财务
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

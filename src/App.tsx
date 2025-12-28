@@ -5,6 +5,7 @@ import { LotteryDetailPage } from './components/Lottery/LotteryDetailPage'
 import { UserListPage } from './components/User/UserListPage'
 import UserManagementPage from './pages/UserManagementPage'
 import { UserDetailsPage } from './components/User/UserDetailsPage'
+import UserFinancialPage from './components/User/UserFinancialPage'
 import { OrderListPage } from './components/Order/OrderListPage'
 import { DepositReviewPage } from './components/Finance/DepositReviewPage'
 import { PaymentConfigPage } from './pages/PaymentConfigPage'
@@ -94,6 +95,7 @@ function App(): JSX.Element {
               <Route path="/" element={<ProtectedRoute element={<DashboardPage />} />} />
               <Route path="/users" element={<ProtectedRoute element={<UserListPage />} requiredRole="admin" />} />
               <Route path="/users/:id" element={<ProtectedRoute element={<UserDetailsPage />} requiredRole="admin" />} />
+              <Route path="/users/:userId/financial" element={<ProtectedRoute element={<UserFinancialPage />} requiredRole="admin" />} />
               <Route path="/user-management" element={<ProtectedRoute element={<UserManagementPage />} requiredRole="admin" />} />
               <Route path="/referral-management" element={<ProtectedRoute element={<ReferralManagementPage />} requiredRole="admin" />} />
               <Route path="/lotteries" element={<ProtectedRoute element={<LotteryListPage />} requiredRole="admin" />} />

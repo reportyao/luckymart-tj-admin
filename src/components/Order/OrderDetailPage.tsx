@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useSupabase } from '@/contexts/SupabaseContext';
+
 import { Tables, Enums } from '@/types/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -16,6 +16,7 @@ import { ArrowLeftIcon } from 'lucide-react';
 type OrderDetails = Tables<'orders'> & {
   user: Tables<'profiles'> | null;
   lottery: Tables<'lotteries'> | null;
+  shipping_address?: string;
 };
 
 const getStatusColor = (status: Enums<'OrderStatus'>) => {

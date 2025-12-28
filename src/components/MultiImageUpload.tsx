@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Upload, X, Loader2, GripVertical, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -62,14 +62,14 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
   const handleMoveLeft = (index: number) => {
     if (index === 0) {return;}
     const newUrls = [...imageUrls];
-    [newUrls[index - 1], newUrls[index]] = [newUrls[index], newUrls[index - 1]];
+    [newUrls[index - 1], newUrls[index]] = [newUrls[index]!, newUrls[index - 1]!];
     onImageUrlsChange(newUrls);
   };
 
   const handleMoveRight = (index: number) => {
     if (index === imageUrls.length - 1) {return;}
     const newUrls = [...imageUrls];
-    [newUrls[index], newUrls[index + 1]] = [newUrls[index + 1], newUrls[index]];
+    [newUrls[index], newUrls[index + 1]] = [newUrls[index + 1]!, newUrls[index]!];
     onImageUrlsChange(newUrls);
   };
 
@@ -98,7 +98,9 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
 
     const newUrls = [...imageUrls];
     const [draggedItem] = newUrls.splice(draggedIndex, 1);
-    newUrls.splice(dropIndex, 0, draggedItem);
+    if (draggedItem) {
+      newUrls.splice(dropIndex, 0, draggedItem);
+    }
     onImageUrlsChange(newUrls);
     setDraggedIndex(null);
     setDragOverIndex(null);

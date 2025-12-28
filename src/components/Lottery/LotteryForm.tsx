@@ -220,7 +220,7 @@ export const LotteryForm: React.FC = () => {
       } else {
         result = await supabase
           .from('lotteries')
-          .insert(payload)
+          .insert([payload])
           .select();
       }
 
