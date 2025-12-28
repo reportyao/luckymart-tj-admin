@@ -41,7 +41,7 @@ export const UserListPage = () => {
       const to = from + LIMIT - 1;
 
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*')
         .order('created_at', { ascending: false })
         .range(from, to);
