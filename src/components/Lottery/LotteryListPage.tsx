@@ -62,7 +62,7 @@ export const LotteryListPage: React.FC = () => {
       setLotteries(data || []);
       setHasMore((data || []).length === LIMIT);
     } catch (error: any) {
-      toast.error(`加载夺宝列表失败: ${error.message}`);
+      toast.error(`加载积分商城列表失败: ${error.message}`);
       console.error('Error loading lotteries:', error);
     } finally {
       setIsLoading(false);
@@ -82,7 +82,7 @@ export const LotteryListPage: React.FC = () => {
 
       if (error) {throw error;}
 
-      toast.success(`夺宝 ${id} 开奖成功! 中奖号码: ${(data as any).winning_number}`);
+      toast.success(`积分商城 ${id} 开奖成功! 中奖号码: ${(data as any).winning_number}`);
       fetchLotteries(); // 刷新列表
     } catch (error: any) {
       toast.error(`开奖失败: ${error.message}`);
@@ -107,10 +107,10 @@ export const LotteryListPage: React.FC = () => {
   };
 
   const handleCopy = async (id: string) => {
-    if (!window.confirm('确定要复制这个夺宝吗？')) {return;}
+    if (!window.confirm('确定要复制这个积分商城吗？')) {return;}
 
     try {
-      // 获取原夺宝数据
+      // 获取原积分商城数据
       const { data: originalLottery, error: fetchError } = await supabase
         .from('lotteries')
         .select('*')
@@ -128,7 +128,7 @@ export const LotteryListPage: React.FC = () => {
       const newStartTime = now.toISOString();
       const newEndTime = new Date(now.getTime() + originalDuration).toISOString();
       
-      // 复制夺宝数据（重置所有状态相关字段）
+      // 复制积分商城数据（重置所有状态相关字段）
       const newLottery = {
         ...originalLottery,
         id: undefined, // 让数据库生成新 ID
@@ -156,7 +156,7 @@ export const LotteryListPage: React.FC = () => {
 
       if (insertError) {throw insertError;}
 
-      toast.success(`夺宝复制成功! 新期号: ${newPeriod}`);
+      toast.success(`积分商城复制成功! 新期号: ${newPeriod}`);
       fetchLotteries(); // 刷新列表
     } catch (error: any) {
       toast.error(`复制失败: ${error.message}`);
@@ -165,7 +165,7 @@ export const LotteryListPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('确定要删除这个夺宝吗？')) {return;}
+    if (!window.confirm('确定要删除这个积分商城吗？')) {return;}
 
     try {
       const { error } = await supabase
@@ -175,7 +175,7 @@ export const LotteryListPage: React.FC = () => {
 
       if (error) {throw error;}
 
-      toast.success('夺宝删除成功!');
+      toast.success('积分商城删除成功!');
       fetchLotteries(); // 刷新列表
     } catch (error: any) {
       toast.error(`删除失败: ${error.message}`);
@@ -186,16 +186,16 @@ export const LotteryListPage: React.FC = () => {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-2xl font-bold">夺宝管理</CardTitle>
+        <CardTitle className="text-2xl font-bold">积分商城管理</CardTitle>
         <Button onClick={() => navigate('/lotteries/new')}>
-          创建新夺宝
+          创建新积分商城
         </Button>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <div className="text-center py-10">加载中...</div>
         ) : lotteries.length === 0 ? (
-          <EmptyState title="暂无夺宝" message="当前没有夺宝活动，请点击上方按钮创建。" action={<Button onClick={() => navigate('/lotteries/new')}>创建新夺宝</Button>} />
+          <EmptyState title="暂无积分商城" message="当前没有积分商城活动，请点击上方按钮创建。" action={<Button onClick={() => navigate('/lotteries/new')}>创建新积分商城</Button>} />
         ) : (
           <div className="overflow-x-auto">
             <Table>

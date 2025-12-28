@@ -53,7 +53,7 @@ function App(): JSX.Element {
             <NavLink to="/users" label="用户列表" icon="👥" />
             <NavLink to="/user-management" label="用户管理" icon="👤" />
             <NavLink to="/referral-management" label="推荐管理" icon="🌳" />
-            <NavLink to="/lotteries" label="夺宝活动" icon="🎰" />
+            <NavLink to="/lotteries" label="积分商城活动" icon="🎰" />
             <NavLink to="/group-buy-products" label="拼团商品" icon="🛒" />
             <NavLink to="/group-buy-sessions" label="拼团会话" icon="👥" />
             <NavLink to="/orders" label="订单管理" icon="📦" />

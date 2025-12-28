@@ -7,7 +7,7 @@ export const OrderService = {
   /**
    * 获取单个订单详情
    * @param orderId 订单ID
-   * @returns 订单详情，包含关联的用户和夺宝信息
+   * @returns 订单详情，包含关联的用户和积分商城信息
    */
   async getOrderDetails(orderId: string): Promise<any> {
     // 先查询订单
@@ -38,7 +38,7 @@ export const OrderService = {
       userData = user;
     }
 
-    // 查询夺宝信息
+    // 查询积分商城信息
     let lotteryData = null;
     if (orderData.lottery_id) {
       const { data: lottery } = await supabase

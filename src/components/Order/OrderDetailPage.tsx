@@ -125,9 +125,9 @@ export const OrderDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 关联夺宝信息 */}
+        {/* 关联积分商城信息 */}
         <div className="border-b pb-4">
-          <h3 className="text-xl font-semibold mb-4">关联夺宝/商品</h3>
+          <h3 className="text-xl font-semibold mb-4">关联积分商城/商品</h3>
           <div className="flex items-center space-x-4">
             {order.lottery?.image_url && (
               <img src={order.lottery.image_url} alt="Lottery Image" className="w-20 h-20 object-cover rounded-lg" />

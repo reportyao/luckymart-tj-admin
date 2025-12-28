@@ -261,9 +261,9 @@ export const ShowoffReviewPage: React.FC = () => {
               <div className="space-y-4 pt-4 border-t">
                 <h3 className="font-semibold">审核设置</h3>
                 
-                {/* 幸运币奖励 */}
+                {/* 积分奖励 */}
                 <div className="space-y-2">
-                  <Label htmlFor="reward_coins">幸运币奖励（批准时发放）</Label>
+                  <Label htmlFor="reward_coins">积分奖励（批准时发放）</Label>
                   <div className="flex items-center space-x-2">
                     <Input
                       id="reward_coins"
@@ -342,7 +342,7 @@ export const ShowoffReviewPage: React.FC = () => {
                   </div>
                   {selectedShowoff?.reward_coins > 0 && (
                     <div>
-                      <span className="text-gray-600">奖励幸运币:</span>
+                      <span className="text-gray-600">奖励积分:</span>
                       <span className="ml-2 font-medium text-amber-600">
                         {selectedShowoff.reward_coins} 币
                       </span>

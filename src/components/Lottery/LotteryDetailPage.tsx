@@ -91,7 +91,7 @@ export const LotteryDetailPage: React.FC = () => {
     try {
       setIsLoading(true);
       
-      // 获取夺宝详情
+      // 获取积分商城详情
       const { data: lotteryData, error: lotteryError } = await supabase
         .from('lotteries')
         .select('*')
@@ -120,7 +120,7 @@ export const LotteryDetailPage: React.FC = () => {
         setLottery(lotteryData);
       }
     } catch (error: any) {
-      toast.error(`加载夺宝详情失败: ${error.message}`);
+      toast.error(`加载积分商城详情失败: ${error.message}`);
       console.error('Error loading lottery detail:', error);
     } finally {
       setIsLoading(false);
@@ -190,7 +190,7 @@ export const LotteryDetailPage: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="text-lg text-red-600">夺宝不存在</div>
+          <div className="text-lg text-red-600">积分商城不存在</div>
           <Button onClick={() => navigate('/lotteries')} className="mt-4">
             返回列表
           </Button>
@@ -244,7 +244,7 @@ export const LotteryDetailPage: React.FC = () => {
       {/* 基本信息 */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">夺宝详情 - 期号 {lottery.period}</CardTitle>
+          <CardTitle className="text-2xl">积分商城详情 - 期号 {lottery.period}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

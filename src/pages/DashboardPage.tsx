@@ -62,7 +62,7 @@ export default function DashboardPage() {
         .select('*', { count: 'exact', head: true })
         .gte('last_login_at', sevenDaysAgo.toISOString());
 
-      // 获取夺宝活动统计
+      // 获取积分商城活动统计
       const { count: totalLotteries, error: lotteriesError } = await supabase
         .from('lotteries')
         .select('*', { count: 'exact', head: true });
@@ -185,7 +185,7 @@ export default function DashboardPage() {
           color="blue"
         />
         <StatCard
-          title="夺宝活动"
+          title="积分商城活动"
           value={stats.totalLotteries.toLocaleString()}
           subtitle={`进行中: ${stats.activeLotteries} | 已完成: ${stats.completedLotteries}`}
           icon={<Gift className="w-8 h-8" />}
@@ -237,11 +237,11 @@ export default function DashboardPage() {
           </h2>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">活跃夺宝活动</span>
+              <span className="text-gray-600">活跃积分商城活动</span>
               <span className="font-semibold text-purple-600">{stats.activeLotteries}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">已完成夺宝</span>
+              <span className="text-gray-600">已完成积分商城</span>
               <span className="font-semibold text-green-600">{stats.completedLotteries}</span>
             </div>
             <div className="flex justify-between items-center">

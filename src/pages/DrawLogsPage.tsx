@@ -114,7 +114,7 @@ export default function DrawLogsPage() {
           <FileText className="w-7 h-7" />
           开奖记录
         </h1>
-        <p className="text-gray-600 mt-1">查看所有夺宝活动的开奖历史和验证数据</p>
+        <p className="text-gray-600 mt-1">查看所有积分商城活动的开奖历史和验证数据</p>
       </div>
 
       {/* 数据表格 */}

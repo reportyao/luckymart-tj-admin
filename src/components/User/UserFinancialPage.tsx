@@ -97,10 +97,10 @@ const UserFinancialPage: React.FC = () => {
       transactionsUrl.searchParams.set('action', 'transactions');
       transactionsUrl.searchParams.set('page', page.toString());
       transactionsUrl.searchParams.set('pageSize', '20');
-      if (filters.type) transactionsUrl.searchParams.set('type', filters.type);
-      if (filters.status) transactionsUrl.searchParams.set('status', filters.status);
-      if (filters.startDate) transactionsUrl.searchParams.set('startDate', filters.startDate);
-      if (filters.endDate) transactionsUrl.searchParams.set('endDate', filters.endDate);
+      if (filters.type) {transactionsUrl.searchParams.set('type', filters.type);}
+      if (filters.status) {transactionsUrl.searchParams.set('status', filters.status);}
+      if (filters.startDate) {transactionsUrl.searchParams.set('startDate', filters.startDate);}
+      if (filters.endDate) {transactionsUrl.searchParams.set('endDate', filters.endDate);}
 
       const transactionsResponse = await fetch(transactionsUrl.toString(), {
         headers: {
@@ -125,10 +125,10 @@ const UserFinancialPage: React.FC = () => {
       const exportUrl = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-user-financial`);
       exportUrl.searchParams.set('user_id', userId!);
       exportUrl.searchParams.set('action', 'export');
-      if (filters.type) exportUrl.searchParams.set('type', filters.type);
-      if (filters.status) exportUrl.searchParams.set('status', filters.status);
-      if (filters.startDate) exportUrl.searchParams.set('startDate', filters.startDate);
-      if (filters.endDate) exportUrl.searchParams.set('endDate', filters.endDate);
+      if (filters.type) {exportUrl.searchParams.set('type', filters.type);}
+      if (filters.status) {exportUrl.searchParams.set('status', filters.status);}
+      if (filters.startDate) {exportUrl.searchParams.set('startDate', filters.startDate);}
+      if (filters.endDate) {exportUrl.searchParams.set('endDate', filters.endDate);}
 
       const response = await fetch(exportUrl.toString(), {
         headers: {
@@ -218,7 +218,7 @@ const UserFinancialPage: React.FC = () => {
           {/* Balance Cards */}
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm opacity-90">幸运币余额</span>
+              <span className="text-sm opacity-90">积分余额</span>
               <BanknotesIcon className="w-6 h-6 opacity-80" />
             </div>
             <div className="text-3xl font-bold">{summary.luckyCoinsBalance.toFixed(2)}</div>
@@ -309,7 +309,7 @@ const UserFinancialPage: React.FC = () => {
                 <option value="">全部</option>
                 <option value="DEPOSIT">充值</option>
                 <option value="WITHDRAWAL">提现</option>
-                <option value="LOTTERY_PURCHASE">夺宝消费</option>
+                <option value="LOTTERY_PURCHASE">积分商城消费</option>
                 <option value="GROUP_BUY_PURCHASE">拼团消费</option>
                 <option value="REFERRAL_BONUS">邀请奖励</option>
               </select>

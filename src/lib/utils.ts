@@ -89,7 +89,7 @@ export function formatTimeRemaining(endTime: string): string {
 export function getWalletTypeText(type: string): string {
   const typeMap: Record<string, string> = {
     'BALANCE': '余额',
-    'LUCKY_COIN': '幸运币'
+    'LUCKY_COIN': '积分'
   };
   return typeMap[type] || type;
 }

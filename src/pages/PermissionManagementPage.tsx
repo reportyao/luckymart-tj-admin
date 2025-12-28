@@ -10,12 +10,12 @@ const ALL_PERMISSIONS = [
   { id: 'users.edit', name: '编辑用户', category: '用户管理' },
   { id: 'users.delete', name: '删除用户', category: '用户管理' },
   
-  // 夺宝管理
-  { id: 'lotteries.view', name: '查看夺宝', category: '夺宝管理' },
-  { id: 'lotteries.create', name: '创建夺宝', category: '夺宝管理' },
-  { id: 'lotteries.edit', name: '编辑夺宝', category: '夺宝管理' },
-  { id: 'lotteries.delete', name: '删除夺宝', category: '夺宝管理' },
-  { id: 'lotteries.draw', name: '执行开奖', category: '夺宝管理' },
+  // 积分商城管理
+  { id: 'lotteries.view', name: '查看积分商城', category: '积分商城管理' },
+  { id: 'lotteries.create', name: '创建积分商城', category: '积分商城管理' },
+  { id: 'lotteries.edit', name: '编辑积分商城', category: '积分商城管理' },
+  { id: 'lotteries.delete', name: '删除积分商城', category: '积分商城管理' },
+  { id: 'lotteries.draw', name: '执行开奖', category: '积分商城管理' },
   
   // 订单管理
   { id: 'orders.view', name: '查看订单', category: '订单管理' },
@@ -97,7 +97,7 @@ const ROLE_PERMISSIONS = {
 
 const ROLES = [
   { value: 'super_admin', label: '超级管理员', description: '拥有所有权限，可管理其他管理员' },
-  { value: 'admin', label: '管理员', description: '可管理用户、夺宝、订单、财务等核心功能' },
+  { value: 'admin', label: '管理员', description: '可管理用户、积分商城、订单、财务等核心功能' },
   { value: 'operator', label: '运营人员', description: '可管理订单、物流、晒单等日常运营工作' },
   { value: 'finance', label: '财务人员', description: '可审核充值提现、查看财务数据' },
   { value: 'viewer', label: '只读用户', description: '只能查看数据，无编辑权限' },

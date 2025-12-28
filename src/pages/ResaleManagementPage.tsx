@@ -95,7 +95,7 @@ export default function ResaleManagementPage() {
           .select('id, telegram_username, first_name')
           .in('id', buyerIds);
 
-        // 获取夺宝信息
+        // 获取积分商城信息
         const { data: lotteries } = await supabase
           .from('lotteries')
           .select('id, title, title_i18n, image_url')
