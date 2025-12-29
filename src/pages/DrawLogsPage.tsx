@@ -1,81 +1,90 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Download, Eye, Calendar } from 'lucide-react';
+import { FileText, Download, Eye, Calendar, RefreshCw } from 'lucide-react';
 import { useSupabase } from '../contexts/SupabaseContext';
 
-interface DrawLog {
+interface LotteryResult {
   id: string;
   lottery_id: string;
-  algorithm_name: string;
-  input_data: any;
-  calculation_steps: any;
-  winning_number: number;
-  winner_user_id: string | null;
-  winner_order_id: string | null;
-  vrf_seed: string | null;
-  vrf_proof: string | null;
+  winner_id: string | null;
+  winner_ticket_number: number;
   draw_time: string;
+  algorithm_data: {
+    algorithm?: string;
+    formula?: string;
+    timestamp_sum?: number;
+    total_entries?: number;
+    winning_index?: number;
+    winning_number?: string;
+    timestamp_details?: any[];
+  } | null;
+  created_at: string;
   lottery?: {
-    name_i18n: any;
+    title: string;
+    title_i18n: any;
   };
   winner?: {
-    username: string;
+    telegram_username: string;
     telegram_id: string;
   };
 }
 
 export default function DrawLogsPage() {
   const { supabase } = useSupabase();
-  const [logs, setLogs] = useState<DrawLog[]>([]);
+  const [results, setResults] = useState<LotteryResult[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedLog, setSelectedLog] = useState<DrawLog | null>(null);
+  const [selectedResult, setSelectedResult] = useState<LotteryResult | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const pageSize = 20;
 
   useEffect(() => {
-    loadLogs();
+    loadResults();
   }, [currentPage]);
 
-  const loadLogs = async () => {
+  const loadResults = async () => {
     setLoading(true);
     try {
-      // 先查询draw_logs
-      const { data: logsData, error, count } = await supabase
-        .from('draw_logs')
+      // 从 lottery_results 表查询开奖记录
+      const { data: resultsData, error, count } = await supabase
+        .from('lottery_results')
         .select('*', { count: 'exact' })
         .order('draw_time', { ascending: false })
         .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
 
       if (error) {throw error;}
-      if (!logsData || logsData.length === 0) {
-        setLogs([]);
+      if (!resultsData || resultsData.length === 0) {
+        setResults([]);
         setTotalCount(0);
         return;
       }
 
       // 手动查询关联数据
-      const lotteryIds = [...new Set(logsData.map(log => log.lottery_id))];
-      const userIds = [...new Set(logsData.map(log => log.winner_user_id).filter(Boolean))];
+      const lotteryIds = [...new Set(resultsData.map(r => r.lottery_id))];
+      const userIds = [...new Set(resultsData.map(r => r.winner_id).filter(Boolean))];
 
       const { data: lotteries } = await supabase
         .from('lotteries')
-        .select('id, name_i18n')
+        .select('id, title, title_i18n')
         .in('id', lotteryIds);
 
-      const { data: users } = await supabase
-        .from('users')
-        .select('id, username, telegram_id')
-        .in('id', userIds);
+      let users: any[] = [];
+      if (userIds.length > 0) {
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('id, telegram_username, telegram_id')
+          .in('id', userIds);
+        users = usersData || [];
+      }
 
       // 组装数据
-      const data = logsData.map(log => ({
-        ...log,
-        lottery: lotteries?.find(l => l.id === log.lottery_id),
-        winner: users?.find(u => u.id === log.winner_user_id),
+      const data = resultsData.map(result => ({
+        ...result,
+        lottery: lotteries?.find(l => l.id === result.lottery_id),
+        winner: users?.find(u => u.id === result.winner_id),
       }));
 
-      setLogs(data || []);
+      setResults(data || []);
       setTotalCount(count || 0);
     } catch (error: any) {
       console.error('加载开奖记录失败:', error);
@@ -85,23 +94,39 @@ export default function DrawLogsPage() {
     }
   };
 
-  const downloadVerificationData = (log: DrawLog) => {
+  const getLotteryTitle = (result: LotteryResult): string => {
+    if (!result.lottery) return result.lottery_id;
+    
+    // 优先使用 title_i18n 中的中文
+    if (result.lottery.title_i18n?.zh) {
+      return result.lottery.title_i18n.zh;
+    }
+    
+    // 尝试解析 title 是否为 JSON
+    try {
+      const parsed = JSON.parse(result.lottery.title);
+      if (parsed.zh) return parsed.zh;
+    } catch {
+      // 不是 JSON，直接返回 title
+    }
+    
+    return result.lottery.title || result.lottery_id;
+  };
+
+  const downloadVerificationData = (result: LotteryResult) => {
     const verificationData = {
-      lottery_id: log.lottery_id,
-      algorithm: log.algorithm_name,
-      draw_time: log.draw_time,
-      input_data: log.input_data,
-      calculation_steps: log.calculation_steps,
-      winning_number: log.winning_number,
-      winner_user_id: log.winner_user_id,
-      vrf_seed: log.vrf_seed,
-      vrf_proof: log.vrf_proof
+      lottery_id: result.lottery_id,
+      lottery_title: getLotteryTitle(result),
+      draw_time: result.draw_time,
+      winner_ticket_number: result.winner_ticket_number,
+      winner_id: result.winner_id,
+      algorithm_data: result.algorithm_data,
     };
 
     const blob = new Blob([JSON.stringify(verificationData, null, 2)], { type: 'application/json' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `draw_verification_${log.id}.json`;
+    link.download = `draw_verification_${result.id}.json`;
     link.click();
   };
 
@@ -109,12 +134,22 @@ export default function DrawLogsPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <FileText className="w-7 h-7" />
-          开奖记录
-        </h1>
-        <p className="text-gray-600 mt-1">查看所有积分商城活动的开奖历史和验证数据</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <FileText className="w-7 h-7" />
+            开奖记录
+          </h1>
+          <p className="text-gray-600 mt-1">查看所有积分商城活动的开奖历史和验证数据</p>
+        </div>
+        <button
+          onClick={loadResults}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          刷新
+        </button>
       </div>
 
       {/* 数据表格 */}
@@ -132,37 +167,37 @@ export default function DrawLogsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {logs.map((log) => (
-                <tr key={log.id} className="hover:bg-gray-50">
+              {results.map((result) => (
+                <tr key={result.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-gray-400" />
                       <div>
-                        <div className="text-sm text-gray-900">{new Date(log.draw_time).toLocaleDateString('zh-CN')}</div>
-                        <div className="text-xs text-gray-500">{new Date(log.draw_time).toLocaleTimeString('zh-CN')}</div>
+                        <div className="text-sm text-gray-900">{new Date(result.draw_time).toLocaleDateString('zh-CN')}</div>
+                        <div className="text-xs text-gray-500">{new Date(result.draw_time).toLocaleTimeString('zh-CN')}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="text-sm text-gray-900">
-                      {log.lottery?.name_i18n?.zh || log.lottery_id}
+                    <div className="text-sm text-gray-900 max-w-[200px] truncate" title={getLotteryTitle(result)}>
+                      {getLotteryTitle(result)}
                     </div>
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                      {log.algorithm_name}
+                      {result.algorithm_data?.algorithm || 'timestamp_sum'}
                     </span>
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-lg font-bold text-blue-600">
-                      #{String(log.winning_number).padStart(7, '0')}
+                      #{String(result.winner_ticket_number).padStart(7, '0')}
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    {log.winner ? (
+                    {result.winner ? (
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{log.winner.username}</div>
-                        <div className="text-xs text-gray-500">{log.winner.telegram_id}</div>
+                        <div className="text-sm font-medium text-gray-900">{result.winner.telegram_username || '-'}</div>
+                        <div className="text-xs text-gray-500">{result.winner.telegram_id}</div>
                       </div>
                     ) : (
                       <span className="text-sm text-gray-400">-</span>
@@ -172,7 +207,7 @@ export default function DrawLogsPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => {
-                          setSelectedLog(log);
+                          setSelectedResult(result);
                           setShowDetailModal(true);
                         }}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded"
@@ -181,7 +216,7 @@ export default function DrawLogsPage() {
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => downloadVerificationData(log)}
+                        onClick={() => downloadVerificationData(result)}
                         className="p-2 text-green-600 hover:bg-green-50 rounded"
                         title="下载验证数据"
                       >
@@ -222,7 +257,7 @@ export default function DrawLogsPage() {
       </div>
 
       {/* 详情模态框 */}
-      {showDetailModal && selectedLog && (
+      {showDetailModal && selectedResult && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
@@ -238,37 +273,70 @@ export default function DrawLogsPage() {
               <div>
                 <h3 className="font-semibold mb-2">基本信息</h3>
                 <div className="bg-gray-50 p-4 rounded space-y-2 text-sm">
-                  <p><span className="font-medium">开奖时间:</span> {new Date(selectedLog.draw_time).toLocaleString('zh-CN')}</p>
-                  <p><span className="font-medium">算法:</span> {selectedLog.algorithm_name}</p>
-                  <p><span className="font-medium">中奖号码:</span> <span className="text-lg font-bold text-blue-600">#{String(selectedLog.winning_number).padStart(7, '0')}</span></p>
+                  <p><span className="font-medium">活动名称:</span> {getLotteryTitle(selectedResult)}</p>
+                  <p><span className="font-medium">开奖时间:</span> {new Date(selectedResult.draw_time).toLocaleString('zh-CN')}</p>
+                  <p><span className="font-medium">算法:</span> {selectedResult.algorithm_data?.algorithm || 'timestamp_sum'}</p>
+                  <p><span className="font-medium">中奖号码:</span> <span className="text-lg font-bold text-blue-600">#{String(selectedResult.winner_ticket_number).padStart(7, '0')}</span></p>
+                  {selectedResult.winner && (
+                    <p><span className="font-medium">中奖用户:</span> {selectedResult.winner.telegram_username || selectedResult.winner.telegram_id}</p>
+                  )}
                 </div>
               </div>
+
+              {selectedResult.algorithm_data && (
+                <>
+                  <div>
+                    <h3 className="font-semibold mb-2">算法计算过程</h3>
+                    <div className="bg-gray-50 p-4 rounded space-y-2 text-sm">
+                      {selectedResult.algorithm_data.formula && (
+                        <p><span className="font-medium">计算公式:</span> {selectedResult.algorithm_data.formula}</p>
+                      )}
+                      {selectedResult.algorithm_data.timestamp_sum && (
+                        <p><span className="font-medium">时间戳总和:</span> {selectedResult.algorithm_data.timestamp_sum}</p>
+                      )}
+                      {selectedResult.algorithm_data.total_entries && (
+                        <p><span className="font-medium">参与记录数:</span> {selectedResult.algorithm_data.total_entries}</p>
+                      )}
+                      {selectedResult.algorithm_data.winning_index !== undefined && (
+                        <p><span className="font-medium">中奖索引:</span> {selectedResult.algorithm_data.winning_index}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {selectedResult.algorithm_data.timestamp_details && selectedResult.algorithm_data.timestamp_details.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-2">参与记录详情 (共 {selectedResult.algorithm_data.timestamp_details.length} 条)</h3>
+                      <div className="bg-gray-50 p-4 rounded overflow-x-auto max-h-60">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="border-b">
+                              <th className="text-left py-1 px-2">序号</th>
+                              <th className="text-left py-1 px-2">参与码</th>
+                              <th className="text-left py-1 px-2">时间戳</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {selectedResult.algorithm_data.timestamp_details.map((detail, index) => (
+                              <tr key={detail.entry_id} className={index === selectedResult.algorithm_data?.winning_index ? 'bg-green-100' : ''}>
+                                <td className="py-1 px-2">{index}</td>
+                                <td className="py-1 px-2 font-mono">{detail.numbers}</td>
+                                <td className="py-1 px-2">{detail.timestamp}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
 
               <div>
-                <h3 className="font-semibold mb-2">输入数据</h3>
-                <pre className="bg-gray-50 p-4 rounded text-xs overflow-x-auto">
-                  {JSON.stringify(selectedLog.input_data, null, 2)}
+                <h3 className="font-semibold mb-2">原始数据</h3>
+                <pre className="bg-gray-50 p-4 rounded text-xs overflow-x-auto max-h-60">
+                  {JSON.stringify(selectedResult.algorithm_data, null, 2)}
                 </pre>
               </div>
-
-              {selectedLog.calculation_steps && (
-                <div>
-                  <h3 className="font-semibold mb-2">计算步骤</h3>
-                  <pre className="bg-gray-50 p-4 rounded text-xs overflow-x-auto">
-                    {JSON.stringify(selectedLog.calculation_steps, null, 2)}
-                  </pre>
-                </div>
-              )}
-
-              {selectedLog.vrf_seed && (
-                <div>
-                  <h3 className="font-semibold mb-2">VRF验证</h3>
-                  <div className="bg-gray-50 p-4 rounded space-y-2 text-xs">
-                    <p><span className="font-medium">Seed:</span> {selectedLog.vrf_seed}</p>
-                    <p><span className="font-medium">Proof:</span> {selectedLog.vrf_proof}</p>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -280,7 +348,7 @@ export default function DrawLogsPage() {
         </div>
       )}
 
-      {!loading && logs.length === 0 && (
+      {!loading && results.length === 0 && (
         <div className="text-center py-12 text-gray-500">
           <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
           <p>暂无开奖记录</p>
