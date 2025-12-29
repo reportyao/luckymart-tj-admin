@@ -82,7 +82,7 @@ const UserFinancialPage: React.FC = () => {
       const summaryUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-user-financial?user_id=${userId}&action=summary&period=${period}`;
       const summaryResponse = await fetch(summaryUrl, {
         headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          'X-Admin-Id': JSON.parse(localStorage.getItem('admin_user') || '{}').id || '',
           'Content-Type': 'application/json'
         }
       });
@@ -104,7 +104,7 @@ const UserFinancialPage: React.FC = () => {
 
       const transactionsResponse = await fetch(transactionsUrl.toString(), {
         headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          'X-Admin-Id': JSON.parse(localStorage.getItem('admin_user') || '{}').id || '',
           'Content-Type': 'application/json'
         }
       });
@@ -132,7 +132,7 @@ const UserFinancialPage: React.FC = () => {
 
       const response = await fetch(exportUrl.toString(), {
         headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          'X-Admin-Id': JSON.parse(localStorage.getItem('admin_user') || '{}').id || ''
         }
       });
 

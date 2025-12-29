@@ -18,13 +18,18 @@ interface SupabaseContextType {
 
 const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined)
 
-export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const clients = useMemo(() => {
-    // 服务端客户端：使用Service Role Key，绕过RLS限制
-    const supabaseService = createClient<DB>(supabaseUrl, supabaseServiceRoleKey, {
+// 创建单例客户端，避免多次实例化
+let supabaseServiceInstance: SupabaseClient<DB> | null = null
+
+function getSupabaseClient(): SupabaseClient<DB> {
+  if (!supabaseServiceInstance) {
+    supabaseServiceInstance = createClient<DB>(supabaseUrl, supabaseServiceRoleKey, {
       auth: {
         autoRefreshToken: false,
-        persistSession: false
+        persistSession: false,
+        detectSessionInUrl: false,
+        // 使用自定义存储键避免与其他实例冲突
+        storageKey: 'admin-supabase-auth'
       },
       global: {
         headers: {
@@ -33,18 +38,20 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
       }
     })
+  }
+  return supabaseServiceInstance
+}
 
-    // 认证客户端：使用Anon Key用于认证操作
-    const supabaseAuthClient = createClient<DB>(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true
-      }
-    })
+export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const clients = useMemo(() => {
+    // 使用单例客户端
+    const supabaseService = getSupabaseClient()
 
+    // 为了向后兼容，supabaseAuth 也指向同一个客户端
+    // 因为管理后台使用自定义的 admin_users 表进行认证，不需要 Supabase Auth
     return {
       supabase: supabaseService,
-      supabaseAuth: supabaseAuthClient
+      supabaseAuth: supabaseService
     }
   }, [])
 
