@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSupabase } from '../contexts/SupabaseContext';
+import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import {
   MagnifyingGlassIcon,
@@ -21,27 +21,35 @@ interface PrizeInfo {
   pickup_status: string;
   expires_at: string;
   claimed_at: string;
+  source_type: 'lottery' | 'group_buy';
   user: {
     id: string;
     telegram_username: string;
     first_name: string;
     last_name: string;
     avatar_url: string;
-  };
+  } | null;
   lottery: {
     title: string;
     title_i18n: any;
-  };
+  } | null;
   pickup_point: {
+    id: string;
     name: string;
     name_i18n: any;
     address: string;
     address_i18n: any;
-  };
+  } | null;
 }
 
+// 获取本地化文本
+const getLocalizedText = (text: any): string => {
+  if (!text) return '';
+  if (typeof text === 'string') return text;
+  return text.zh || text.ru || text.tg || '';
+};
+
 const PickupVerificationPage: React.FC = () => {
-  const { supabase } = useSupabase();
   const [pickupCode, setPickupCode] = useState('');
   const [prizeInfo, setPrizeInfo] = useState<PrizeInfo | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -58,7 +66,7 @@ const PickupVerificationPage: React.FC = () => {
     setPrizeInfo(null);
 
     try {
-      // 查询 prizes 表
+      // 1. 首先查询 prizes 表（积分商城）
       const { data: prize, error } = await supabase
         .from('prizes')
         .select(`
@@ -72,73 +80,132 @@ const PickupVerificationPage: React.FC = () => {
           claimed_at,
           user_id,
           lottery_id,
-          pickup_point_id,
-          user:users(
-            id,
-            telegram_username,
-            first_name,
-            last_name,
-            avatar_url
-          ),
-          lottery:lotteries(
-            title,
-            title_i18n
-          ),
-          pickup_point:pickup_points(
-            name,
-            name_i18n,
-            address,
-            address_i18n
-          )
+          pickup_point_id
         `)
         .eq('pickup_code', pickupCode)
         .single();
 
-      if (error) {
-        // 如果 prizes 表没找到，尝试查询 group_buy_results 表
-        const { data: groupBuyPrize, error: groupBuyError } = await supabase
-          .from('group_buy_results')
-          .select(`
-            id,
-            product_name as prize_name,
-            product_image as prize_image,
-            product_value as prize_value,
-            pickup_code,
-            pickup_status,
-            expires_at,
-            claimed_at,
-            winner_id,
-            session_id,
-            pickup_point_id,
-            user:users!group_buy_results_winner_id_fkey(
-              id,
-              telegram_username,
-              first_name,
-              last_name,
-              avatar_url
-            ),
-            pickup_point:pickup_points(
-              name,
-              name_i18n,
-              address,
-              address_i18n
-            )
-          `)
-          .eq('pickup_code', pickupCode)
-          .single();
+      if (!error && prize) {
+        // 获取用户信息
+        let userInfo = null;
+        if (prize.user_id) {
+          const { data: userData } = await supabase
+            .from('users')
+            .select('id, telegram_username, first_name, last_name, avatar_url')
+            .eq('id', prize.user_id)
+            .single();
+          userInfo = userData;
+        }
 
-        if (groupBuyError || !groupBuyPrize) {
-          toast.error('未找到该提货码对应的奖品');
-          return;
+        // 获取抽奖信息
+        let lotteryInfo = null;
+        if (prize.lottery_id) {
+          const { data: lotteryData } = await supabase
+            .from('lotteries')
+            .select('title, title_i18n')
+            .eq('id', prize.lottery_id)
+            .single();
+          lotteryInfo = lotteryData;
+        }
+
+        // 获取自提点信息
+        let pickupPointInfo = null;
+        if (prize.pickup_point_id) {
+          const { data: pointData } = await supabase
+            .from('pickup_points')
+            .select('id, name, name_i18n, address, address_i18n')
+            .eq('id', prize.pickup_point_id)
+            .single();
+          pickupPointInfo = pointData;
         }
 
         setPrizeInfo({
-          ...groupBuyPrize,
-          lottery: { title: '拼团商品', title_i18n: { zh: '拼团商品', ru: 'Групповая покупка', tg: 'Харидҳои гурӯҳӣ' } }
-        } as PrizeInfo);
-      } else {
-        setPrizeInfo(prize as PrizeInfo);
+          id: prize.id,
+          prize_name: prize.prize_name || getLocalizedText(lotteryInfo?.title_i18n) || lotteryInfo?.title || '积分商城奖品',
+          prize_image: prize.prize_image || '',
+          prize_value: prize.prize_value || 0,
+          pickup_code: prize.pickup_code,
+          pickup_status: prize.pickup_status || 'PENDING_CLAIM',
+          expires_at: prize.expires_at,
+          claimed_at: prize.claimed_at,
+          source_type: 'lottery',
+          user: userInfo,
+          lottery: lotteryInfo,
+          pickup_point: pickupPointInfo,
+        });
+        return;
       }
+
+      // 2. 如果 prizes 表没找到，尝试查询 group_buy_results 表（拼团）
+      const { data: groupBuyPrize, error: groupBuyError } = await supabase
+        .from('group_buy_results')
+        .select(`
+          id,
+          pickup_code,
+          pickup_status,
+          expires_at,
+          claimed_at,
+          winner_id,
+          product_id,
+          session_id,
+          pickup_point_id
+        `)
+        .eq('pickup_code', pickupCode)
+        .single();
+
+      if (groupBuyError || !groupBuyPrize) {
+        toast.error('未找到该提货码对应的奖品');
+        return;
+      }
+
+      // 获取商品信息
+      let productInfo = null;
+      if (groupBuyPrize.product_id) {
+        const { data: productData } = await supabase
+          .from('group_buy_products')
+          .select('title, image_url, original_price')
+          .eq('id', groupBuyPrize.product_id)
+          .single();
+        productInfo = productData;
+      }
+
+      // 获取用户信息（通过telegram_id）
+      let userInfo = null;
+      if (groupBuyPrize.winner_id) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('id, telegram_username, first_name, last_name, avatar_url')
+          .eq('telegram_id', groupBuyPrize.winner_id)
+          .single();
+        userInfo = userData;
+      }
+
+      // 获取自提点信息
+      let pickupPointInfo = null;
+      if (groupBuyPrize.pickup_point_id) {
+        const { data: pointData } = await supabase
+          .from('pickup_points')
+          .select('id, name, name_i18n, address, address_i18n')
+          .eq('id', groupBuyPrize.pickup_point_id)
+          .single();
+        pickupPointInfo = pointData;
+      }
+
+      setPrizeInfo({
+        id: groupBuyPrize.id,
+        prize_name: getLocalizedText(productInfo?.title) || '拼团商品',
+        prize_image: productInfo?.image_url || '',
+        prize_value: productInfo?.original_price || 0,
+        pickup_code: groupBuyPrize.pickup_code,
+        pickup_status: groupBuyPrize.pickup_status || 'PENDING_CLAIM',
+        expires_at: groupBuyPrize.expires_at,
+        claimed_at: groupBuyPrize.claimed_at,
+        source_type: 'group_buy',
+        user: userInfo,
+        lottery: { title: '拼团商品', title_i18n: { zh: '拼团商品', ru: 'Групповая покупка', tg: 'Харидҳои гурӯҳӣ' } },
+        pickup_point: pickupPointInfo,
+      });
+
     } catch (error: any) {
       console.error('Search error:', error);
       toast.error('查询失败，请重试');
@@ -158,11 +225,13 @@ const PickupVerificationPage: React.FC = () => {
     }
 
     // 检查是否过期
-    const expiresAt = new Date(prizeInfo.expires_at);
-    const now = new Date();
-    if (expiresAt < now) {
-      toast.error('该提货码已过期，请联系用户延期');
-      return;
+    if (prizeInfo.expires_at) {
+      const expiresAt = new Date(prizeInfo.expires_at);
+      const now = new Date();
+      if (expiresAt < now) {
+        toast.error('该提货码已过期，请联系用户延期');
+        return;
+      }
     }
 
     setIsVerifying(true);
@@ -174,8 +243,8 @@ const PickupVerificationPage: React.FC = () => {
         throw new Error('未登录');
       }
 
-      // 更新奖品状态
-      const tableName = prizeInfo.lottery?.title === '拼团商品' ? 'group_buy_results' : 'prizes';
+      // 根据来源类型确定表名
+      const tableName = prizeInfo.source_type === 'group_buy' ? 'group_buy_results' : 'prizes';
       
       const { error: updateError } = await supabase
         .from(tableName)
@@ -199,7 +268,7 @@ const PickupVerificationPage: React.FC = () => {
           pickup_point_id: prizeInfo.pickup_point?.id,
           operator_id: user.id,
           operation_type: 'PICKUP',
-          notes: `管理员核销提货码: ${prizeInfo.pickup_code}`,
+          notes: `管理员核销${prizeInfo.source_type === 'group_buy' ? '拼团' : '积分商城'}提货码: ${prizeInfo.pickup_code}`,
         });
 
       if (logError) {
@@ -257,9 +326,9 @@ const PickupVerificationPage: React.FC = () => {
                   value={pickupCode}
                   onChange={(e) => setPickupCode(e.target.value.toUpperCase())}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder="请输入6-8位提货码"
+                  placeholder="请输入6位提货码"
                   className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg font-mono"
-                  maxLength={8}
+                  maxLength={6}
                 />
                 <QrCodeIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               </div>
@@ -306,10 +375,17 @@ const PickupVerificationPage: React.FC = () => {
                     <>
                       <XCircleIcon className="w-6 h-6 text-red-600" />
                       <span className="text-red-800 font-medium">
-                        {prizeInfo.pickup_status === 'PICKED_UP' ? '已核销' : '不可核销'}
+                        {prizeInfo.pickup_status === 'PICKED_UP' ? '已核销' : 
+                         prizeInfo.pickup_status === 'PENDING_CLAIM' ? '待用户确认领取' :
+                         prizeInfo.pickup_status === 'EXPIRED' ? '已过期' : '不可核销'}
                       </span>
                     </>
                   )}
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    prizeInfo.source_type === 'group_buy' ? 'bg-pink-100 text-pink-800' : 'bg-purple-100 text-purple-800'
+                  }`}>
+                    {prizeInfo.source_type === 'group_buy' ? '拼团' : '积分商城'}
+                  </span>
                 </div>
                 {prizeInfo.expires_at && (
                   <div className="text-sm text-gray-600">
@@ -328,7 +404,7 @@ const PickupVerificationPage: React.FC = () => {
               {/* 用户信息 */}
               <div className="flex items-center space-x-4 pb-6 border-b">
                 <div className="relative">
-                  {prizeInfo.user.avatar_url ? (
+                  {prizeInfo.user?.avatar_url ? (
                     <img
                       src={prizeInfo.user.avatar_url}
                       alt="User"
@@ -342,9 +418,11 @@ const PickupVerificationPage: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-bold text-gray-900">
-                    {prizeInfo.user.first_name} {prizeInfo.user.last_name}
+                    {prizeInfo.user ? `${prizeInfo.user.first_name || ''} ${prizeInfo.user.last_name || ''}`.trim() || '未知用户' : '未知用户'}
                   </h3>
-                  <p className="text-sm text-gray-500">@{prizeInfo.user.telegram_username}</p>
+                  <p className="text-sm text-gray-500">
+                    {prizeInfo.user?.telegram_username ? `@${prizeInfo.user.telegram_username}` : '无用户名'}
+                  </p>
                 </div>
               </div>
 
@@ -363,15 +441,17 @@ const PickupVerificationPage: React.FC = () => {
                 )}
                 <div className="flex-1">
                   <h4 className="text-lg font-bold text-gray-900 mb-1">
-                    {prizeInfo.lottery?.title_i18n?.zh || prizeInfo.lottery?.title || prizeInfo.prize_name}
+                    {prizeInfo.prize_name}
                   </h4>
                   <p className="text-sm text-gray-500 mb-2">
                     价值: ₽{prizeInfo.prize_value}
                   </p>
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <ClockIcon className="w-4 h-4" />
-                    <span>领取时间: {new Date(prizeInfo.claimed_at).toLocaleString()}</span>
-                  </div>
+                  {prizeInfo.claimed_at && (
+                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                      <ClockIcon className="w-4 h-4" />
+                      <span>领取时间: {new Date(prizeInfo.claimed_at).toLocaleString()}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -381,10 +461,10 @@ const PickupVerificationPage: React.FC = () => {
                   <MapPinIcon className="w-5 h-5 text-purple-600 mt-0.5" />
                   <div>
                     <h5 className="font-medium text-gray-900 mb-1">
-                      {prizeInfo.pickup_point.name_i18n?.zh || prizeInfo.pickup_point.name}
+                      {getLocalizedText(prizeInfo.pickup_point.name_i18n) || prizeInfo.pickup_point.name}
                     </h5>
                     <p className="text-sm text-gray-600">
-                      {prizeInfo.pickup_point.address_i18n?.zh || prizeInfo.pickup_point.address}
+                      {getLocalizedText(prizeInfo.pickup_point.address_i18n) || prizeInfo.pickup_point.address}
                     </p>
                   </div>
                 </div>
@@ -435,7 +515,7 @@ const PickupVerificationPage: React.FC = () => {
             <ul className="space-y-2 text-sm text-blue-800">
               <li className="flex items-start space-x-2">
                 <span className="text-blue-600 mt-0.5">•</span>
-                <span>请用户出示提货码（6-8位数字）</span>
+                <span>请用户出示提货码（6位数字）</span>
               </li>
               <li className="flex items-start space-x-2">
                 <span className="text-blue-600 mt-0.5">•</span>

@@ -32,6 +32,7 @@ import BannerManagementPage from './pages/BannerManagementPage';
 import PickupVerificationPage from './pages/PickupVerificationPage';
 import PickupPointsPage from './pages/PickupPointsPage';
 import PickupStatsPage from './pages/PickupStatsPage';
+import PendingPickupsPage from './pages/PendingPickupsPage';
 
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import LoginPage from './pages/LoginPage';
@@ -67,6 +68,7 @@ function App(): JSX.Element {
             <NavLink to="/pickup-verification" label="自提核销" icon="✅" />
             <NavLink to="/pickup-points" label="自提点管理" icon="📍" />
             <NavLink to="/pickup-stats" label="核销统计" icon="📈" />
+            <NavLink to="/pending-pickups" label="待核销列表" icon="📋" />
             <NavLink to="/showoff-review" label="晒单审核" icon="📸" />
             <NavLink to="/resale-management" label="转售管理" icon="🔄" />
             <NavLink to="/payment-config" label="支付配置" icon="⚙️" />
@@ -117,6 +119,7 @@ function App(): JSX.Element {
               <Route path="/pickup-verification" element={<ProtectedRoute element={<PickupVerificationPage />} requiredRole="admin" />} />
               <Route path="/pickup-points" element={<ProtectedRoute element={<PickupPointsPage />} requiredRole="admin" />} />
               <Route path="/pickup-stats" element={<ProtectedRoute element={<PickupStatsPage />} requiredRole="admin" />} />
+              <Route path="/pending-pickups" element={<ProtectedRoute element={<PendingPickupsPage />} requiredRole="admin" />} />
               <Route path="/showoff-review" element={<ProtectedRoute element={<ShowoffReviewPage />} requiredRole="admin" />} />
               <Route path="/resale-management" element={<ProtectedRoute element={<ResaleManagementPage />} requiredRole="admin" />} />
           <Route path="/admin-management" element={<ProtectedRoute element={<AdminManagementPage />} requiredRole="super_admin" />} />
