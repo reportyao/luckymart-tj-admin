@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { useSupabase } from '../contexts/SupabaseContext';
+import { useAdminAuth } from '../contexts/AdminAuthContext';
 import toast from 'react-hot-toast';
 import {
   MagnifyingGlassIcon,
@@ -50,6 +51,8 @@ const getLocalizedText = (text: any): string => {
 };
 
 const PickupVerificationPage: React.FC = () => {
+  const { supabase } = useSupabase();
+  const { admin } = useAdminAuth();
   const [pickupCode, setPickupCode] = useState('');
   const [prizeInfo, setPrizeInfo] = useState<PrizeInfo | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -238,10 +241,10 @@ const PickupVerificationPage: React.FC = () => {
 
     try {
       // 获取当前管理员ID
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      if (!admin) {
         throw new Error('未登录');
       }
+      const adminId = admin.id;
 
       // 根据来源类型确定表名
       const tableName = prizeInfo.source_type === 'group_buy' ? 'group_buy_results' : 'prizes';
@@ -251,7 +254,7 @@ const PickupVerificationPage: React.FC = () => {
         .update({
           pickup_status: 'PICKED_UP',
           picked_up_at: new Date().toISOString(),
-          picked_up_by: user.id,
+          picked_up_by: adminId,
         })
         .eq('id', prizeInfo.id);
 
@@ -266,7 +269,7 @@ const PickupVerificationPage: React.FC = () => {
           prize_id: prizeInfo.id,
           pickup_code: prizeInfo.pickup_code,
           pickup_point_id: prizeInfo.pickup_point?.id,
-          operator_id: user.id,
+          operator_id: adminId,
           operation_type: 'PICKUP',
           notes: `管理员核销${prizeInfo.source_type === 'group_buy' ? '拼团' : '积分商城'}提货码: ${prizeInfo.pickup_code}`,
         });
