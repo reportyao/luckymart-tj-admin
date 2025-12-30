@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
+interface BusinessHours {
+  monday?: string;
+  tuesday?: string;
+  wednesday?: string;
+  thursday?: string;
+  friday?: string;
+  saturday?: string;
+  sunday?: string;
+}
+
 interface PickupPoint {
   id: string;
   name: string;
@@ -11,12 +21,36 @@ interface PickupPoint {
   longitude: number | null;
   contact_phone: string | null;
   contact_person: string | null;
-  business_hours: string | null;
-  is_active: boolean;
+  business_hours: BusinessHours | string | null;
+  status: string;
+  is_active?: boolean;
   created_at: string;
 }
 
-const emptyPickupPoint: Omit<PickupPoint, 'id' | 'created_at'> = {
+interface FormData {
+  name: string;
+  name_i18n: { zh: string; ru: string; tg: string };
+  address: string;
+  address_i18n: { zh: string; ru: string; tg: string };
+  latitude: number | null;
+  longitude: number | null;
+  contact_phone: string;
+  contact_person: string;
+  business_hours: BusinessHours;
+  status: string;
+}
+
+const emptyBusinessHours: BusinessHours = {
+  monday: '09:00-18:00',
+  tuesday: '09:00-18:00',
+  wednesday: '09:00-18:00',
+  thursday: '09:00-18:00',
+  friday: '09:00-18:00',
+  saturday: '10:00-16:00',
+  sunday: 'closed',
+};
+
+const emptyPickupPoint: FormData = {
   name: '',
   name_i18n: { zh: '', ru: '', tg: '' },
   address: '',
@@ -25,8 +59,62 @@ const emptyPickupPoint: Omit<PickupPoint, 'id' | 'created_at'> = {
   longitude: null,
   contact_phone: '',
   contact_person: '',
-  business_hours: '',
-  is_active: true,
+  business_hours: emptyBusinessHours,
+  status: 'ACTIVE',
+};
+
+// 格式化营业时间显示
+const formatBusinessHours = (hours: BusinessHours | string | null): string => {
+  if (!hours) return '-';
+  if (typeof hours === 'string') return hours;
+  
+  // 如果是对象，格式化显示
+  const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  const dayNames: Record<string, string> = {
+    monday: '周一',
+    tuesday: '周二',
+    wednesday: '周三',
+    thursday: '周四',
+    friday: '周五',
+    saturday: '周六',
+    sunday: '周日',
+  };
+  
+  // 简化显示：只显示工作日和周末
+  const weekdayHours = hours.monday || hours.tuesday || '-';
+  const saturdayHours = hours.saturday || '-';
+  const sundayHours = hours.sunday || '-';
+  
+  if (weekdayHours === saturdayHours && saturdayHours === sundayHours) {
+    return `每天 ${weekdayHours}`;
+  }
+  
+  return `工作日 ${weekdayHours}`;
+};
+
+// 解析营业时间
+const parseBusinessHours = (hours: BusinessHours | string | null): BusinessHours => {
+  if (!hours) return emptyBusinessHours;
+  if (typeof hours === 'string') {
+    return {
+      monday: hours,
+      tuesday: hours,
+      wednesday: hours,
+      thursday: hours,
+      friday: hours,
+      saturday: hours,
+      sunday: hours,
+    };
+  }
+  return {
+    monday: hours.monday || '09:00-18:00',
+    tuesday: hours.tuesday || '09:00-18:00',
+    wednesday: hours.wednesday || '09:00-18:00',
+    thursday: hours.thursday || '09:00-18:00',
+    friday: hours.friday || '09:00-18:00',
+    saturday: hours.saturday || '10:00-16:00',
+    sunday: hours.sunday || 'closed',
+  };
 };
 
 export default function PickupPointsPage() {
@@ -34,7 +122,7 @@ export default function PickupPointsPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingPoint, setEditingPoint] = useState<PickupPoint | null>(null);
-  const [formData, setFormData] = useState(emptyPickupPoint);
+  const [formData, setFormData] = useState<FormData>(emptyPickupPoint);
   const [saving, setSaving] = useState(false);
 
   // 加载自提点列表
@@ -73,8 +161,8 @@ export default function PickupPointsPage() {
         longitude: point.longitude,
         contact_phone: point.contact_phone || '',
         contact_person: point.contact_person || '',
-        business_hours: point.business_hours || '',
-        is_active: point.is_active,
+        business_hours: parseBusinessHours(point.business_hours),
+        status: point.status || 'ACTIVE',
       });
     } else {
       setEditingPoint(null);
@@ -108,8 +196,8 @@ export default function PickupPointsPage() {
         longitude: formData.longitude,
         contact_phone: formData.contact_phone || null,
         contact_person: formData.contact_person || null,
-        business_hours: formData.business_hours || null,
-        is_active: formData.is_active,
+        business_hours: formData.business_hours,
+        status: formData.status,
       };
 
       if (editingPoint) {
@@ -161,11 +249,12 @@ export default function PickupPointsPage() {
   };
 
   // 切换启用状态
-  const toggleActive = async (id: string, currentStatus: boolean) => {
+  const toggleActive = async (id: string, currentStatus: string) => {
     try {
+      const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
       const { error } = await supabase
         .from('pickup_points')
-        .update({ is_active: !currentStatus })
+        .update({ status: newStatus })
         .eq('id', id);
 
       if (error) throw error;
@@ -247,18 +336,18 @@ export default function PickupPointsPage() {
                     {point.contact_phone || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {point.business_hours || '-'}
+                    {formatBusinessHours(point.business_hours)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button
-                      onClick={() => toggleActive(point.id, point.is_active)}
+                      onClick={() => toggleActive(point.id, point.status)}
                       className={`px-2 py-1 text-xs rounded-full ${
-                        point.is_active
+                        point.status === 'ACTIVE'
                           ? 'bg-green-100 text-green-800'
                           : 'bg-gray-100 text-gray-800'
                       }`}
                     >
-                      {point.is_active ? '启用' : '停用'}
+                      {point.status === 'ACTIVE' ? '启用' : '停用'}
                     </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -350,7 +439,7 @@ export default function PickupPointsPage() {
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="详细地址"
+                  placeholder="例如：杜尚别市中心"
                 />
               </div>
 
@@ -462,32 +551,53 @@ export default function PickupPointsPage() {
 
               {/* 营业时间 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   营业时间
                 </label>
-                <input
-                  type="text"
-                  value={formData.business_hours}
-                  onChange={(e) =>
-                    setFormData({ ...formData, business_hours: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="例如：周一至周五 9:00-18:00"
-                />
+                <div className="grid grid-cols-2 gap-3">
+                  {(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const).map((day) => {
+                    const dayNames: Record<string, string> = {
+                      monday: '周一',
+                      tuesday: '周二',
+                      wednesday: '周三',
+                      thursday: '周四',
+                      friday: '周五',
+                      saturday: '周六',
+                      sunday: '周日',
+                    };
+                    return (
+                      <div key={day} className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600 w-10">{dayNames[day]}</span>
+                        <input
+                          type="text"
+                          value={formData.business_hours[day] || ''}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              business_hours: { ...formData.business_hours, [day]: e.target.value },
+                            })
+                          }
+                          className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="09:00-18:00 或 closed"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* 启用状态 */}
               <div className="flex items-center">
                 <input
                   type="checkbox"
-                  id="is_active"
-                  checked={formData.is_active}
+                  id="status"
+                  checked={formData.status === 'ACTIVE'}
                   onChange={(e) =>
-                    setFormData({ ...formData, is_active: e.target.checked })
+                    setFormData({ ...formData, status: e.target.checked ? 'ACTIVE' : 'INACTIVE' })
                   }
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label htmlFor="is_active" className="ml-2 text-sm text-gray-700">
+                <label htmlFor="status" className="ml-2 text-sm text-gray-700">
                   启用此自提点
                 </label>
               </div>
