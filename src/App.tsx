@@ -29,6 +29,7 @@ import DashboardPage from './pages/DashboardPage';
 import GroupBuyProductManagementPage from './pages/GroupBuyProductManagementPage';
 import GroupBuySessionManagementPage from './pages/GroupBuySessionManagementPage';
 import BannerManagementPage from './pages/BannerManagementPage';
+import PickupVerificationPage from './pages/PickupVerificationPage';
 
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import LoginPage from './pages/LoginPage';
@@ -61,6 +62,7 @@ function App(): JSX.Element {
             <NavLink to="/withdrawal-review" label="提现审核" icon="💸" />
 
             <NavLink to="/shipping-management" label="物流管理" icon="🚚" />
+            <NavLink to="/pickup-verification" label="自提核销" icon="✅" />
             <NavLink to="/showoff-review" label="晒单审核" icon="📸" />
             <NavLink to="/resale-management" label="转售管理" icon="🔄" />
             <NavLink to="/payment-config" label="支付配置" icon="⚙️" />
@@ -108,6 +110,7 @@ function App(): JSX.Element {
               <Route path="/deposit-review" element={<ProtectedRoute element={<DepositReviewPage />} requiredRole="admin" />} />
               <Route path="/withdrawal-review" element={<ProtectedRoute element={<WithdrawalReviewPage />} requiredRole="admin" />} />
               <Route path="/shipping-management" element={<ProtectedRoute element={<ShippingManagementPage />} requiredRole="admin" />} />
+              <Route path="/pickup-verification" element={<ProtectedRoute element={<PickupVerificationPage />} requiredRole="admin" />} />
               <Route path="/showoff-review" element={<ProtectedRoute element={<ShowoffReviewPage />} requiredRole="admin" />} />
               <Route path="/resale-management" element={<ProtectedRoute element={<ResaleManagementPage />} requiredRole="admin" />} />
           <Route path="/admin-management" element={<ProtectedRoute element={<AdminManagementPage />} requiredRole="super_admin" />} />
