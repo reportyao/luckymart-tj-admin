@@ -65,8 +65,8 @@ const emptyPickupPoint: FormData = {
 
 // 格式化营业时间显示
 const formatBusinessHours = (hours: BusinessHours | string | null): string => {
-  if (!hours) return '-';
-  if (typeof hours === 'string') return hours;
+  if (!hours) {return '-';}
+  if (typeof hours === 'string') {return hours;}
   
   // 如果是对象，格式化显示
   const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -94,7 +94,7 @@ const formatBusinessHours = (hours: BusinessHours | string | null): string => {
 
 // 解析营业时间
 const parseBusinessHours = (hours: BusinessHours | string | null): BusinessHours => {
-  if (!hours) return emptyBusinessHours;
+  if (!hours) {return emptyBusinessHours;}
   if (typeof hours === 'string') {
     return {
       monday: hours,
@@ -134,7 +134,7 @@ export default function PickupPointsPage() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {throw error;}
       setPickupPoints(data || []);
     } catch (error) {
       console.error('加载自提点失败:', error);
@@ -207,7 +207,7 @@ export default function PickupPointsPage() {
           .update(dataToSave)
           .eq('id', editingPoint.id);
 
-        if (error) throw error;
+        if (error) {throw error;}
         alert('更新成功');
       } else {
         // 新增
@@ -215,7 +215,7 @@ export default function PickupPointsPage() {
           .from('pickup_points')
           .insert(dataToSave);
 
-        if (error) throw error;
+        if (error) {throw error;}
         alert('添加成功');
       }
 
@@ -231,7 +231,7 @@ export default function PickupPointsPage() {
 
   // 删除自提点
   const handleDelete = async (id: string) => {
-    if (!confirm('确定要删除这个自提点吗？')) return;
+    if (!confirm('确定要删除这个自提点吗？')) {return;}
 
     try {
       const { error } = await supabase
@@ -239,7 +239,7 @@ export default function PickupPointsPage() {
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {throw error;}
       alert('删除成功');
       loadPickupPoints();
     } catch (error) {
@@ -257,7 +257,7 @@ export default function PickupPointsPage() {
         .update({ status: newStatus })
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {throw error;}
       loadPickupPoints();
     } catch (error) {
       console.error('更新状态失败:', error);

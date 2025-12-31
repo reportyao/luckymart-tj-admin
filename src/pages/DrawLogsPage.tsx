@@ -95,7 +95,7 @@ export default function DrawLogsPage() {
   };
 
   const getLotteryTitle = (result: LotteryResult): string => {
-    if (!result.lottery) return result.lottery_id;
+    if (!result.lottery) {return result.lottery_id;}
     
     // 优先使用 title_i18n 中的中文
     if (result.lottery.title_i18n?.zh) {
@@ -105,7 +105,7 @@ export default function DrawLogsPage() {
     // 尝试解析 title 是否为 JSON
     try {
       const parsed = JSON.parse(result.lottery.title);
-      if (parsed.zh) return parsed.zh;
+      if (parsed.zh) {return parsed.zh;}
     } catch {
       // 不是 JSON，直接返回 title
     }

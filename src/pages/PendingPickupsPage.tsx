@@ -238,8 +238,8 @@ export default function PendingPickupsPage() {
 
   // 获取本地化文本
   const getLocalizedText = (text: any): string => {
-    if (!text) return '';
-    if (typeof text === 'string') return text;
+    if (!text) {return '';}
+    if (typeof text === 'string') {return text;}
     return text.zh || text.ru || text.tg || '';
   };
 
@@ -298,7 +298,7 @@ export default function PendingPickupsPage() {
 
   // 格式化日期
   const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return '-';
+    if (!dateStr) {return '-';}
     return new Date(dateStr).toLocaleString('zh-CN', {
       year: 'numeric',
       month: '2-digit',
@@ -310,7 +310,7 @@ export default function PendingPickupsPage() {
 
   // 计算剩余天数
   const getRemainingDays = (expiresAt: string | null) => {
-    if (!expiresAt) return null;
+    if (!expiresAt) {return null;}
     const now = new Date();
     const expires = new Date(expiresAt);
     const diff = expires.getTime() - now.getTime();
@@ -336,7 +336,7 @@ export default function PendingPickupsPage() {
 
   // 执行核销
   const handleVerify = async () => {
-    if (!selectedPickup) return;
+    if (!selectedPickup) {return;}
     
     setVerifying(true);
     try {
@@ -356,7 +356,7 @@ export default function PendingPickupsPage() {
         })
         .eq('id', selectedPickup.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {throw updateError;}
 
       // 记录核销日志
       await supabase

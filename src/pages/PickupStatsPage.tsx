@@ -60,7 +60,7 @@ export default function PickupStatsPage() {
         .from('prizes')
         .select('pickup_status');
 
-      if (prizesError) throw prizesError;
+      if (prizesError) {throw prizesError;}
 
       const statsData: PickupStats = {
         total_prizes: prizes?.length || 0,
@@ -86,7 +86,7 @@ export default function PickupStatsPage() {
         .order('verified_at', { ascending: false })
         .limit(20);
 
-      if (logsError) throw logsError;
+      if (logsError) {throw logsError;}
 
       // 为每条记录获取奖品和用户信息
       const logsWithDetails = await Promise.all(
@@ -130,7 +130,7 @@ export default function PickupStatsPage() {
         .select('verified_at')
         .gte('verified_at', startDate.toISOString());
 
-      if (dailyError) throw dailyError;
+      if (dailyError) {throw dailyError;}
 
       // 按日期分组统计
       const dailyMap: { [key: string]: number } = {};
@@ -169,8 +169,8 @@ export default function PickupStatsPage() {
 
   // 获取本地化标题
   const getLocalizedTitle = (lottery: any) => {
-    if (!lottery) return '未知商品';
-    if (lottery.title_i18n?.zh) return lottery.title_i18n.zh;
+    if (!lottery) {return '未知商品';}
+    if (lottery.title_i18n?.zh) {return lottery.title_i18n.zh;}
     return lottery.title || '未知商品';
   };
 
