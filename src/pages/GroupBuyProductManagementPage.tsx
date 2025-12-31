@@ -7,6 +7,11 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+interface PriceComparisonItem {
+  platform: string;
+  price: number;
+}
+
 interface GroupBuyProduct {
   id: string;
   title: { zh: string; ru: string; tg: string };
@@ -21,6 +26,7 @@ interface GroupBuyProduct {
   stock_quantity: number;
   status: 'ACTIVE' | 'INACTIVE';
   created_at: string;
+  price_comparisons?: PriceComparisonItem[];
 }
 
 export default function GroupBuyProductManagementPage() {
@@ -43,7 +49,12 @@ export default function GroupBuyProductManagementPage() {
     product_type: 'PHYSICAL',
     stock_quantity: 100,
     status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE',
+    price_comparisons: [] as PriceComparisonItem[],
   });
+
+  // 比价清单输入状态
+  const [newPlatform, setNewPlatform] = useState('');
+  const [newPrice, setNewPrice] = useState('');
 
   useEffect(() => {
     fetchProducts();
@@ -65,6 +76,38 @@ export default function GroupBuyProductManagementPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAddPriceComparison = () => {
+    if (!newPlatform.trim() || !newPrice) {
+      return;
+    }
+
+    const price = parseFloat(newPrice);
+    if (isNaN(price) || price <= 0) {
+      return;
+    }
+
+    const newItem: PriceComparisonItem = {
+      platform: newPlatform.trim(),
+      price: price,
+    };
+
+    setFormData({
+      ...formData,
+      price_comparisons: [...formData.price_comparisons, newItem],
+    });
+    setNewPlatform('');
+    setNewPrice('');
+  };
+
+  const handleRemovePriceComparison = (index: number) => {
+    const newComparisons = [...formData.price_comparisons];
+    newComparisons.splice(index, 1);
+    setFormData({
+      ...formData,
+      price_comparisons: newComparisons,
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,6 +133,7 @@ export default function GroupBuyProductManagementPage() {
       product_type: formData.product_type,
       stock_quantity: formData.stock_quantity,
       status: formData.status,
+      price_comparisons: formData.price_comparisons,
     };
 
     try {
@@ -139,6 +183,7 @@ export default function GroupBuyProductManagementPage() {
       product_type: product.product_type || 'PHYSICAL',
       stock_quantity: product.stock_quantity || 100,
       status: product.status || 'ACTIVE',
+      price_comparisons: product.price_comparisons || [],
     });
     setShowModal(true);
   };
@@ -160,6 +205,7 @@ export default function GroupBuyProductManagementPage() {
       product_type: product.product_type || 'PHYSICAL',
       stock_quantity: product.stock_quantity || 100,
       status: 'INACTIVE',
+      price_comparisons: product.price_comparisons || [],
     });
     setShowModal(true);
   };
@@ -226,7 +272,10 @@ export default function GroupBuyProductManagementPage() {
       product_type: 'PHYSICAL',
       stock_quantity: 100,
       status: 'ACTIVE',
+      price_comparisons: [],
     });
+    setNewPlatform('');
+    setNewPrice('');
   };
 
   return (
@@ -281,12 +330,12 @@ export default function GroupBuyProductManagementPage() {
                 <div className="space-y-1 text-sm mb-4">
                   <div className="flex justify-between">
                     <span className="text-gray-600">原价:</span>
-                    <span className="font-bold">₽{product.original_price || 0}</span>
+                    <span className="font-bold">TJS {product.original_price || 0}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">人均价格:</span>
                     <span className="font-bold text-orange-600">
-                      ₽{product.price_per_person || 0}
+                      TJS {product.price_per_person || 0}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -301,6 +350,12 @@ export default function GroupBuyProductManagementPage() {
                     <span className="text-gray-600">库存:</span>
                     <span>{product.stock_quantity || 0}</span>
                   </div>
+                  {product.price_comparisons && product.price_comparisons.length > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">比价清单:</span>
+                      <span className="text-blue-600">{product.price_comparisons.length} 项</span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -434,7 +489,7 @@ export default function GroupBuyProductManagementPage() {
                 {/* 价格和参数 */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">原价（₽）*</label>
+                    <label className="block text-sm font-medium mb-1">原价（TJS）*</label>
                     <input
                       type="number"
                       value={formData.original_price}
@@ -494,8 +549,83 @@ export default function GroupBuyProductManagementPage() {
                 <div className="bg-orange-50 rounded-lg p-3">
                   <div className="text-sm text-gray-600">人均价格预览：</div>
                   <div className="text-2xl font-bold text-orange-600">
-                    ₽{formData.group_size > 0 ? (formData.original_price / formData.group_size).toFixed(2) : '0.00'}
+                    TJS {formData.group_size > 0 ? (formData.original_price / formData.group_size).toFixed(2) : '0.00'}
                   </div>
+                </div>
+
+                {/* 比价清单 */}
+                <div className="border-t pt-4">
+                  <label className="block text-base font-semibold mb-2">比价清单</label>
+                  <p className="text-sm text-gray-500 mb-3">
+                    添加其他平台的价格对比，帮助用户了解价格优势
+                  </p>
+
+                  {/* 已添加的比价项 */}
+                  {formData.price_comparisons.length > 0 && (
+                    <div className="space-y-2 mb-3">
+                      {formData.price_comparisons.map((item, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                          <span className="flex-1">{item.platform}</span>
+                          <span className="text-gray-500">TJS {item.price.toFixed(2)}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePriceComparison(index)}
+                            className="text-red-500 hover:text-red-700 p-1"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 添加新比价项 */}
+                  <div className="flex items-center gap-2 p-3 border-2 border-dashed border-gray-300 rounded-lg">
+                    <input
+                      type="text"
+                      value={newPlatform}
+                      onChange={(e) => setNewPlatform(e.target.value)}
+                      placeholder="平台名称 (如: Somon.tj)"
+                      className="flex-1 border rounded px-3 py-2"
+                    />
+                    <div className="flex items-center gap-1">
+                      <span className="text-gray-500">TJS</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={newPrice}
+                        onChange={(e) => setNewPrice(e.target.value)}
+                        placeholder="价格"
+                        className="w-24 border rounded px-3 py-2"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddPriceComparison}
+                      disabled={!newPlatform.trim() || !newPrice}
+                      className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      <Plus className="w-4 h-4 inline mr-1" />
+                      添加
+                    </button>
+                  </div>
+
+                  {/* 预览效果 */}
+                  {formData.price_comparisons.length > 0 && (
+                    <div className="p-3 bg-gray-100 rounded-lg mt-3">
+                      <p className="text-sm font-medium text-gray-700 mb-2">前端展示预览：</p>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        {formData.price_comparisons.map((item, index) => (
+                          <div key={index} className="flex items-center">
+                            <span className="text-red-500 mr-2">❌</span>
+                            <span>{item.platform}:</span>
+                            <span className="ml-2 text-gray-500">TJS {item.price.toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* 商品类型和状态 */}

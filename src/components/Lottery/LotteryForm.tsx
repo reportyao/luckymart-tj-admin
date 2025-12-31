@@ -10,11 +10,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { MultiLanguageInput } from '../MultiLanguageInput';
 import { RichTextEditor } from '../RichTextEditor';
 import { ImageUpload } from '../ui/ImageUpload';
+import { PriceComparisonInput } from '../PriceComparisonInput';
 import toast from 'react-hot-toast';
 import { formatDateTime } from '@/lib/utils';
 
 type LotteryStatus = Enums<'LotteryStatus'>;
 type Currency = Enums<'Currency'>;
+
+interface PriceComparisonItem {
+  platform: string;
+  price: number;
+}
 
 interface LotteryFormData {
   details_i18n: Record<string, string> | null;
@@ -29,6 +35,7 @@ interface LotteryFormData {
   status: LotteryStatus;
   image_urls: string[];
   start_time: string;
+  price_comparisons: PriceComparisonItem[];
 }
 
 const initialFormData: LotteryFormData = {
@@ -44,6 +51,7 @@ const initialFormData: LotteryFormData = {
   status: 'PENDING',
   image_urls: [],
   start_time: new Date().toISOString().slice(0, 16),
+  price_comparisons: [],
 };
 
 /**
@@ -106,6 +114,17 @@ export const LotteryForm: React.FC = () => {
           setLotteryRound(result);
         }
 
+        // 解析比价清单数据
+        let priceComparisons: PriceComparisonItem[] = [];
+        try {
+          const rawComparisons = (data as any).price_comparisons;
+          if (Array.isArray(rawComparisons)) {
+            priceComparisons = rawComparisons;
+          }
+        } catch {
+          priceComparisons = [];
+        }
+
         setFormData({
           // 优先使用JSONB字段，如果为空则尝试从旧字段读取
           title: (data.title_i18n as Record<string, string>) || (typeof data.title === 'string' ? { zh: data.title } : {}),
@@ -120,6 +139,7 @@ export const LotteryForm: React.FC = () => {
           status: data.status,
           image_urls: data.image_url ? [data.image_url] : [],
           start_time: new Date(data.start_time).toISOString().slice(0, 16),
+          price_comparisons: priceComparisons,
         });
       }
     } catch (error: any) {
@@ -168,6 +188,13 @@ export const LotteryForm: React.FC = () => {
     }));
   };
 
+  const handlePriceComparisonsChange = (value: PriceComparisonItem[]) => {
+    setFormData((prev) => ({
+      ...prev,
+      price_comparisons: value,
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -208,6 +235,8 @@ export const LotteryForm: React.FC = () => {
         // 保留旧字段兼容性，使用中文作为默认值
         title: (formData.title && formData.title.zh) || '',
         description: (formData.description && formData.description.zh) || '',
+        // 比价清单
+        price_comparisons: formData.price_comparisons,
       };
 
       let result;
@@ -380,6 +409,14 @@ export const LotteryForm: React.FC = () => {
             <Label htmlFor="unlimited_purchase" className="cursor-pointer">
               无限购（不限制用户购买份数）
             </Label>
+          </div>
+
+          {/* 比价清单 */}
+          <div className="border-t pt-6">
+            <PriceComparisonInput
+              value={formData.price_comparisons}
+              onChange={handlePriceComparisonsChange}
+            />
           </div>
 
           {/* 开始时间 */}
