@@ -12,6 +12,19 @@ interface PriceComparisonItem {
   price: number;
 }
 
+interface InventoryProduct {
+  id: string;
+  name: string;
+  name_i18n: { zh: string; ru: string; tg: string };
+  description: string;
+  description_i18n: { zh: string; ru: string; tg: string };
+  image_url: string;
+  image_urls: string[];
+  original_price: number;
+  stock: number;
+  status: string;
+}
+
 interface GroupBuyProduct {
   id: string;
   title: { zh: string; ru: string; tg: string };
@@ -34,6 +47,8 @@ export default function GroupBuyProductManagementPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<GroupBuyProduct | null>(null);
+  const [inventoryProducts, setInventoryProducts] = useState<InventoryProduct[]>([]);
+  const [showSkuSelector, setShowSkuSelector] = useState(false);
   const [formData, setFormData] = useState({
     title_zh: '',
     title_ru: '',
@@ -58,7 +73,41 @@ export default function GroupBuyProductManagementPage() {
 
   useEffect(() => {
     fetchProducts();
+    fetchInventoryProducts();
   }, []);
+
+  const fetchInventoryProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('inventory_products')
+        .select('id, name, name_i18n, description, description_i18n, image_url, image_urls, original_price, stock, status')
+        .eq('status', 'ACTIVE')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      setInventoryProducts(data || []);
+    } catch (error) {
+      console.error('Failed to fetch inventory products:', error);
+    }
+  };
+
+  const handleSelectSku = (product: InventoryProduct) => {
+    setFormData({
+      ...formData,
+      title_zh: product.name_i18n?.zh || product.name || '',
+      title_ru: product.name_i18n?.ru || '',
+      title_tg: product.name_i18n?.tg || '',
+      description_zh: product.description_i18n?.zh || product.description || '',
+      description_ru: product.description_i18n?.ru || '',
+      description_tg: product.description_i18n?.tg || '',
+      image_url: product.image_url || '',
+      images: product.image_urls || (product.image_url ? [product.image_url] : []),
+      original_price: product.original_price || 0,
+      stock_quantity: product.stock || 100,
+    });
+    setShowSkuSelector(false);
+    alert('已从库存商品导入信息');
+  };
 
   const fetchProducts = async () => {
     try {
@@ -410,6 +459,25 @@ export default function GroupBuyProductManagementPage() {
                 {editingProduct ? '编辑商品' : '创建商品'}
               </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* 从SKU导入按钮 */}
+                {!editingProduct && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium text-blue-800">从SKU库导入商品信息</h3>
+                        <p className="text-sm text-blue-600">可以一键导入库存商品的标题、描述、图片和价格信息</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowSkuSelector(true)}
+                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                      >
+                        选择SKU商品
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* 标题部分 */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
@@ -681,6 +749,60 @@ export default function GroupBuyProductManagementPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SKU选择弹窗 */}
+      {showSkuSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">选择库存商品</h2>
+                <button
+                  onClick={() => setShowSkuSelector(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+              {inventoryProducts.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  暂无可用的库存商品
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {inventoryProducts.map((product) => (
+                    <div
+                      key={product.id}
+                      className="border rounded-lg p-4 hover:border-blue-500 cursor-pointer transition-colors"
+                      onClick={() => handleSelectSku(product)}
+                    >
+                      <div className="flex gap-3">
+                        {product.image_url && (
+                          <img
+                            src={product.image_url}
+                            alt=""
+                            className="w-16 h-16 object-cover rounded"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <h3 className="font-medium">{product.name_i18n?.zh || product.name}</h3>
+                          <p className="text-sm text-gray-500 line-clamp-1">
+                            {product.description_i18n?.zh || product.description || '暂无描述'}
+                          </p>
+                          <div className="flex justify-between mt-1 text-sm">
+                            <span className="text-orange-600 font-bold">TJS {product.original_price}</span>
+                            <span className="text-gray-500">库存: {product.stock}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -34,6 +34,10 @@ import PickupPointsPage from './pages/PickupPointsPage';
 import PickupStatsPage from './pages/PickupStatsPage';
 import PendingPickupsPage from './pages/PendingPickupsPage';
 import InventoryProductManagementPage from './pages/InventoryProductManagementPage';
+import ShipmentBatchManagementPage from './pages/ShipmentBatchManagementPage';
+import OrderShipmentPage from './pages/OrderShipmentPage';
+import BatchArrivalConfirmPage from './pages/BatchArrivalConfirmPage';
+import BatchStatisticsPage from './pages/BatchStatisticsPage';
 
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import LoginPage from './pages/LoginPage';
@@ -67,6 +71,9 @@ function App(): JSX.Element {
             <NavLink to="/withdrawal-review" label="提现审核" icon="💸" />
 
             <NavLink to="/shipping-management" label="物流管理" icon="🚚" />
+            <NavLink to="/shipment-batches" label="批次管理" icon="📦" />
+            <NavLink to="/order-shipment" label="订单发货" icon="🚀" />
+            <NavLink to="/batch-statistics" label="批次统计" icon="📊" />
             <NavLink to="/pickup-verification" label="自提核销" icon="✅" />
             <NavLink to="/pickup-points" label="自提点管理" icon="📍" />
             <NavLink to="/pickup-stats" label="核销统计" icon="📈" />
@@ -119,6 +126,10 @@ function App(): JSX.Element {
               <Route path="/deposit-review" element={<ProtectedRoute element={<DepositReviewPage />} requiredRole="admin" />} />
               <Route path="/withdrawal-review" element={<ProtectedRoute element={<WithdrawalReviewPage />} requiredRole="admin" />} />
               <Route path="/shipping-management" element={<ProtectedRoute element={<ShippingManagementPage />} requiredRole="admin" />} />
+              <Route path="/shipment-batches" element={<ProtectedRoute element={<ShipmentBatchManagementPage />} requiredRole="admin" />} />
+              <Route path="/order-shipment" element={<ProtectedRoute element={<OrderShipmentPage />} requiredRole="admin" />} />
+              <Route path="/batch-arrival-confirm/:id" element={<ProtectedRoute element={<BatchArrivalConfirmPage />} requiredRole="admin" />} />
+              <Route path="/batch-statistics" element={<ProtectedRoute element={<BatchStatisticsPage />} requiredRole="admin" />} />
               <Route path="/pickup-verification" element={<ProtectedRoute element={<PickupVerificationPage />} requiredRole="admin" />} />
               <Route path="/pickup-points" element={<ProtectedRoute element={<PickupPointsPage />} requiredRole="admin" />} />
               <Route path="/pickup-stats" element={<ProtectedRoute element={<PickupStatsPage />} requiredRole="admin" />} />
