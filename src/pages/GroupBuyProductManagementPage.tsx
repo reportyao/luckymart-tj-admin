@@ -84,7 +84,7 @@ export default function GroupBuyProductManagementPage() {
         .eq('status', 'ACTIVE')
         .order('name', { ascending: true });
 
-      if (error) throw error;
+      if (error) {throw error;}
       setInventoryProducts(data || []);
     } catch (error) {
       console.error('Failed to fetch inventory products:', error);

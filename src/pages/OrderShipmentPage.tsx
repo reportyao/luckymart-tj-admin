@@ -282,7 +282,7 @@ export default function OrderShipmentPage() {
         .eq('status', 'IN_TRANSIT_CHINA')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {throw error;}
       setActiveBatches(data || []);
     } catch (error) {
       console.error('Failed to fetch active batches:', error);
@@ -354,8 +354,8 @@ export default function OrderShipmentPage() {
         },
       });
 
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error);
+      if (error) {throw error;}
+      if (!data.success) {throw new Error(data.error);}
 
       toast.success(data.message || '订单已加入批次');
       setShowAddToBatchModal(false);

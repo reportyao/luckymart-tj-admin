@@ -87,7 +87,7 @@ export default function BatchArrivalConfirmPage() {
   const [sendNotification, setSendNotification] = useState(true);
 
   const fetchBatchData = useCallback(async () => {
-    if (!batchId) return;
+    if (!batchId) {return;}
 
     try {
       setLoading(true);
@@ -99,7 +99,7 @@ export default function BatchArrivalConfirmPage() {
         .eq('id', batchId)
         .single();
 
-      if (batchError) throw batchError;
+      if (batchError) {throw batchError;}
       
       if (batchData.status !== 'IN_TRANSIT_TAJIKISTAN') {
         toast.error('只能确认运输中（塔国段）的批次到货');
@@ -116,7 +116,7 @@ export default function BatchArrivalConfirmPage() {
         .eq('batch_id', batchId)
         .order('added_at', { ascending: false });
 
-      if (itemsError) throw itemsError;
+      if (itemsError) {throw itemsError;}
       setOrderItems(itemsData || []);
 
       // 初始化所有订单状态为正常
@@ -202,8 +202,8 @@ export default function BatchArrivalConfirmPage() {
         },
       });
 
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error);
+      if (error) {throw error;}
+      if (!data.success) {throw new Error(data.error);}
 
       toast.success(data.message || '批次到货确认成功');
       navigate('/shipment-batches');
@@ -218,9 +218,9 @@ export default function BatchArrivalConfirmPage() {
   const getStatusCounts = () => {
     const counts = { normal: 0, missing: 0, damaged: 0 };
     Object.values(orderStatuses).forEach(status => {
-      if (status.arrival_status === 'NORMAL') counts.normal++;
-      else if (status.arrival_status === 'MISSING') counts.missing++;
-      else if (status.arrival_status === 'DAMAGED') counts.damaged++;
+      if (status.arrival_status === 'NORMAL') {counts.normal++;}
+      else if (status.arrival_status === 'MISSING') {counts.missing++;}
+      else if (status.arrival_status === 'DAMAGED') {counts.damaged++;}
     });
     return counts;
   };

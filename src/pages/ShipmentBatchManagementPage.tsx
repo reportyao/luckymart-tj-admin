@@ -156,7 +156,7 @@ export default function ShipmentBatchManagementPage() {
       const { data: batchData, error: queryError, count } = await query
         .range((page - 1) * 20, page * 20 - 1);
 
-      if (queryError) throw queryError;
+      if (queryError) {throw queryError;}
 
       setBatches(batchData || []);
       setTotalPages(Math.ceil((count || 0) / 20));
@@ -191,8 +191,8 @@ export default function ShipmentBatchManagementPage() {
         },
       });
 
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error);
+      if (error) {throw error;}
+      if (!data.success) {throw new Error(data.error);}
 
       toast.success(data.message || '批次创建成功');
       setShowCreateModal(false);
@@ -223,7 +223,7 @@ export default function ShipmentBatchManagementPage() {
         .eq('batch_id', batch.id)
         .order('added_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {throw error;}
       setBatchItems(data || []);
     } catch (error) {
       console.error('Failed to fetch batch items:', error);
@@ -234,7 +234,7 @@ export default function ShipmentBatchManagementPage() {
   };
 
   const handleUpdateStatus = async () => {
-    if (!selectedBatch || !newStatus || !adminUser?.id) return;
+    if (!selectedBatch || !newStatus || !adminUser?.id) {return;}
 
     try {
       setUpdatingStatus(true);
@@ -249,8 +249,8 @@ export default function ShipmentBatchManagementPage() {
         },
       });
 
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error);
+      if (error) {throw error;}
+      if (!data.success) {throw new Error(data.error);}
 
       toast.success(data.message || '状态更新成功');
       setShowStatusModal(false);
@@ -289,7 +289,7 @@ export default function ShipmentBatchManagementPage() {
 
   const renderStatusBadge = (status: string) => {
     const config = statusConfig[status as keyof typeof statusConfig];
-    if (!config) return <Badge variant="outline">{status}</Badge>;
+    if (!config) {return <Badge variant="outline">{status}</Badge>;}
     
     const Icon = config.icon;
     return (
