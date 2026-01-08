@@ -33,6 +33,7 @@ import PickupVerificationPage from './pages/PickupVerificationPage';
 import PickupPointsPage from './pages/PickupPointsPage';
 import PickupStatsPage from './pages/PickupStatsPage';
 import PendingPickupsPage from './pages/PendingPickupsPage';
+import InventoryProductManagementPage from './pages/InventoryProductManagementPage';
 
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import LoginPage from './pages/LoginPage';
@@ -57,6 +58,7 @@ function App(): JSX.Element {
             <NavLink to="/users" label="用户列表" icon="👥" />
             <NavLink to="/user-management" label="用户管理" icon="👤" />
             <NavLink to="/referral-management" label="推荐管理" icon="🌳" />
+            <NavLink to="/inventory-products" label="库存商品" icon="📦" />
             <NavLink to="/lotteries" label="积分商城活动" icon="🎰" />
             <NavLink to="/group-buy-products" label="拼团商品" icon="🛒" />
             <NavLink to="/group-buy-sessions" label="拼团会话" icon="👥" />
@@ -106,6 +108,7 @@ function App(): JSX.Element {
               <Route path="/users/:userId/financial" element={<ProtectedRoute element={<UserFinancialPage />} requiredRole="admin" />} />
               <Route path="/user-management" element={<ProtectedRoute element={<UserManagementPage />} requiredRole="admin" />} />
               <Route path="/referral-management" element={<ProtectedRoute element={<ReferralManagementPage />} requiredRole="admin" />} />
+              <Route path="/inventory-products" element={<ProtectedRoute element={<InventoryProductManagementPage />} requiredRole="admin" />} />
               <Route path="/lotteries" element={<ProtectedRoute element={<LotteryListPage />} requiredRole="admin" />} />
               <Route path="/lotteries/new" element={<ProtectedRoute element={<LotteryForm />} requiredRole="admin" />} />
               <Route path="/lotteries/:id/detail" element={<ProtectedRoute element={<LotteryDetailPage />} requiredRole="admin" />} />

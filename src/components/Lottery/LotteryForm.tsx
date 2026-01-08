@@ -22,6 +22,15 @@ interface PriceComparisonItem {
   price: number;
 }
 
+interface InventoryProduct {
+  id: string;
+  name: string;
+  name_i18n: { zh?: string; ru?: string; tg?: string };
+  original_price: number;
+  stock: number;
+  status: string;
+}
+
 interface LotteryFormData {
   details_i18n: Record<string, string> | null;
   title: Record<string, string> | null;
@@ -36,6 +45,9 @@ interface LotteryFormData {
   image_urls: string[];
   start_time: string;
   price_comparisons: PriceComparisonItem[];
+  inventory_product_id: string | null;
+  full_purchase_enabled: boolean;
+  full_purchase_price: number | null;
 }
 
 const initialFormData: LotteryFormData = {
@@ -52,6 +64,9 @@ const initialFormData: LotteryFormData = {
   image_urls: [],
   start_time: new Date().toISOString().slice(0, 16),
   price_comparisons: [],
+  inventory_product_id: null,
+  full_purchase_enabled: true,
+  full_purchase_price: null,
 };
 
 /**
@@ -78,6 +93,27 @@ export const LotteryForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(isEdit);
   const [lotteryRound, setLotteryRound] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [inventoryProducts, setInventoryProducts] = useState<InventoryProduct[]>([]);
+
+  // 加载库存商品列表
+  const loadInventoryProducts = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('inventory_products')
+        .select('id, name, name_i18n, original_price, stock, status')
+        .eq('status', 'ACTIVE')
+        .order('name', { ascending: true });
+
+      if (error) {throw error;}
+      setInventoryProducts(data || []);
+    } catch (error) {
+      console.error('Failed to load inventory products:', error);
+    }
+  }, [supabase]);
+
+  useEffect(() => {
+    loadInventoryProducts();
+  }, [loadInventoryProducts]);
 
   const loadLottery = useCallback(async () => {
     if (!id) {return;}
@@ -140,6 +176,9 @@ export const LotteryForm: React.FC = () => {
           image_urls: data.image_url ? [data.image_url] : [],
           start_time: new Date(data.start_time).toISOString().slice(0, 16),
           price_comparisons: priceComparisons,
+          inventory_product_id: data.inventory_product_id || null,
+          full_purchase_enabled: data.full_purchase_enabled !== false,
+          full_purchase_price: data.full_purchase_price || null,
         });
       }
     } catch (error: any) {
@@ -237,6 +276,10 @@ export const LotteryForm: React.FC = () => {
         description: (formData.description && formData.description.zh) || '',
         // 比价清单
         price_comparisons: formData.price_comparisons,
+        // 库存商品关联
+        inventory_product_id: formData.inventory_product_id || null,
+        full_purchase_enabled: formData.full_purchase_enabled,
+        full_purchase_price: formData.full_purchase_price ? Number(formData.full_purchase_price) : null,
       };
 
       let result;
@@ -417,6 +460,76 @@ export const LotteryForm: React.FC = () => {
               value={formData.price_comparisons}
               onChange={handlePriceComparisonsChange}
             />
+          </div>
+
+          {/* 库存商品关联（全款购买设置） */}
+          <div className="border-t pt-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-base font-semibold">全款购买设置</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  id="full_purchase_enabled"
+                  type="checkbox"
+                  checked={formData.full_purchase_enabled}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, full_purchase_enabled: e.target.checked }))}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <Label htmlFor="full_purchase_enabled" className="cursor-pointer text-sm">
+                  启用全款购买
+                </Label>
+              </div>
+            </div>
+            
+            {formData.full_purchase_enabled && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="inventory_product_id">关联库存商品 *</Label>
+                  <Select
+                    value={formData.inventory_product_id || ''}
+                    onValueChange={(v) => {
+                      const selectedProduct = inventoryProducts.find(p => p.id === v);
+                      setFormData((prev) => ({
+                        ...prev,
+                        inventory_product_id: v || null,
+                        // 自动填充全款购买价格
+                        full_purchase_price: selectedProduct ? selectedProduct.original_price : prev.full_purchase_price,
+                      }));
+                    }}
+                  >
+                    <SelectTrigger id="inventory_product_id">
+                      <SelectValue placeholder="选择库存商品" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">不关联库存商品</SelectItem>
+                      {inventoryProducts.map((product) => (
+                        <SelectItem key={product.id} value={product.id}>
+                          {product.name_i18n?.zh || product.name} - 库存: {product.stock} - 价格: TJS {product.original_price}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500">
+                    📦 关联库存商品后，全款购买将从该库存商品扣减库存，不影响一元购物的份数
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="full_purchase_price">全款购买价格（TJS）</Label>
+                  <Input
+                    id="full_purchase_price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.full_purchase_price || ''}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, full_purchase_price: e.target.value ? Number(e.target.value) : null }))}
+                    placeholder="留空则使用库存商品原价"
+                  />
+                  <p className="text-xs text-gray-500">
+                    💰 留空则使用关联库存商品的原价
+                  </p>
+                </div>
+              </>
+            )}
           </div>
 
           {/* 开始时间 */}
