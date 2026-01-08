@@ -37,8 +37,8 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           let width = img.width;
           let height = img.height;
 
-          // 限制最大尺寸为1920x1920
-          const maxSize = 1920;
+          // 限制最大尺寸为800x800，优化手机展示
+          const maxSize = 800;
           if (width > maxSize || height > maxSize) {
             if (width > height) {
               height = (height / width) * maxSize;
@@ -63,7 +63,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
               }
             },
             'image/jpeg',
-            0.85
+            0.8
           );
         };
         img.onerror = reject;
