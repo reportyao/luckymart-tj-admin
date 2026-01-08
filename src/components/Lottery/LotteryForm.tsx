@@ -485,12 +485,12 @@ export const LotteryForm: React.FC = () => {
                 <div className="space-y-2">
                   <Label htmlFor="inventory_product_id">关联库存商品 *</Label>
                   <Select
-                    value={formData.inventory_product_id || ''}
+                    value={formData.inventory_product_id || 'none'}
                     onValueChange={(v) => {
                       const selectedProduct = inventoryProducts.find(p => p.id === v);
                       setFormData((prev) => ({
                         ...prev,
-                        inventory_product_id: v || null,
+                        inventory_product_id: v === 'none' ? null : v,
                         // 自动填充全款购买价格
                         full_purchase_price: selectedProduct ? selectedProduct.original_price : prev.full_purchase_price,
                       }));
@@ -500,7 +500,7 @@ export const LotteryForm: React.FC = () => {
                       <SelectValue placeholder="选择库存商品" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">不关联库存商品</SelectItem>
+                      <SelectItem value="none">不关联库存商品</SelectItem>
                       {inventoryProducts.map((product) => (
                         <SelectItem key={product.id} value={product.id}>
                           {product.name_i18n?.zh || product.name} - 库存: {product.stock} - 价格: TJS {product.original_price}

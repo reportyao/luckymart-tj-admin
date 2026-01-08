@@ -155,18 +155,18 @@ export default function BatchStatisticsPage() {
         supabase
           .from('full_purchase_orders')
           .select('id', { count: 'exact', head: true })
-          .or('logistics_status.is.null,logistics_status.eq.PENDING_SHIPMENT')
+          .or('(logistics_status.is.null,logistics_status.eq.PENDING_SHIPMENT)')
           .is('batch_id', null),
         supabase
           .from('prizes')
           .select('id', { count: 'exact', head: true })
-          .or('logistics_status.is.null,logistics_status.eq.PENDING_SHIPMENT')
+          .or('(logistics_status.is.null,logistics_status.eq.PENDING_SHIPMENT)')
           .is('batch_id', null)
           .eq('status', 'CLAIMED'),
         supabase
           .from('group_buy_results')
           .select('id', { count: 'exact', head: true })
-          .or('logistics_status.is.null,logistics_status.eq.PENDING_SHIPMENT')
+          .or('(logistics_status.is.null,logistics_status.eq.PENDING_SHIPMENT)')
           .is('batch_id', null),
       ]);
 
