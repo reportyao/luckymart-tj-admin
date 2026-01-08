@@ -8,6 +8,7 @@ interface ImageUploadProps {
   onChange: (urls: string[]) => void;
   maxImages?: number;
   maxSizeMB?: number;
+  bucket?: string; // 指定使用的Storage Bucket，默认为'lottery-images'
 }
 
 // 创建独立的Storage客户端（使用service_role绕过RLS）
@@ -20,6 +21,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   onChange,
   maxImages = 5,
   maxSizeMB = 5,
+  bucket = 'lottery-images',
 }) => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -89,7 +91,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
    */
   const uploadToStorage = async (blob: Blob, fileName: string): Promise<string> => {
     const { data, error } = await storageClient.storage
-      .from('lottery-images')
+      .from(bucket)
       .upload(fileName, blob, {
         contentType: 'image/jpeg',
         cacheControl: '3600',
@@ -103,7 +105,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
     // 获取公开访问URL
     const { data: urlData } = storageClient.storage
-      .from('lottery-images')
+      .from(bucket)
       .getPublicUrl(data.path);
 
     return urlData.publicUrl;
@@ -191,14 +193,14 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     try {
       // 从URL中提取文件路径
       const urlObj = new URL(url);
-      const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/lottery-images\/(.+)$/);
+      const pathMatch = urlObj.pathname.match(new RegExp(`\\/storage\\/v1\\/object\\/public\\/${bucket}\\/(.+)$`));
       
       if (pathMatch && pathMatch[1]) {
         const filePath = pathMatch[1];
         
         // 从Storage中删除文件
         const { error } = await storageClient.storage
-          .from('lottery-images')
+          .from(bucket)
           .remove([filePath]);
 
         if (error) {
