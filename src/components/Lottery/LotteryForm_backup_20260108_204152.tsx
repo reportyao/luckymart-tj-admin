@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useSupabase } from '@/contexts/SupabaseContext';
 import { Enums } from '@/types/supabase';
@@ -26,13 +26,9 @@ interface InventoryProduct {
   id: string;
   name: string;
   name_i18n: { zh?: string; ru?: string; tg?: string };
-  description_i18n?: { zh?: string; ru?: string; tg?: string };
   original_price: number;
   stock: number;
   status: string;
-  image_urls?: string[];
-  category?: string;
-  sku?: string;
 }
 
 interface LotteryFormData {
@@ -98,15 +94,13 @@ export const LotteryForm: React.FC = () => {
   const [lotteryRound, setLotteryRound] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inventoryProducts, setInventoryProducts] = useState<InventoryProduct[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   // 加载库存商品列表
   const loadInventoryProducts = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('inventory_products')
-        .select('id, name, name_i18n, description_i18n, original_price, stock, status, image_urls, category, sku')
+        .select('id, name, name_i18n, original_price, stock, status')
         .eq('status', 'ACTIVE')
         .order('name', { ascending: true });
 
@@ -120,37 +114,6 @@ export const LotteryForm: React.FC = () => {
   useEffect(() => {
     loadInventoryProducts();
   }, [loadInventoryProducts]);
-
-  // 筛选和搜索库存商品
-  const filteredProducts = useMemo(() => {
-    let filtered = inventoryProducts;
-
-    // 分类筛选
-    if (categoryFilter !== 'all') {
-      filtered = filtered.filter(p => p.category === categoryFilter);
-    }
-
-    // 搜索筛选
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(p => {
-        const name = p.name_i18n?.zh || p.name || '';
-        const sku = p.sku || '';
-        return name.toLowerCase().includes(query) || sku.toLowerCase().includes(query);
-      });
-    }
-
-    return filtered;
-  }, [inventoryProducts, searchQuery, categoryFilter]);
-
-  // 获取所有分类
-  const categories = useMemo(() => {
-    const cats = new Set<string>();
-    inventoryProducts.forEach(p => {
-      if (p.category) cats.add(p.category);
-    });
-    return Array.from(cats).sort();
-  }, [inventoryProducts]);
 
   const loadLottery = useCallback(async () => {
     if (!id) {return;}
@@ -269,42 +232,6 @@ export const LotteryForm: React.FC = () => {
       ...prev,
       price_comparisons: value,
     }));
-  };
-
-  // 选择SKU后自动填充数据
-  const handleProductSelect = (productId: string) => {
-    if (productId === 'none') {
-      setFormData((prev) => ({
-        ...prev,
-        inventory_product_id: null,
-      }));
-      return;
-    }
-
-    const selectedProduct = inventoryProducts.find(p => p.id === productId);
-    if (!selectedProduct) return;
-
-    // 自动填充所有相关字段
-    setFormData((prev) => ({
-      ...prev,
-      inventory_product_id: productId,
-      // 自动填充标题
-      title: selectedProduct.name_i18n || { zh: selectedProduct.name },
-      // 自动填充描述
-      description: selectedProduct.description_i18n || prev.description,
-      // 自动填充图片
-      image_urls: selectedProduct.image_urls && selectedProduct.image_urls.length > 0 
-        ? selectedProduct.image_urls 
-        : prev.image_urls,
-      // 自动填充全款购买价格
-      full_purchase_price: selectedProduct.original_price,
-      // 自动填充单价（建议为原价的1/100）
-      ticket_price: prev.ticket_price === 0 ? Math.round(selectedProduct.original_price / 100) : prev.ticket_price,
-      // 自动填充总票数（建议为100份）
-      total_tickets: prev.total_tickets === 0 ? 100 : prev.total_tickets,
-    }));
-
-    toast.success('已自动填充商品信息！');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -428,138 +355,6 @@ export const LotteryForm: React.FC = () => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* 🔝 关联库存商品（移到最上面） */}
-          <div className="border-2 border-blue-200 rounded-lg p-6 space-y-4 bg-blue-50">
-            <div className="flex items-center justify-between">
-              <Label className="text-lg font-bold text-blue-900">📦 关联库存商品（推荐优先选择）</Label>
-              <div className="flex items-center gap-2">
-                <input
-                  id="full_purchase_enabled"
-                  type="checkbox"
-                  checked={formData.full_purchase_enabled}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, full_purchase_enabled: e.target.checked }))}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <Label htmlFor="full_purchase_enabled" className="cursor-pointer text-sm">
-                  启用全款购买
-                </Label>
-              </div>
-            </div>
-            
-            {formData.full_purchase_enabled && (
-              <>
-                {/* 搜索和筛选 */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="search">🔍 搜索商品</Label>
-                    <Input
-                      id="search"
-                      type="text"
-                      placeholder="输入商品名称或SKU..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="bg-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="category">🏷️ 分类筛选</Label>
-                    <Select
-                      value={categoryFilter}
-                      onValueChange={setCategoryFilter}
-                    >
-                      <SelectTrigger id="category" className="bg-white">
-                        <SelectValue placeholder="选择分类" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">全部分类</SelectItem>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat} value={cat}>
-                            {cat}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* SKU选择 */}
-                <div className="space-y-2">
-                  <Label htmlFor="inventory_product_id">选择库存商品 *</Label>
-                  <Select
-                    value={formData.inventory_product_id || 'none'}
-                    onValueChange={handleProductSelect}
-                  >
-                    <SelectTrigger id="inventory_product_id" className="bg-white">
-                      <SelectValue placeholder="选择库存商品（将自动填充商品信息）" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-80">
-                      <SelectItem value="none">不关联库存商品</SelectItem>
-                      {filteredProducts.length === 0 ? (
-                        <SelectItem value="empty" disabled>
-                          未找到匹配的商品
-                        </SelectItem>
-                      ) : (
-                        filteredProducts.map((product) => (
-                          <SelectItem key={product.id} value={product.id}>
-                            <div className="flex flex-col py-1">
-                              <span className="font-medium">
-                                {product.name_i18n?.zh || product.name}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                SKU: {product.sku || 'N/A'} | 库存: {product.stock} | 价格: TJS {product.original_price}
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-blue-600 font-medium">
-                    💡 选择商品后将自动填充：标题、描述、图片、价格等信息
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    📦 关联库存商品后，全款购买将从该库存商品扣减库存，不影响一元购物的份数
-                  </p>
-                </div>
-
-                {/* 显示已选择的商品信息 */}
-                {formData.inventory_product_id && (
-                  <div className="p-4 bg-white border border-blue-300 rounded-lg">
-                    <p className="text-sm font-semibold text-blue-900 mb-2">✅ 已选择商品</p>
-                    {(() => {
-                      const selected = inventoryProducts.find(p => p.id === formData.inventory_product_id);
-                      return selected ? (
-                        <div className="space-y-1 text-sm">
-                          <p><strong>名称:</strong> {selected.name_i18n?.zh || selected.name}</p>
-                          <p><strong>SKU:</strong> {selected.sku || 'N/A'}</p>
-                          <p><strong>库存:</strong> {selected.stock}</p>
-                          <p><strong>原价:</strong> TJS {selected.original_price}</p>
-                        </div>
-                      ) : null;
-                    })()}
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="full_purchase_price">全款购买价格（TJS）</Label>
-                  <Input
-                    id="full_purchase_price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.full_purchase_price || ''}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, full_purchase_price: e.target.value ? Number(e.target.value) : null }))}
-                    placeholder="留空则使用库存商品原价"
-                    className="bg-white"
-                  />
-                  <p className="text-xs text-gray-500">
-                    💰 留空则使用关联库存商品的原价
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-
           {/* 多语言标题 */}
           <MultiLanguageInput
             label="积分商城标题"
@@ -665,6 +460,76 @@ export const LotteryForm: React.FC = () => {
               value={formData.price_comparisons}
               onChange={handlePriceComparisonsChange}
             />
+          </div>
+
+          {/* 库存商品关联（全款购买设置） */}
+          <div className="border-t pt-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-base font-semibold">全款购买设置</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  id="full_purchase_enabled"
+                  type="checkbox"
+                  checked={formData.full_purchase_enabled}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, full_purchase_enabled: e.target.checked }))}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <Label htmlFor="full_purchase_enabled" className="cursor-pointer text-sm">
+                  启用全款购买
+                </Label>
+              </div>
+            </div>
+            
+            {formData.full_purchase_enabled && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="inventory_product_id">关联库存商品 *</Label>
+                  <Select
+                    value={formData.inventory_product_id || 'none'}
+                    onValueChange={(v) => {
+                      const selectedProduct = inventoryProducts.find(p => p.id === v);
+                      setFormData((prev) => ({
+                        ...prev,
+                        inventory_product_id: v === 'none' ? null : v,
+                        // 自动填充全款购买价格
+                        full_purchase_price: selectedProduct ? selectedProduct.original_price : prev.full_purchase_price,
+                      }));
+                    }}
+                  >
+                    <SelectTrigger id="inventory_product_id">
+                      <SelectValue placeholder="选择库存商品" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">不关联库存商品</SelectItem>
+                      {inventoryProducts.map((product) => (
+                        <SelectItem key={product.id} value={product.id}>
+                          {product.name_i18n?.zh || product.name} - 库存: {product.stock} - 价格: TJS {product.original_price}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500">
+                    📦 关联库存商品后，全款购买将从该库存商品扣减库存，不影响一元购物的份数
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="full_purchase_price">全款购买价格（TJS）</Label>
+                  <Input
+                    id="full_purchase_price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.full_purchase_price || ''}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, full_purchase_price: e.target.value ? Number(e.target.value) : null }))}
+                    placeholder="留空则使用库存商品原价"
+                  />
+                  <p className="text-xs text-gray-500">
+                    💰 留空则使用关联库存商品的原价
+                  </p>
+                </div>
+              </>
+            )}
           </div>
 
           {/* 开始时间 */}
