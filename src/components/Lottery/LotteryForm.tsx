@@ -106,7 +106,7 @@ export const LotteryForm: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('inventory_products')
-        .select('id, name, name_i18n, description_i18n, original_price, stock, status, image_urls, category, sku')
+        .select('id, name, name_i18n, description_i18n, original_price, stock, status, image_urls')
         .eq('status', 'ACTIVE')
         .order('name', { ascending: true });
 
@@ -130,13 +130,13 @@ export const LotteryForm: React.FC = () => {
       filtered = filtered.filter(p => p.category === categoryFilter);
     }
 
-    // 搜索筛选
+    // 搜索筛选（按名称或ID）
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(p => {
         const name = p.name_i18n?.zh || p.name || '';
-        const sku = p.sku || '';
-        return name.toLowerCase().includes(query) || sku.toLowerCase().includes(query);
+        const id = p.id || '';
+        return name.toLowerCase().includes(query) || id.toLowerCase().includes(query);
       });
     }
 
@@ -455,7 +455,7 @@ export const LotteryForm: React.FC = () => {
                     <Input
                       id="search"
                       type="text"
-                      placeholder="输入商品名称或SKU..."
+                      placeholder="输入商品名称或ID..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="bg-white"
@@ -506,7 +506,7 @@ export const LotteryForm: React.FC = () => {
                                 {product.name_i18n?.zh || product.name}
                               </span>
                               <span className="text-xs text-gray-500">
-                                SKU: {product.sku || 'N/A'} | 库存: {product.stock} | 价格: TJS {product.original_price}
+                                ID: {product.id.substring(0, 8)}... | 库存: {product.stock} | 价格: TJS {product.original_price}
                               </span>
                             </div>
                           </SelectItem>
@@ -531,7 +531,7 @@ export const LotteryForm: React.FC = () => {
                       return selected ? (
                         <div className="space-y-1 text-sm">
                           <p><strong>名称:</strong> {selected.name_i18n?.zh || selected.name}</p>
-                          <p><strong>SKU:</strong> {selected.sku || 'N/A'}</p>
+                          <p><strong>ID:</strong> {selected.id}</p>
                           <p><strong>库存:</strong> {selected.stock}</p>
                           <p><strong>原价:</strong> TJS {selected.original_price}</p>
                         </div>
