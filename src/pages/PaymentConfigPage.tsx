@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { MultiLanguageInput } from '@/components/MultiLanguageInput';
 import { ImageUpload } from '@/components/ui/ImageUpload';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import toast from 'react-hot-toast';
 import { Plus, Edit, Trash2, Power, PowerOff } from 'lucide-react';
 
@@ -242,151 +243,145 @@ export const PaymentConfigPage: React.FC = () => {
         ))}
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <CardTitle>{editingConfig ? '编辑支付配置' : '添加支付配置'}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>配置Key (唯一标识)</Label>
-                    <Input 
-                      value={formData.config_key} 
-                      onChange={(e) => setFormData({...formData, config_key: e.target.value})}
-                      placeholder="如: alif_bank_deposit"
-                      disabled={!!editingConfig}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>配置类型</Label>
-                    <select 
-                      className="w-full border rounded p-2"
-                      value={formData.config_type}
-                      onChange={(e) => setFormData({...formData, config_type: e.target.value as any})}
-                    >
-                      <option value="DEPOSIT">充值</option>
-                      <option value="WITHDRAW">提现</option>
-                    </select>
-                  </div>
-                </div>
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white">
+          <DialogHeader>
+            <DialogTitle>{editingConfig ? '编辑支付配置' : '添加支付配置'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-6 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>配置Key (唯一标识)</Label>
+                <Input 
+                  value={formData.config_key} 
+                  onChange={(e) => setFormData({...formData, config_key: e.target.value})}
+                  placeholder="如: alif_bank_deposit"
+                  disabled={!!editingConfig}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>配置类型</Label>
+                <select 
+                  className="flex h-9 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={formData.config_type}
+                  onChange={(e) => setFormData({...formData, config_type: e.target.value as any})}
+                >
+                  <option value="DEPOSIT">充值</option>
+                  <option value="WITHDRAW">提现</option>
+                </select>
+              </div>
+            </div>
 
-                <div className="space-y-2">
-                  <Label>显示名称 (多语言)</Label>
-                  <MultiLanguageInput 
-                    value={formData.name_i18n}
-                    onChange={(val) => setFormData({...formData, name_i18n: val})}
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label>显示名称 (多语言)</Label>
+              <MultiLanguageInput 
+                value={formData.name_i18n}
+                onChange={(val) => setFormData({...formData, name_i18n: val})}
+              />
+            </div>
 
-                <div className="space-y-2">
-                  <Label>描述信息 (多语言)</Label>
-                  <MultiLanguageInput 
-                    value={formData.description_i18n}
-                    onChange={(val) => setFormData({...formData, description_i18n: val})}
-                    multiline={true}
-                    rows={2}
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label>描述信息 (多语言)</Label>
+              <MultiLanguageInput 
+                value={formData.description_i18n}
+                onChange={(val) => setFormData({...formData, description_i18n: val})}
+                multiline={true}
+                rows={2}
+              />
+            </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>支付方法</Label>
-                    <Input 
-                      value={formData.method} 
-                      onChange={(e) => setFormData({...formData, method: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>处理时间</Label>
-                    <Input 
-                      value={formData.processing_time} 
-                      onChange={(e) => setFormData({...formData, processing_time: e.target.value})}
-                    />
-                  </div>
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>支付方法</Label>
+                <Input 
+                  value={formData.method} 
+                  onChange={(e) => setFormData({...formData, method: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>处理时间</Label>
+                <Input 
+                  value={formData.processing_time} 
+                  onChange={(e) => setFormData({...formData, processing_time: e.target.value})}
+                />
+              </div>
+            </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>最小金额</Label>
-                    <Input 
-                      type="number"
-                      value={formData.min_amount} 
-                      onChange={(e) => setFormData({...formData, min_amount: Number(e.target.value)})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>最大金额</Label>
-                    <Input 
-                      type="number"
-                      value={formData.max_amount} 
-                      onChange={(e) => setFormData({...formData, max_amount: Number(e.target.value)})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>排序权重</Label>
-                    <Input 
-                      type="number"
-                      value={formData.sort_order} 
-                      onChange={(e) => setFormData({...formData, sort_order: Number(e.target.value)})}
-                    />
-                  </div>
-                </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>最小金额</Label>
+                <Input 
+                  type="number"
+                  value={formData.min_amount} 
+                  onChange={(e) => setFormData({...formData, min_amount: Number(e.target.value)})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>最大金额</Label>
+                <Input 
+                  type="number"
+                  value={formData.max_amount} 
+                  onChange={(e) => setFormData({...formData, max_amount: Number(e.target.value)})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>排序权重</Label>
+                <Input 
+                  type="number"
+                  value={formData.sort_order} 
+                  onChange={(e) => setFormData({...formData, sort_order: Number(e.target.value)})}
+                />
+              </div>
+            </div>
 
-                <div className="space-y-2">
-                  <Label>收款账号信息</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input 
-                      placeholder="账号"
-                      value={formData.account_number} 
-                      onChange={(e) => setFormData({...formData, account_number: e.target.value})}
-                    />
-                    <Input 
-                      placeholder="户名"
-                      value={formData.account_name} 
-                      onChange={(e) => setFormData({...formData, account_name: e.target.value})}
-                    />
-                  </div>
-                  <Input 
-                    className="mt-2"
-                    placeholder="银行名称"
-                    value={formData.bank_name} 
-                    onChange={(e) => setFormData({...formData, bank_name: e.target.value})}
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label>收款账号信息</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Input 
+                  placeholder="账号"
+                  value={formData.account_number} 
+                  onChange={(e) => setFormData({...formData, account_number: e.target.value})}
+                />
+                <Input 
+                  placeholder="户名"
+                  value={formData.account_name} 
+                  onChange={(e) => setFormData({...formData, account_name: e.target.value})}
+                />
+              </div>
+              <Input 
+                className="mt-2"
+                placeholder="银行名称"
+                value={formData.bank_name} 
+                onChange={(e) => setFormData({...formData, bank_name: e.target.value})}
+              />
+            </div>
 
-                <div className="space-y-2">
-                  <Label>收款二维码</Label>
-                  <ImageUpload 
-                    value={formData.qr_code_urls}
-                    onChange={(urls) => setFormData({...formData, qr_code_urls: urls})}
-                    maxImages={1}
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label>收款二维码</Label>
+              <ImageUpload 
+                value={formData.qr_code_urls}
+                onChange={(urls) => setFormData({...formData, qr_code_urls: urls})}
+                maxImages={1}
+              />
+            </div>
 
-                <div className="space-y-2">
-                  <Label>操作说明 (多语言)</Label>
-                  <MultiLanguageInput 
-                    value={formData.instructions}
-                    onChange={(val) => setFormData({...formData, instructions: val})}
-                    multiline={true}
-                    rows={5}
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label>操作说明 (多语言)</Label>
+              <MultiLanguageInput 
+                value={formData.instructions}
+                onChange={(val) => setFormData({...formData, instructions: val})}
+                multiline={true}
+                rows={5}
+              />
+            </div>
 
-                <div className="flex justify-end space-x-2 pt-4">
-                  <Button variant="outline" type="button" onClick={() => setShowModal(false)}>取消</Button>
-                  <Button type="submit">保存配置</Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" type="button" onClick={() => setShowModal(false)}>取消</Button>
+              <Button type="submit">保存配置</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
-
-// export default PaymentConfigPage;

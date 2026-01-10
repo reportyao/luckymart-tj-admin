@@ -56,26 +56,28 @@ export const MultiLanguageInput: React.FC<MultiLanguageInputProps> = ({
 
   return (
     <div className={className}>
-      <Label className="mb-2 block">{label}</Label>
+      {label && <Label className="mb-2 block">{label}</Label>}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-3 bg-zinc-100 p-1">
           {SUPPORTED_LANGUAGES.map((lang) => (
-            <TabsTrigger key={lang.code} value={lang.code}>
+            <TabsTrigger 
+              key={lang.code} 
+              value={lang.code}
+              className="data-[state=active]:bg-white data-[state=active]:shadow-sm"
+            >
               {lang.label}
             </TabsTrigger>
           ))}
         </TabsList>
         {SUPPORTED_LANGUAGES.map((lang) => (
-          <TabsContent key={lang.code} value={lang.code} className="mt-4">
+          <TabsContent key={lang.code} value={lang.code} className="mt-4 focus-visible:ring-0">
             <div className="space-y-2">
-              <Label htmlFor={`${label}-${lang.code}`}>
-                {label} ({lang.label})
-              </Label>
               <InputComponent
-                id={`${label}-${lang.code}`}
+                id={`${label || 'input'}-${lang.code}`}
                 value={currentValues[lang.code] || ''}
                 onChange={(e) => handleChange(lang.code, e.target.value)}
-                placeholder={placeholder || `输入 ${label} (${lang.label})`}
+                placeholder={placeholder || `输入内容 (${lang.label})`}
+                className="min-h-[40px]"
                 {...(multiline || type === 'textarea' ? { rows } : {})}
               />
             </div>
