@@ -141,7 +141,7 @@ const PaymentConfigListPage: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {configs.map(config => (
+                {(configs || []).map(config => (
                   <TableRow key={config.id}>
                     <TableCell className="font-medium">{config.provider}</TableCell>
                     <TableCell>{renderConfigValue(config)}</TableCell>

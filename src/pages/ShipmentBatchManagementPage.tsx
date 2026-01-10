@@ -377,7 +377,7 @@ export default function ShipmentBatchManagementPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {batches.map((batch) => (
+                {(batches || []).map((batch) => (
                   <TableRow key={batch.id}>
                     <TableCell className="font-medium">{batch.batch_no}</TableCell>
                     <TableCell>{renderStatusBadge(batch.status)}</TableCell>

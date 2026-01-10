@@ -387,7 +387,7 @@ export default function GroupBuyProductManagementPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {products.map((product) => (
+              {(products || []).map((product) => (
                 <tr key={product.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -506,7 +506,7 @@ export default function GroupBuyProductManagementPage() {
                 <div className="border rounded p-4 max-h-60 overflow-y-auto">
                   <h4 className="font-medium mb-2">选择库存商品</h4>
                   <div className="space-y-2">
-                    {inventoryProducts.map((product) => (
+                    {(inventoryProducts || []).map((product) => (
                       <div
                         key={product.id}
                         onClick={() => handleSelectSku(product)}

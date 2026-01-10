@@ -188,7 +188,7 @@ export default function GroupBuySessionManagementPage() {
         <div className="text-center py-12 text-gray-500">暂无拼团会话</div>
       ) : (
         <div className="space-y-4">
-          {sessions.map((session) => (
+          {(sessions || []).map((session) => (
             <div key={session.id} className="bg-white rounded-lg shadow-md p-6">
               <div className="flex gap-4">
                 {/* Product Image */}
@@ -242,7 +242,7 @@ export default function GroupBuySessionManagementPage() {
                     <div>
                       <div className="text-sm font-medium text-gray-700 mb-2">参与者:</div>
                       <div className="flex flex-wrap gap-2">
-                        {session.orders.map((order, index) => (
+                        {(session.orders || []).map((order, index) => (
                           <div
                             key={order.id}
                             className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${

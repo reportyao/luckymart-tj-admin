@@ -212,7 +212,7 @@ export default function AdminManagementPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {admins.map((admin) => (
+            {(admins || []).map((admin) => (
               <tr key={admin.id}>
                 <td className="px-6 py-4 whitespace-nowrap">{admin.username}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{admin.display_name || '-'}</td>

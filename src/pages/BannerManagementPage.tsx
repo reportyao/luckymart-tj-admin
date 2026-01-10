@@ -230,7 +230,7 @@ export default function BannerManagementPage() {
         <div className="text-center py-12 text-gray-500">暂无Banner</div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
-          {banners.map((banner, index) => (
+          {(banners || []).map((banner, index) => (
             <div key={banner.id} className="bg-white rounded-lg shadow-md p-4 flex items-center gap-4">
               <img
                 src={banner.image_url_zh || banner.image_url_ru || banner.image_url_tg || banner.image_url}

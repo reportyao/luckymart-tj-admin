@@ -36,13 +36,24 @@ export const UserDetailsPage: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('*, referred_by_user:users!referred_by_id(*)')
+        .select('*')
         .eq('id', id)
         .single();
 
       if (error) {throw error;}
 
-      setUser(data as UserProfile);
+      // 手动查询邀请人信息
+      let referredByUser = null;
+      if (data?.referred_by_id) {
+        const { data: referrer } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', data.referred_by_id)
+          .single();
+        referredByUser = referrer;
+      }
+
+      setUser({ ...data, referred_by_user: referredByUser } as UserProfile);
       
       // 查询邀请统计
       await fetchReferralStats(id);

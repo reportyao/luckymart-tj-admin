@@ -312,7 +312,7 @@ export default function CommissionRecordsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {records.map((record) => (
+              {(records || []).map((record) => (
                 <tr key={record.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
                     {record.status === 'pending' && (
