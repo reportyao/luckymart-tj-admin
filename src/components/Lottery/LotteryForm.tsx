@@ -38,6 +38,7 @@ interface InventoryProduct {
 interface LotteryFormData {
   title: Record<string, string> | null;
   description: Record<string, string> | null;
+  name_i18n: Record<string, string> | null;
   period: string;
   ticket_price: number;
   total_tickets: number;
@@ -54,8 +55,9 @@ interface LotteryFormData {
 }
 
 const initialFormData: LotteryFormData = {
-  title: { zh: '', en: '' },
-  description: { zh: '', en: '' },
+  title: { zh: '', en: '', ru: '', tg: '' },
+  description: { zh: '', en: '', ru: '', tg: '' },
+  name_i18n: { zh: '', en: '', ru: '', tg: '' },
   period: '',
   ticket_price: 0,
   total_tickets: 0,
@@ -331,29 +333,26 @@ export const LotteryForm: React.FC = () => {
       // 开奖时间 = 结束时间 + 180秒
       const drawTime = new Date(endTime.getTime() + 180 * 1000);
 
-      const payload = {
-        ...formData,
-        image_url: formData.image_urls[0] || null,
+      // 显式构建 Payload，只包含数据库中存在的字段，彻底移除 details_i18n
+      const payload: any = {
+        title: (formData.title && formData.title.zh) || '',
+        description: (formData.description && formData.description.zh) || '',
+        title_i18n: formData.title || {},
+        description_i18n: formData.description || {},
+        name_i18n: formData.title || {}, // 兼容前端使用的字段
         period: isEdit ? formData.period : generatePeriod(),
+        ticket_price: Number(formData.ticket_price),
+        total_tickets: Number(formData.total_tickets),
         max_per_user: formData.unlimited_purchase ? 999999 : Number(formData.max_per_user),
-        currency: 'TJS', // 固定为塔吉克索莫尼
+        currency: 'TJS',
+        status: formData.status,
+        image_url: formData.image_urls[0] || null,
+        image_urls: formData.image_urls,
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
         draw_time: drawTime.toISOString(),
         updated_at: new Date().toISOString(),
-        ticket_price: Number(formData.ticket_price),
-        total_tickets: Number(formData.total_tickets),
-        // 使用JSONB字段存储多语言内容
-        title_i18n: formData.title || {},
-        description_i18n: formData.description || {},
-        // 前端使用name_i18n字段，也需要保存
-        name_i18n: formData.title || {},
-        // 保留旧字段兼容性，使用中文作为默认值
-        title: (formData.title && formData.title.zh) || '',
-        description: (formData.description && formData.description.zh) || '',
-        // 比价清单
         price_comparisons: formData.price_comparisons,
-        // 库存商品关联
         inventory_product_id: formData.inventory_product_id || null,
         full_purchase_enabled: formData.full_purchase_enabled,
         full_purchase_price: formData.full_purchase_price ? Number(formData.full_purchase_price) : null,
@@ -565,19 +564,32 @@ export const LotteryForm: React.FC = () => {
           </div>
 
           {/* 多语言标题 */}
-          <MultiLanguageInput
-            label="积分商城标题"
-            value={formData.title}
-            onChange={(v) => handleMultiLangChange('title', v)}
-          />
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <span>积分商城标题</span>
+              <span className="text-xs text-gray-500 font-normal">(将同步到 title_i18n 和 name_i18n)</span>
+            </Label>
+            <MultiLanguageInput
+              value={formData.title || {}}
+              onChange={(v) => handleMultiLangChange('title', v)}
+              placeholder="输入商品标题"
+            />
+          </div>
 
           {/* 多语言描述 */}
-          <MultiLanguageInput
-            label="积分商城描述"
-            value={formData.description}
-            onChange={(v) => handleMultiLangChange('description', v)}
-            type="textarea"
-          />
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <span>积分商城描述 / 详情</span>
+              <span className="text-xs text-gray-500 font-normal">(支持多行文本，将同步到 description_i18n)</span>
+            </Label>
+            <MultiLanguageInput
+              value={formData.description || {}}
+              onChange={(v) => handleMultiLangChange('description', v)}
+              placeholder="输入商品描述或详细介绍"
+              multiline={true}
+              rows={6}
+            />
+          </div>
 
           {/* 图片上传 */}
           <div className="space-y-2">
