@@ -1,29 +1,41 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
-export default defineConfig({
-  plugins: [react()],
-  base: '/admin/',
+export default defineConfig(({ mode }) => {
+  // 加载环境变量
+  const env = loadEnv(mode, process.cwd(), '')
   
-  server: {
-    port: 5174,
-    host: '0.0.0.0',
-    allowedHosts: [
-      'admin.seardao.org',
-      '47.243.83.253',
-      'localhost'
-    ],
-  },
-  
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
+  return {
+    plugins: [react()],
+    base: '/admin/',
+    
+    server: {
+      port: 5174,
+      host: '0.0.0.0',
+      allowedHosts: [
+        'admin.seardao.org',
+        '47.243.83.253',
+        'localhost'
+      ],
     },
-  },
-  
-  build: {
-    outDir: 'dist',
-    sourcemap: false,
-  },
+    
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
+    },
+    
+    build: {
+      outDir: 'dist',
+      sourcemap: false,
+    },
+    
+    // 确保环境变量在构建时可用
+    define: {
+      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL || 'https://enndjqqststndfeivwof.supabase.co'),
+      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVubmRqcXFzdHN0bmRmZWl2d29mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI3ODMxNTksImV4cCI6MjA0ODM1OTE1OX0.Ks6h5_r5Hy7KIJqQxWqzVBXH0qYQPeXSfxZC0ksxMIo'),
+      'import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY': JSON.stringify(env.VITE_SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVubmRqcXFzdHN0bmRmZWl2d29mIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczMjc4MzE1OSwiZXhwIjoyMDQ4MzU5MTU5fQ.YhPxJbqjxBbJGWOEKPW8Oy-SXfXTRJvPbUZyNpkAOQo'),
+    }
+  }
 })
