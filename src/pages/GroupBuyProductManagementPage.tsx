@@ -107,9 +107,11 @@ export default function GroupBuyProductManagementPage() {
       description_ru: product.description_i18n?.ru || '',
       description_tg: product.description_i18n?.tg || '',
       image_url: product.image_url || '',
-      image_urls: product.image_urls || (product.image_url ? [product.image_url] : []),
+      image_urls: Array.isArray(product.image_urls) ? product.image_urls : (product.image_url ? [product.image_url] : []),
       original_price: product.original_price || 0,
       stock: product.stock || 100,
+      // 保留原有的 price_comparisons，不要覆盖
+      price_comparisons: formData.price_comparisons || [],
     });
     setShowSkuSelector(false);
     alert('已从库存商品导入信息');
@@ -282,7 +284,7 @@ export default function GroupBuyProductManagementPage() {
         .eq('product_id', id)
         .eq('status', 'ACTIVE');
 
-      if (activeSessions && activeSessions.length > 0) {
+      if (activeSessions && Array.isArray(activeSessions) && activeSessions.length > 0) {
         alert('该商品有进行中的拼团会话，无法删除。请先等待会话结束或手动关闭。');
         return;
       }
@@ -742,7 +744,7 @@ export default function GroupBuyProductManagementPage() {
                   价格对比
                 </label>
                 <div className="space-y-2">
-                  {formData.price_comparisons.map((item, index) => (
+                  {(formData.price_comparisons || []).map((item, index) => (
                     <div key={index} className="flex items-center gap-2">
                       <span className="text-sm">{item.platform}</span>
                       <span className="text-sm">¥{item.price}</span>
