@@ -167,23 +167,31 @@ export const LotteryForm: React.FC = () => {
       if (data) {
         // 如果已开奖，尝试获取开奖轮次信息
         if (data.status === 'COMPLETED') {
+          // 修复: 使用正确的表关系查询lottery_results
+          // lottery_results表使用winner_id字段关联users表
           const { data: roundData, error: roundError } = await supabase
             .from('lottery_results')
             .select(
               `
                 *,
-                winner:tickets!lottery_results_winner_id_fkey (
-                  ticket_number,
-                  user_id,
-                  user:users (telegram_username, first_name, last_name, avatar_url)
+                winner:users!lottery_results_winner_id_fkey (
+                  id,
+                  telegram_id,
+                  telegram_username,
+                  first_name,
+                  last_name,
+                  avatar_url
                 )
               `
             )
             .eq('lottery_id', id)
             .single();
 
-          if (roundError && roundError.code !== 'PGRST116') {throw roundError;}
-          const result = roundData ? { ...roundData, winner: roundData.winner[0] } : null;
+          if (roundError && roundError.code !== 'PGRST116') {
+            console.error('Failed to fetch lottery result:', roundError);
+            // 不抛出错误，继续加载表单数据
+          }
+          const result = roundData ? { ...roundData, winner: roundData.winner } : null;
           setLotteryRound(result);
         }
 
