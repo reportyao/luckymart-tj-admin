@@ -36,7 +36,6 @@ interface InventoryProduct {
 }
 
 interface LotteryFormData {
-  details_i18n: Record<string, string> | null;
   title: Record<string, string> | null;
   description: Record<string, string> | null;
   period: string;
@@ -55,7 +54,6 @@ interface LotteryFormData {
 }
 
 const initialFormData: LotteryFormData = {
-  details_i18n: { zh: '', ru: '', tg: '' },
   title: { zh: '', en: '' },
   description: { zh: '', en: '' },
   period: '',
@@ -210,7 +208,6 @@ export const LotteryForm: React.FC = () => {
           // 优先使用JSONB字段，如果为空则尝试从旧字段读取
           title: (data.title_i18n as Record<string, string>) || (typeof data.title === 'string' ? { zh: data.title } : {}),
           description: (data.description_i18n as Record<string, string>) || (typeof data.description === 'string' ? { zh: data.description } : {}),
-          details_i18n: data.details_i18n as Record<string, string> | null,
           period: data.period,
           ticket_price: data.ticket_price,
           total_tickets: data.total_tickets,
@@ -257,7 +254,7 @@ export const LotteryForm: React.FC = () => {
     }));
   };
 
-  const handleMultiLangChange = (id: 'title' | 'description' | 'details_i18n', value: Record<string, string>) => {
+  const handleMultiLangChange = (id: 'title' | 'description', value: Record<string, string>) => {
     setFormData((prev) => ({
       ...prev,
       [id]: value,
@@ -349,7 +346,6 @@ export const LotteryForm: React.FC = () => {
         // 使用JSONB字段存储多语言内容
         title_i18n: formData.title || {},
         description_i18n: formData.description || {},
-        details_i18n: formData.details_i18n || {},
         // 前端使用name_i18n字段，也需要保存
         name_i18n: formData.title || {},
         // 保留旧字段兼容性，使用中文作为默认值
@@ -582,15 +578,6 @@ export const LotteryForm: React.FC = () => {
             onChange={(v) => handleMultiLangChange('description', v)}
             type="textarea"
           />
-
-          {/* 多语言详情 (富文本) */}
-          <div className="space-y-2">
-            <Label>积分商城详情</Label>
-            <RichTextEditor
-              value={formData.details_i18n}
-              onChange={(v) => handleMultiLangChange('details_i18n', v)}
-            />
-          </div>
 
           {/* 图片上传 */}
           <div className="space-y-2">

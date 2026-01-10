@@ -12,11 +12,14 @@ const SUPPORTED_LANGUAGES = [
 ];
 
 interface MultiLanguageInputProps {
-  label: string;
+  label?: string;
   value: Record<string, string> | null;
   onChange: (value: Record<string, string>) => void;
   type?: 'input' | 'textarea';
   className?: string;
+  placeholder?: string;
+  multiline?: boolean;
+  rows?: number;
 }
 
 /**
@@ -28,6 +31,9 @@ export const MultiLanguageInput: React.FC<MultiLanguageInputProps> = ({
   onChange,
   type = 'input',
   className,
+  placeholder,
+  multiline = false,
+  rows = 3,
 }) => {
   const [activeTab, setActiveTab] = useState(SUPPORTED_LANGUAGES[0]?.code || 'zh');
   const currentValues = value || {};
@@ -46,7 +52,7 @@ export const MultiLanguageInput: React.FC<MultiLanguageInputProps> = ({
     [currentValues, onChange]
   );
 
-  const InputComponent = type === 'textarea' ? Textarea : Input;
+  const InputComponent = (type === 'textarea' || multiline) ? Textarea : Input;
 
   return (
     <div className={className}>
@@ -69,7 +75,8 @@ export const MultiLanguageInput: React.FC<MultiLanguageInputProps> = ({
                 id={`${label}-${lang.code}`}
                 value={currentValues[lang.code] || ''}
                 onChange={(e) => handleChange(lang.code, e.target.value)}
-                placeholder={`输入 ${label} (${lang.label})`}
+                placeholder={placeholder || `输入 ${label} (${lang.label})`}
+                {...(multiline || type === 'textarea' ? { rows } : {})}
               />
             </div>
           </TabsContent>

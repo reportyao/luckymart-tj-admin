@@ -160,16 +160,13 @@ export default function OrderShipmentPage() {
           product_id,
           session_id,
           created_at,
-          group_buy_products:product_id (
+          logistics_status,
+          batch_id,
+          group_buy_products:group_buy_products!group_buy_results_product_id_fkey (
             title,
             description,
             image_urls,
             original_price
-          ),
-          users:winner_id (
-            first_name,
-            telegram_username,
-            telegram_id
           )
         `)
         .or('logistics_status.is.null,logistics_status.eq.PENDING_SHIPMENT')
@@ -229,9 +226,18 @@ export default function OrderShipmentPage() {
 
       // 处理拼团中奖订单
       if (groupBuyOrders) {
+        // 获取所有中奖用户的信息
+        const winnerIds = groupBuyOrders.map(o => o.winner_id).filter(Boolean);
+        const { data: winners } = await supabase
+          .from('users')
+          .select('id, first_name, telegram_username, telegram_id')
+          .in('id', winnerIds);
+        
+        const winnersMap = new Map((winners || []).map(u => [u.id, u]));
+        
         for (const order of groupBuyOrders) {
           const product = order.group_buy_products as any;
-          const user = order.users as any;
+          const user = winnersMap.get(order.winner_id);
           
           let productName = '未知商品';
           let productNameI18n: Record<string, string> = {};
