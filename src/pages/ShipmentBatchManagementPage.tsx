@@ -89,7 +89,7 @@ const statusConfig = {
 
 export default function ShipmentBatchManagementPage() {
   const { supabase } = useSupabase();
-  const { adminUser } = useAdminAuth();
+  const { admin: adminUser } = useAdminAuth();
   const navigate = useNavigate();
 
   const [batches, setBatches] = useState<ShipmentBatch[]>([]);

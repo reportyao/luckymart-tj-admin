@@ -67,7 +67,7 @@ interface ShipmentBatch {
 
 export default function OrderShipmentPage() {
   const { supabase } = useSupabase();
-  const { adminUser } = useAdminAuth();
+  const { admin: adminUser } = useAdminAuth();
   const navigate = useNavigate();
 
   const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);

@@ -53,7 +53,7 @@ export const PaymentConfigPage: React.FC = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('payment_config')
+        .from('payment_configs')
         .select('*')
         .order('sort_order', { ascending: true });
 
@@ -122,10 +122,13 @@ export const PaymentConfigPage: React.FC = () => {
       };
 
       const payload = {
+        provider: formData.name_i18n.zh || formData.config_key,
         config_key: formData.config_key,
         config_type: formData.config_type,
         config_data: configData,
         config: configData, // 兼容旧字段
+        name: formData.name_i18n.zh || formData.config_key,
+        type: formData.method || 'BANK_TRANSFER',
         name_i18n: formData.name_i18n,
         description_i18n: formData.description_i18n,
         is_enabled: formData.is_enabled,
@@ -136,7 +139,7 @@ export const PaymentConfigPage: React.FC = () => {
 
       if (editingConfig) {
         const { error } = await supabase
-          .from('payment_config')
+          .from('payment_configs')
           .update(payload)
           .eq('id', editingConfig.id);
 
@@ -144,7 +147,7 @@ export const PaymentConfigPage: React.FC = () => {
         toast.success('支付配置更新成功');
       } else {
         const { error } = await supabase
-          .from('payment_config')
+          .from('payment_configs')
           .insert({
             ...payload,
             created_at: new Date().toISOString(),
@@ -167,7 +170,7 @@ export const PaymentConfigPage: React.FC = () => {
 
     try {
       const { error } = await supabase
-        .from('payment_config')
+        .from('payment_configs')
         .delete()
         .eq('id', id);
 
@@ -182,7 +185,7 @@ export const PaymentConfigPage: React.FC = () => {
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
       const { error } = await supabase
-        .from('payment_config')
+        .from('payment_configs')
         .update({ 
           is_enabled: !currentStatus,
           is_active: !currentStatus,

@@ -72,7 +72,7 @@ interface OrderArrivalStatus {
 export default function BatchArrivalConfirmPage() {
   const { id: batchId } = useParams<{ id: string }>();
   const { supabase } = useSupabase();
-  const { adminUser } = useAdminAuth();
+  const { admin: adminUser } = useAdminAuth();
   const navigate = useNavigate();
 
   const [batch, setBatch] = useState<ShipmentBatch | null>(null);
