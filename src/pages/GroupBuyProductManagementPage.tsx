@@ -183,7 +183,7 @@ export default function GroupBuyProductManagementPage() {
         tg: formData.description_tg,
       },
       image_url: formData.image_url,
-      image_urls: formData.image_urls, // 正确的字段名
+      image_urls: Array.isArray(formData.image_urls) ? formData.image_urls : [], // 确保始终是数组
       original_price: formData.original_price,
       group_price: Math.round((formData.original_price / formData.min_participants) * 100) / 100, // 正确的字段名
       min_participants: formData.min_participants, // 正确的字段名
@@ -192,7 +192,7 @@ export default function GroupBuyProductManagementPage() {
       stock: formData.stock, // 正确的字段名
       currency: formData.currency,
       status: formData.status,
-      price_comparisons: formData.price_comparisons,
+      price_comparisons: Array.isArray(formData.price_comparisons) ? formData.price_comparisons : [],
     };
 
     try {
