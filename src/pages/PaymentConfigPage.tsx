@@ -39,7 +39,7 @@ const initialFormData = {
   sort_order: 0,
 };
 
-const PaymentConfigPage: React.FC = () => {
+export const PaymentConfigPage: React.FC = () => {
   const { supabase } = useSupabase();
   const [configs, setConfigs] = useState<PaymentConfig[]>([]);
   const [loading, setLoading] = useState(true);
@@ -388,4 +388,4 @@ const PaymentConfigPage: React.FC = () => {
   );
 };
 
-export default PaymentConfigPage;
+// export default PaymentConfigPage;
