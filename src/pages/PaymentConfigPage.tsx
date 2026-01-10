@@ -89,7 +89,6 @@ export const PaymentConfigPage: React.FC = () => {
       const { data, error } = await supabase
         .from('payment_config')
         .select('*')
-        .eq('config_type', activeTab)
         .order('sort_order', { ascending: true });
 
       if (error) {throw error;}

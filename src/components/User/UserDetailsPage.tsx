@@ -36,7 +36,7 @@ export const UserDetailsPage: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('*, referred_by_user:referred_by_id(*)')
+        .select('*, referred_by_user:users!referred_by_id(*)')
         .eq('id', id)
         .single();
 

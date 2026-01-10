@@ -52,8 +52,8 @@ export default function GroupBuySessionManagementPage() {
         .from('group_buy_sessions')
         .select(`
           *,
-          product:group_buy_products(title, image_url, price_per_person),
-          orders:group_buy_orders(id, user_id, amount, created_at)
+          product:group_buy_products!product_id(title, image_url, price_per_person),
+          orders:group_buy_orders!session_id(id, user_id, amount, created_at)
         `)
         .order('created_at', { ascending: false });
 
