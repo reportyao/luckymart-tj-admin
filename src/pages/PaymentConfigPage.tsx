@@ -56,7 +56,7 @@ export const PaymentConfigPage: React.FC = () => {
         .select('*')
         .order('sort_order', { ascending: true });
 
-      if (error) throw error;
+      if (error) {throw error;}
       setConfigs(data || []);
     } catch (error: any) {
       toast.error(`加载配置失败: ${error.message}`);
@@ -139,7 +139,7 @@ export const PaymentConfigPage: React.FC = () => {
           .update(payload)
           .eq('id', editingConfig.id);
 
-        if (error) throw error;
+        if (error) {throw error;}
         toast.success('支付配置更新成功');
       } else {
         const { error } = await supabase
@@ -149,7 +149,7 @@ export const PaymentConfigPage: React.FC = () => {
             created_at: new Date().toISOString(),
           });
 
-        if (error) throw error;
+        if (error) {throw error;}
         toast.success('支付配置创建成功');
       }
 
@@ -162,7 +162,7 @@ export const PaymentConfigPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`确定要删除支付方式"${name}"吗？`)) return;
+    if (!window.confirm(`确定要删除支付方式"${name}"吗？`)) {return;}
 
     try {
       const { error } = await supabase
@@ -170,7 +170,7 @@ export const PaymentConfigPage: React.FC = () => {
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {throw error;}
       toast.success('支付配置已删除');
       fetchConfigs();
     } catch (error: any) {
@@ -189,7 +189,7 @@ export const PaymentConfigPage: React.FC = () => {
         })
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {throw error;}
       toast.success('状态更新成功');
       fetchConfigs();
     } catch (error: any) {

@@ -90,7 +90,7 @@ export default function GroupBuyProductManagementPage() {
         .eq('status', 'ACTIVE')
         .order('name', { ascending: true });
 
-      if (error) throw error;
+      if (error) {throw error;}
       setInventoryProducts(data || []);
     } catch (error) {
       console.error('Failed to fetch inventory products:', error);
@@ -125,7 +125,7 @@ export default function GroupBuyProductManagementPage() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {throw error;}
       setProducts(data || []);
     } catch (error) {
       console.error('Failed to fetch products:', error);
@@ -205,7 +205,7 @@ export default function GroupBuyProductManagementPage() {
           .update(productData)
           .eq('id', editingProduct.id);
 
-        if (error) throw error;
+        if (error) {throw error;}
         alert('商品更新成功');
       } else {
         // Create new product
@@ -213,7 +213,7 @@ export default function GroupBuyProductManagementPage() {
           .from('group_buy_products')
           .insert([productData]);
 
-        if (error) throw error;
+        if (error) {throw error;}
         alert('商品创建成功');
       }
 
@@ -274,7 +274,7 @@ export default function GroupBuyProductManagementPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('确定要删除这个商品吗？删除后无法恢复。')) return;
+    if (!confirm('确定要删除这个商品吗？删除后无法恢复。')) {return;}
 
     try {
       // 检查是否有进行中的拼团会话
@@ -294,7 +294,7 @@ export default function GroupBuyProductManagementPage() {
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {throw error;}
       alert('商品删除成功');
       fetchProducts();
     } catch (error) {
@@ -311,7 +311,7 @@ export default function GroupBuyProductManagementPage() {
         .update({ status: newStatus })
         .eq('id', product.id);
 
-      if (error) throw error;
+      if (error) {throw error;}
       fetchProducts();
     } catch (error) {
       console.error('Failed to toggle status:', error);

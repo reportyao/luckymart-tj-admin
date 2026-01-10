@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => {
     define: {
       'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL || 'https://enndjqqststndfeivwof.supabase.co'),
       'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVubmRqcXFzdHN0bmRmZWl2d29mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI3ODMxNTksImV4cCI6MjA0ODM1OTE1OX0.Ks6h5_r5Hy7KIJqQxWqzVBXH0qYQPeXSfxZC0ksxMIo'),
-      'import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY': JSON.stringify(env.VITE_SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVubmRqcXFzdHN0bmRmZWl2d29mIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczMjc4MzE1OSwiZXhwIjoyMDQ4MzU5MTU5fQ.YhPxJbqjxBbJGWOEKPW8Oy-SXfXTRJvPbUZyNpkAOQo'),
+      'import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY': JSON.stringify(env.VITE_SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVubmRqcXFzdHN0bmRmZWl2d29mIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NzkyNDY0MiwiZXhwIjoyMDgzNTAwNjQyfQ.x77hm1bJapyVyb6OYimdlACNDVJPDqkm4DnTbvUbd8M'),
     }
   }
 })

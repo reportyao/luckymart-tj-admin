@@ -145,7 +145,7 @@ export const LotteryForm: React.FC = () => {
   const categories = useMemo(() => {
     const cats = new Set<string>();
     inventoryProducts.forEach(p => {
-      if (p.category) cats.add(p.category);
+      if (p.category) {cats.add(p.category);}
     });
     return Array.from(cats).sort();
   }, [inventoryProducts]);
@@ -287,7 +287,7 @@ export const LotteryForm: React.FC = () => {
     }
 
     const selectedProduct = inventoryProducts.find(p => p.id === productId);
-    if (!selectedProduct) return;
+    if (!selectedProduct) {return;}
 
     // 自动填充所有相关字段
     setFormData((prev) => ({
