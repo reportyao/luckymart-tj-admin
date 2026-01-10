@@ -110,7 +110,7 @@ export default function OrderShipmentPage() {
             telegram_id
           )
         `)
-        .or('(logistics_status.is.null,logistics_status.eq.PENDING_SHIPMENT)')
+        .or('logistics_status.is.null,logistics_status.eq.PENDING_SHIPMENT')
         .is('batch_id', null)
         .eq('status', 'COMPLETED')
         .order('created_at', { ascending: false });
@@ -142,7 +142,7 @@ export default function OrderShipmentPage() {
             telegram_id
           )
         `)
-        .or('(logistics_status.is.null,logistics_status.eq.PENDING_SHIPMENT)')
+        .or('logistics_status.is.null,logistics_status.eq.PENDING_SHIPMENT')
         .is('batch_id', null)
         .eq('status', 'CLAIMED')
         .order('created_at', { ascending: false });
@@ -172,7 +172,7 @@ export default function OrderShipmentPage() {
             telegram_id
           )
         `)
-        .or('(logistics_status.is.null,logistics_status.eq.PENDING_SHIPMENT)')
+        .or('logistics_status.is.null,logistics_status.eq.PENDING_SHIPMENT')
         .is('batch_id', null)
         .order('created_at', { ascending: false });
 
