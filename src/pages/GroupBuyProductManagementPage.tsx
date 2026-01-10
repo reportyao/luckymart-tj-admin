@@ -25,20 +25,25 @@ interface InventoryProduct {
   status: string;
 }
 
+// 修复后的接口，完全匹配数据库字段
 interface GroupBuyProduct {
   id: string;
-  title: { zh: string; ru: string; tg: string };
-  description: { zh: string; ru: string; tg: string };
+  name: string; // 数据库字段
+  name_i18n: { zh: string; ru: string; tg: string }; // 数据库字段
+  description: string; // 数据库字段
+  description_i18n: { zh: string; ru: string; tg: string }; // 数据库字段
   image_url: string;
-  images?: string[]; // 多张图片
+  image_urls: string[]; // 数据库字段（不是images）
   original_price: number;
-  price_per_person: number;
-  group_size: number; // 数据库字段名
-  timeout_hours: number;
-  product_type: string;
-  stock_quantity: number;
+  group_price: number; // 数据库字段（不是price_per_person）
+  min_participants: number; // 数据库字段（不是group_size）
+  max_participants: number; // 数据库字段
+  duration_hours: number; // 数据库字段（不是timeout_hours）
+  stock: number; // 数据库字段（不是stock_quantity）
   status: 'ACTIVE' | 'INACTIVE';
+  currency: string;
   created_at: string;
+  updated_at: string;
   price_comparisons?: PriceComparisonItem[];
 }
 
@@ -50,19 +55,20 @@ export default function GroupBuyProductManagementPage() {
   const [inventoryProducts, setInventoryProducts] = useState<InventoryProduct[]>([]);
   const [showSkuSelector, setShowSkuSelector] = useState(false);
   const [formData, setFormData] = useState({
-    title_zh: '',
-    title_ru: '',
-    title_tg: '',
+    name_zh: '',
+    name_ru: '',
+    name_tg: '',
     description_zh: '',
     description_ru: '',
     description_tg: '',
     image_url: '',
-    images: [] as string[],
+    image_urls: [] as string[],
     original_price: 0,
-    group_size: 3,
-    timeout_hours: 24,
-    product_type: 'PHYSICAL',
-    stock_quantity: 100,
+    min_participants: 3,
+    max_participants: 10,
+    duration_hours: 24,
+    stock: 100,
+    currency: 'CNY',
     status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE',
     price_comparisons: [] as PriceComparisonItem[],
   });
@@ -84,7 +90,7 @@ export default function GroupBuyProductManagementPage() {
         .eq('status', 'ACTIVE')
         .order('name', { ascending: true });
 
-      if (error) {throw error;}
+      if (error) throw error;
       setInventoryProducts(data || []);
     } catch (error) {
       console.error('Failed to fetch inventory products:', error);
@@ -94,16 +100,16 @@ export default function GroupBuyProductManagementPage() {
   const handleSelectSku = (product: InventoryProduct) => {
     setFormData({
       ...formData,
-      title_zh: product.name_i18n?.zh || product.name || '',
-      title_ru: product.name_i18n?.ru || '',
-      title_tg: product.name_i18n?.tg || '',
+      name_zh: product.name_i18n?.zh || product.name || '',
+      name_ru: product.name_i18n?.ru || '',
+      name_tg: product.name_i18n?.tg || '',
       description_zh: product.description_i18n?.zh || product.description || '',
       description_ru: product.description_i18n?.ru || '',
       description_tg: product.description_i18n?.tg || '',
       image_url: product.image_url || '',
-      images: product.image_urls || (product.image_url ? [product.image_url] : []),
+      image_urls: product.image_urls || (product.image_url ? [product.image_url] : []),
       original_price: product.original_price || 0,
-      stock_quantity: product.stock || 100,
+      stock: product.stock || 100,
     });
     setShowSkuSelector(false);
     alert('已从库存商品导入信息');
@@ -117,7 +123,7 @@ export default function GroupBuyProductManagementPage() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {throw error;}
+      if (error) throw error;
       setProducts(data || []);
     } catch (error) {
       console.error('Failed to fetch products:', error);
@@ -162,25 +168,29 @@ export default function GroupBuyProductManagementPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // 构建完全匹配数据库字段的payload
     const productData = {
-      title: {
-        zh: formData.title_zh,
-        ru: formData.title_ru,
-        tg: formData.title_tg,
+      name: formData.name_zh, // 使用中文作为默认name
+      name_i18n: {
+        zh: formData.name_zh,
+        ru: formData.name_ru,
+        tg: formData.name_tg,
       },
-      description: {
+      description: formData.description_zh, // 使用中文作为默认description
+      description_i18n: {
         zh: formData.description_zh,
         ru: formData.description_ru,
         tg: formData.description_tg,
       },
       image_url: formData.image_url,
-      images: formData.images, // 保存多张图片
+      image_urls: formData.image_urls, // 正确的字段名
       original_price: formData.original_price,
-      price_per_person: Math.round((formData.original_price / formData.group_size) * 100) / 100,
-      group_size: formData.group_size, // 使用正确的数据库字段名
-      timeout_hours: formData.timeout_hours,
-      product_type: formData.product_type,
-      stock_quantity: formData.stock_quantity,
+      group_price: Math.round((formData.original_price / formData.min_participants) * 100) / 100, // 正确的字段名
+      min_participants: formData.min_participants, // 正确的字段名
+      max_participants: formData.max_participants, // 正确的字段名
+      duration_hours: formData.duration_hours, // 正确的字段名
+      stock: formData.stock, // 正确的字段名
+      currency: formData.currency,
       status: formData.status,
       price_comparisons: formData.price_comparisons,
     };
@@ -193,7 +203,7 @@ export default function GroupBuyProductManagementPage() {
           .update(productData)
           .eq('id', editingProduct.id);
 
-        if (error) {throw error;}
+        if (error) throw error;
         alert('商品更新成功');
       } else {
         // Create new product
@@ -201,7 +211,7 @@ export default function GroupBuyProductManagementPage() {
           .from('group_buy_products')
           .insert([productData]);
 
-        if (error) {throw error;}
+        if (error) throw error;
         alert('商品创建成功');
       }
 
@@ -211,26 +221,27 @@ export default function GroupBuyProductManagementPage() {
       fetchProducts();
     } catch (error) {
       console.error('Failed to save product:', error);
-      alert('保存商品失败');
+      alert(`保存商品失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   };
 
   const handleEdit = (product: GroupBuyProduct) => {
     setEditingProduct(product);
     setFormData({
-      title_zh: product.title?.zh || '',
-      title_ru: product.title?.ru || '',
-      title_tg: product.title?.tg || '',
-      description_zh: product.description?.zh || '',
-      description_ru: product.description?.ru || '',
-      description_tg: product.description?.tg || '',
+      name_zh: product.name_i18n?.zh || product.name || '',
+      name_ru: product.name_i18n?.ru || '',
+      name_tg: product.name_i18n?.tg || '',
+      description_zh: product.description_i18n?.zh || product.description || '',
+      description_ru: product.description_i18n?.ru || '',
+      description_tg: product.description_i18n?.tg || '',
       image_url: product.image_url || '',
-      images: product.images || [],
+      image_urls: product.image_urls || [],
       original_price: product.original_price || 0,
-      group_size: product.group_size || 3,
-      timeout_hours: product.timeout_hours || 24,
-      product_type: product.product_type || 'PHYSICAL',
-      stock_quantity: product.stock_quantity || 100,
+      min_participants: product.min_participants || 3,
+      max_participants: product.max_participants || 10,
+      duration_hours: product.duration_hours || 24,
+      stock: product.stock || 100,
+      currency: product.currency || 'CNY',
       status: product.status || 'ACTIVE',
       price_comparisons: product.price_comparisons || [],
     });
@@ -240,19 +251,20 @@ export default function GroupBuyProductManagementPage() {
   const handleDuplicate = (product: GroupBuyProduct) => {
     setEditingProduct(null);
     setFormData({
-      title_zh: (product.title?.zh || '') + ' (复制)',
-      title_ru: (product.title?.ru || '') + ' (копия)',
-      title_tg: (product.title?.tg || '') + ' (нусха)',
-      description_zh: product.description?.zh || '',
-      description_ru: product.description?.ru || '',
-      description_tg: product.description?.tg || '',
+      name_zh: (product.name_i18n?.zh || product.name || '') + ' (复制)',
+      name_ru: (product.name_i18n?.ru || '') + ' (копия)',
+      name_tg: (product.name_i18n?.tg || '') + ' (нусха)',
+      description_zh: product.description_i18n?.zh || product.description || '',
+      description_ru: product.description_i18n?.ru || '',
+      description_tg: product.description_i18n?.tg || '',
       image_url: product.image_url || '',
-      images: product.images || [],
+      image_urls: product.image_urls || [],
       original_price: product.original_price || 0,
-      group_size: product.group_size || 3,
-      timeout_hours: product.timeout_hours || 24,
-      product_type: product.product_type || 'PHYSICAL',
-      stock_quantity: product.stock_quantity || 100,
+      min_participants: product.min_participants || 3,
+      max_participants: product.max_participants || 10,
+      duration_hours: product.duration_hours || 24,
+      stock: product.stock || 100,
+      currency: product.currency || 'CNY',
       status: 'INACTIVE',
       price_comparisons: product.price_comparisons || [],
     });
@@ -260,7 +272,7 @@ export default function GroupBuyProductManagementPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('确定要删除这个商品吗？删除后无法恢复。')) {return;}
+    if (!confirm('确定要删除这个商品吗？删除后无法恢复。')) return;
 
     try {
       // 检查是否有进行中的拼团会话
@@ -280,7 +292,7 @@ export default function GroupBuyProductManagementPage() {
         .delete()
         .eq('id', id);
 
-      if (error) {throw error;}
+      if (error) throw error;
       alert('商品删除成功');
       fetchProducts();
     } catch (error) {
@@ -297,7 +309,7 @@ export default function GroupBuyProductManagementPage() {
         .update({ status: newStatus })
         .eq('id', product.id);
 
-      if (error) {throw error;}
+      if (error) throw error;
       fetchProducts();
     } catch (error) {
       console.error('Failed to toggle status:', error);
@@ -307,19 +319,20 @@ export default function GroupBuyProductManagementPage() {
 
   const resetForm = () => {
     setFormData({
-      title_zh: '',
-      title_ru: '',
-      title_tg: '',
+      name_zh: '',
+      name_ru: '',
+      name_tg: '',
       description_zh: '',
       description_ru: '',
       description_tg: '',
       image_url: '',
-      images: [],
+      image_urls: [],
       original_price: 0,
-      group_size: 3,
-      timeout_hours: 24,
-      product_type: 'PHYSICAL',
-      stock_quantity: 100,
+      min_participants: 3,
+      max_participants: 10,
+      duration_hours: 24,
+      stock: 100,
+      currency: 'CNY',
       status: 'ACTIVE',
       price_comparisons: [],
     });
@@ -337,473 +350,479 @@ export default function GroupBuyProductManagementPage() {
             resetForm();
             setShowModal(true);
           }}
-          className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center gap-2"
         >
-          <Plus className="w-5 h-5" />
-          创建商品
+          <Plus size={20} />
+          新增商品
         </button>
       </div>
 
       {loading ? (
-        <div className="text-center py-12">加载中...</div>
-      ) : products.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">暂无拼团商品</div>
+        <div className="text-center py-8">加载中...</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
-            <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-              <img
-                src={product.image_url || 'https://via.placeholder.com/400x300'}
-                alt={product.title?.zh || '商品图片'}
-                className="w-full h-48 object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
-                }}
-              />
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-bold text-lg truncate">{product.title?.zh || '未命名商品'}</h3>
-                  <span
-                    className={`px-2 py-1 rounded text-xs font-bold ${
-                      product.status === 'ACTIVE'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}
-                  >
-                    {product.status === 'ACTIVE' ? '上架' : '下架'}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                  {product.description?.zh || '暂无描述'}
-                </p>
-                <div className="space-y-1 text-sm mb-4">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">原价:</span>
-                    <span className="font-bold">TJS {product.original_price || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">人均价格:</span>
-                    <span className="font-bold text-orange-600">
-                      TJS {product.price_per_person || 0}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">参与人数:</span>
-                    <span>{product.group_size || 0}人</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">超时时间:</span>
-                    <span>{product.timeout_hours || 24}小时</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">库存:</span>
-                    <span>{product.stock_quantity || 0}</span>
-                  </div>
-                  {product.price_comparisons && product.price_comparisons.length > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">比价清单:</span>
-                      <span className="text-blue-600">{product.price_comparisons.length} 项</span>
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  商品信息
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  价格
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  拼团设置
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  库存
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  状态
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  操作
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {products.map((product) => (
+                <tr key={product.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <img
+                        src={product.image_url}
+                        alt={product.name}
+                        className="h-10 w-10 rounded object-cover"
+                      />
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {product.name_i18n?.zh || product.name}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {product.description_i18n?.zh || product.description}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => toggleStatus(product)}
-                    className="flex-1 flex items-center justify-center gap-1 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-sm"
-                  >
-                    {product.status === 'ACTIVE' ? (
-                      <>
-                        <EyeOff className="w-4 h-4" />
-                        下架
-                      </>
-                    ) : (
-                      <>
-                        <Eye className="w-4 h-4" />
-                        上架
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => handleEdit(product)}
-                    className="flex-1 flex items-center justify-center gap-1 bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded text-sm"
-                  >
-                    <Edit className="w-4 h-4" />
-                    编辑
-                  </button>
-                  <button
-                    onClick={() => handleDuplicate(product)}
-                    className="flex-1 flex items-center justify-center gap-1 bg-green-100 hover:bg-green-200 text-green-700 px-3 py-2 rounded text-sm"
-                  >
-                    <Copy className="w-4 h-4" />
-                    复制
-                  </button>
-                  <button
-                    onClick={() => handleDelete(product.id)}
-                    className="flex items-center justify-center gap-1 bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded text-sm"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      原价: ¥{product.original_price}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      拼团价: ¥{product.group_price}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {product.min_participants}-{product.max_participants}人
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {product.duration_hours}小时
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {product.stock}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <button
+                      onClick={() => toggleStatus(product)}
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        product.status === 'ACTIVE'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      {product.status === 'ACTIVE' ? (
+                        <Eye size={14} className="mr-1" />
+                      ) : (
+                        <EyeOff size={14} className="mr-1" />
+                      )}
+                      {product.status === 'ACTIVE' ? '上架' : '下架'}
+                    </button>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      onClick={() => handleEdit(product)}
+                      className="text-indigo-600 hover:text-indigo-900 mr-3"
+                    >
+                      <Edit size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDuplicate(product)}
+                      className="text-blue-600 hover:text-blue-900 mr-3"
+                    >
+                      <Copy size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(product.id)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal for Add/Edit Product */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <h2 className="text-xl font-bold mb-4">
-                {editingProduct ? '编辑商品' : '创建商品'}
-              </h2>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* 从SKU导入按钮 */}
-                {!editingProduct && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium text-blue-800">从SKU库导入商品信息</h3>
-                        <p className="text-sm text-blue-600">可以一键导入库存商品的标题、描述、图片和价格信息</p>
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">
+                {editingProduct ? '编辑商品' : '新增商品'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setEditingProduct(null);
+                  resetForm();
+                }}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* SKU选择器按钮 */}
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowSkuSelector(!showSkuSelector)}
+                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                >
+                  {showSkuSelector ? '隐藏库存商品' : '从库存商品导入'}
+                </button>
+              </div>
+
+              {/* SKU选择器 */}
+              {showSkuSelector && (
+                <div className="border rounded p-4 max-h-60 overflow-y-auto">
+                  <h4 className="font-medium mb-2">选择库存商品</h4>
+                  <div className="space-y-2">
+                    {inventoryProducts.map((product) => (
+                      <div
+                        key={product.id}
+                        onClick={() => handleSelectSku(product)}
+                        className="flex items-center p-2 hover:bg-gray-100 cursor-pointer rounded"
+                      >
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
+                          className="h-10 w-10 rounded object-cover"
+                        />
+                        <div className="ml-3">
+                          <div className="text-sm font-medium">
+                            {product.name_i18n?.zh || product.name}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            库存: {product.stock} | 价格: ¥{product.original_price}
+                          </div>
+                        </div>
                       </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 商品名称（多语言） */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  商品名称 *
+                </label>
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    placeholder="中文"
+                    value={formData.name_zh}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name_zh: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border rounded"
+                    required
+                  />
+                  <input
+                    type="text"
+                    placeholder="Русский"
+                    value={formData.name_ru}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name_ru: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border rounded"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Тоҷикӣ"
+                    value={formData.name_tg}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name_tg: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border rounded"
+                  />
+                </div>
+              </div>
+
+              {/* 商品描述（多语言） */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  商品描述 *
+                </label>
+                <div className="space-y-2">
+                  <textarea
+                    placeholder="中文"
+                    value={formData.description_zh}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description_zh: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border rounded"
+                    rows={3}
+                    required
+                  />
+                  <textarea
+                    placeholder="Русский"
+                    value={formData.description_ru}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description_ru: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border rounded"
+                    rows={3}
+                  />
+                  <textarea
+                    placeholder="Тоҷикӣ"
+                    value={formData.description_tg}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description_tg: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border rounded"
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              {/* 图片上传 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  商品图片 *
+                </label>
+                <MultiImageUpload
+                  images={formData.image_urls}
+                  onChange={(urls) => {
+                    setFormData({
+                      ...formData,
+                      image_urls: urls,
+                      image_url: urls[0] || '',
+                    });
+                  }}
+                  maxImages={5}
+                />
+              </div>
+
+              {/* 价格和拼团设置 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    原价 (¥) *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.original_price}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        original_price: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full px-3 py-2 border rounded"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    最少参与人数 *
+                  </label>
+                  <input
+                    type="number"
+                    min="2"
+                    value={formData.min_participants}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        min_participants: parseInt(e.target.value) || 3,
+                      })
+                    }
+                    className="w-full px-3 py-2 border rounded"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    最多参与人数 *
+                  </label>
+                  <input
+                    type="number"
+                    min="2"
+                    value={formData.max_participants}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        max_participants: parseInt(e.target.value) || 10,
+                      })
+                    }
+                    className="w-full px-3 py-2 border rounded"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    拼团时长 (小时) *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.duration_hours}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        duration_hours: parseInt(e.target.value) || 24,
+                      })
+                    }
+                    className="w-full px-3 py-2 border rounded"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    库存 *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.stock}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        stock: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full px-3 py-2 border rounded"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    货币
+                  </label>
+                  <select
+                    value={formData.currency}
+                    onChange={(e) =>
+                      setFormData({ ...formData, currency: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border rounded"
+                  >
+                    <option value="CNY">CNY (人民币)</option>
+                    <option value="USD">USD (美元)</option>
+                    <option value="RUB">RUB (卢布)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* 价格对比 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  价格对比
+                </label>
+                <div className="space-y-2">
+                  {formData.price_comparisons.map((item, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <span className="text-sm">{item.platform}</span>
+                      <span className="text-sm">¥{item.price}</span>
                       <button
                         type="button"
-                        onClick={() => setShowSkuSelector(true)}
-                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                        onClick={() => handleRemovePriceComparison(index)}
+                        className="text-red-500 hover:text-red-700"
                       >
-                        选择SKU商品
+                        删除
                       </button>
                     </div>
-                  </div>
-                )}
-
-                {/* 标题部分 */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">标题（中文）*</label>
+                  ))}
+                  <div className="flex gap-2">
                     <input
                       type="text"
-                      value={formData.title_zh}
-                      onChange={(e) => setFormData({ ...formData, title_zh: e.target.value })}
-                      className="w-full border rounded px-3 py-2"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">标题（俄语）*</label>
-                    <input
-                      type="text"
-                      value={formData.title_ru}
-                      onChange={(e) => setFormData({ ...formData, title_ru: e.target.value })}
-                      className="w-full border rounded px-3 py-2"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">标题（塔吉克语）*</label>
-                    <input
-                      type="text"
-                      value={formData.title_tg}
-                      onChange={(e) => setFormData({ ...formData, title_tg: e.target.value })}
-                      className="w-full border rounded px-3 py-2"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* 描述部分 */}
-                <div>
-                  <label className="block text-sm font-medium mb-1">描述（中文）*</label>
-                  <textarea
-                    value={formData.description_zh}
-                    onChange={(e) => setFormData({ ...formData, description_zh: e.target.value })}
-                    className="w-full border rounded px-3 py-2"
-                    rows={2}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">描述（俄语）*</label>
-                  <textarea
-                    value={formData.description_ru}
-                    onChange={(e) => setFormData({ ...formData, description_ru: e.target.value })}
-                    className="w-full border rounded px-3 py-2"
-                    rows={2}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">描述（塔吉克语）*</label>
-                  <textarea
-                    value={formData.description_tg}
-                    onChange={(e) => setFormData({ ...formData, description_tg: e.target.value })}
-                    className="w-full border rounded px-3 py-2"
-                    rows={2}
-                    required
-                  />
-                </div>
-
-                {/* 图片上传 */}
-                <MultiImageUpload
-                  label="商品图片 (最多5张)"
-                  bucket="group-buy-products"
-                  folder="products"
-                  maxImages={5}
-                  imageUrls={formData.images}
-                  onImageUrlsChange={(urls) => setFormData({ ...formData, images: urls, image_url: urls[0] || '' })}
-                />
-
-                {/* 价格和参数 */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">原价（TJS）*</label>
-                    <input
-                      type="number"
-                      value={formData.original_price}
-                      onChange={(e) =>
-                        setFormData({ ...formData, original_price: Number(e.target.value) })
-                      }
-                      className="w-full border rounded px-3 py-2"
-                      min="1"
-                      step="0.01"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">参与人数 *</label>
-                    <input
-                      type="number"
-                      value={formData.group_size}
-                      onChange={(e) =>
-                        setFormData({ ...formData, group_size: Number(e.target.value) })
-                      }
-                      className="w-full border rounded px-3 py-2"
-                      min="2"
-                      max="100"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">超时时间（小时）*</label>
-                    <input
-                      type="number"
-                      value={formData.timeout_hours}
-                      onChange={(e) =>
-                        setFormData({ ...formData, timeout_hours: Number(e.target.value) })
-                      }
-                      className="w-full border rounded px-3 py-2"
-                      min="1"
-                      max="168"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">库存数量 *</label>
-                    <input
-                      type="number"
-                      value={formData.stock_quantity}
-                      onChange={(e) =>
-                        setFormData({ ...formData, stock_quantity: Number(e.target.value) })
-                      }
-                      className="w-full border rounded px-3 py-2"
-                      min="1"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* 人均价格预览 */}
-                <div className="bg-orange-50 rounded-lg p-3">
-                  <div className="text-sm text-gray-600">人均价格预览：</div>
-                  <div className="text-2xl font-bold text-orange-600">
-                    TJS {formData.group_size > 0 ? (formData.original_price / formData.group_size).toFixed(2) : '0.00'}
-                  </div>
-                </div>
-
-                {/* 比价清单 */}
-                <div className="border-t pt-4">
-                  <label className="block text-base font-semibold mb-2">比价清单</label>
-                  <p className="text-sm text-gray-500 mb-3">
-                    添加其他平台的价格对比，帮助用户了解价格优势
-                  </p>
-
-                  {/* 已添加的比价项 */}
-                  {formData.price_comparisons.length > 0 && (
-                    <div className="space-y-2 mb-3">
-                      {formData.price_comparisons.map((item, index) => (
-                        <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                          <span className="flex-1">{item.platform}</span>
-                          <span className="text-gray-500">TJS {item.price.toFixed(2)}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemovePriceComparison(index)}
-                            className="text-red-500 hover:text-red-700 p-1"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* 添加新比价项 */}
-                  <div className="flex items-center gap-2 p-3 border-2 border-dashed border-gray-300 rounded-lg">
-                    <input
-                      type="text"
+                      placeholder="平台名称"
                       value={newPlatform}
                       onChange={(e) => setNewPlatform(e.target.value)}
-                      placeholder="平台名称 (如: Somon.tj)"
-                      className="flex-1 border rounded px-3 py-2"
+                      className="flex-1 px-3 py-2 border rounded"
                     />
-                    <div className="flex items-center gap-1">
-                      <span className="text-gray-500">TJS</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={newPrice}
-                        onChange={(e) => setNewPrice(e.target.value)}
-                        placeholder="价格"
-                        className="w-24 border rounded px-3 py-2"
-                      />
-                    </div>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="价格"
+                      value={newPrice}
+                      onChange={(e) => setNewPrice(e.target.value)}
+                      className="w-32 px-3 py-2 border rounded"
+                    />
                     <button
                       type="button"
                       onClick={handleAddPriceComparison}
-                      disabled={!newPlatform.trim() || !newPrice}
-                      className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap"
+                      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                     >
-                      <Plus className="w-4 h-4 inline mr-1" />
                       添加
                     </button>
                   </div>
-
-                  {/* 预览效果 */}
-                  {formData.price_comparisons.length > 0 && (
-                    <div className="p-3 bg-gray-100 rounded-lg mt-3">
-                      <p className="text-sm font-medium text-gray-700 mb-2">前端展示预览：</p>
-                      <div className="text-sm text-gray-600 space-y-1">
-                        {formData.price_comparisons.map((item, index) => (
-                          <div key={index} className="flex items-center">
-                            <span className="text-red-500 mr-2">❌</span>
-                            <span>{item.platform}:</span>
-                            <span className="ml-2 text-gray-500">TJS {item.price.toFixed(2)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
+              </div>
 
-                {/* 商品类型和状态 */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">商品类型</label>
-                    <select
-                      value={formData.product_type}
-                      onChange={(e) => setFormData({ ...formData, product_type: e.target.value })}
-                      className="w-full border rounded px-3 py-2"
-                    >
-                      <option value="PHYSICAL">实物商品</option>
-                      <option value="VIRTUAL">虚拟商品</option>
-                      <option value="SERVICE">服务类</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">状态</label>
-                    <select
-                      value={formData.status}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          status: e.target.value as 'ACTIVE' | 'INACTIVE',
-                        })
-                      }
-                      className="w-full border rounded px-3 py-2"
-                    >
-                      <option value="ACTIVE">上架</option>
-                      <option value="INACTIVE">下架</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* 按钮 */}
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="submit"
-                    className="flex-1 bg-orange-500 text-white py-2 rounded hover:bg-orange-600"
-                  >
-                    {editingProduct ? '更新' : '创建'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowModal(false);
-                      setEditingProduct(null);
-                      resetForm();
-                    }}
-                    className="flex-1 bg-gray-200 text-gray-700 py-2 rounded hover:bg-gray-300"
-                  >
-                    取消
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* SKU选择弹窗 */}
-      {showSkuSelector && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[60]">
-          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">选择库存商品</h2>
-                <button
-                  onClick={() => setShowSkuSelector(false)}
-                  className="text-gray-500 hover:text-gray-700"
+              {/* 状态 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  状态
+                </label>
+                <select
+                  value={formData.status}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      status: e.target.value as 'ACTIVE' | 'INACTIVE',
+                    })
+                  }
+                  className="w-full px-3 py-2 border rounded"
                 >
-                  ✕
+                  <option value="ACTIVE">上架</option>
+                  <option value="INACTIVE">下架</option>
+                </select>
+              </div>
+
+              {/* 提交按钮 */}
+              <div className="flex justify-end gap-2 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowModal(false);
+                    setEditingProduct(null);
+                    resetForm();
+                  }}
+                  className="px-4 py-2 border rounded hover:bg-gray-50"
+                >
+                  取消
+                </button>
+                <button
+                  type="submit"
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  {editingProduct ? '更新' : '创建'}
                 </button>
               </div>
-              {inventoryProducts.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  暂无可用的库存商品
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {inventoryProducts.map((product) => (
-                    <div
-                      key={product.id}
-                      className="border rounded-lg p-4 hover:border-blue-500 cursor-pointer transition-colors"
-                      onClick={() => handleSelectSku(product)}
-                    >
-                      <div className="flex gap-3">
-                        {product.image_url && (
-                          <img
-                            src={product.image_url}
-                            alt=""
-                            className="w-16 h-16 object-cover rounded"
-                          />
-                        )}
-                        <div className="flex-1">
-                          <h3 className="font-medium">{product.name_i18n?.zh || product.name}</h3>
-                          <p className="text-sm text-gray-500 line-clamp-1">
-                            {product.description_i18n?.zh || product.description || '暂无描述'}
-                          </p>
-                          <div className="flex justify-between mt-1 text-sm">
-                            <span className="text-orange-600 font-bold">TJS {product.original_price}</span>
-                            <span className="text-gray-500">库存: {product.stock}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            </form>
           </div>
         </div>
       )}

@@ -38,7 +38,6 @@ interface InventoryProduct {
 interface LotteryFormData {
   title: Record<string, string> | null;
   description: Record<string, string> | null;
-  name_i18n: Record<string, string> | null;
   period: string;
   ticket_price: number;
   total_tickets: number;
@@ -57,7 +56,6 @@ interface LotteryFormData {
 const initialFormData: LotteryFormData = {
   title: { zh: '', en: '', ru: '', tg: '' },
   description: { zh: '', en: '', ru: '', tg: '' },
-  name_i18n: { zh: '', en: '', ru: '', tg: '' },
   period: '',
   ticket_price: 0,
   total_tickets: 0,
@@ -339,7 +337,6 @@ export const LotteryForm: React.FC = () => {
         description: (formData.description && formData.description.zh) || '',
         title_i18n: formData.title || {},
         description_i18n: formData.description || {},
-        name_i18n: formData.title || {}, // 兼容前端使用的字段
         period: isEdit ? formData.period : generatePeriod(),
         ticket_price: Number(formData.ticket_price),
         total_tickets: Number(formData.total_tickets),
@@ -567,7 +564,7 @@ export const LotteryForm: React.FC = () => {
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <span>积分商城标题</span>
-              <span className="text-xs text-gray-500 font-normal">(将同步到 title_i18n 和 name_i18n)</span>
+              <span className="text-xs text-gray-500 font-normal">(将同步到 title_i18n)</span>
             </Label>
             <MultiLanguageInput
               value={formData.title || {}}
