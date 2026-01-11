@@ -348,8 +348,11 @@ export default function BatchArrivalConfirmPage() {
         </CardHeader>
         <CardContent>
           <MultiImageUpload
-            value={arrivalPhotos}
-            onChange={setArrivalPhotos}
+            label="到货照片"
+            bucket="shipments"
+            folder="arrival-photos"
+            imageUrls={arrivalPhotos || []}
+            onImageUrlsChange={setArrivalPhotos}
             maxImages={10}
           />
         </CardContent>

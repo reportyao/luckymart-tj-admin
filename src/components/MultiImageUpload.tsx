@@ -26,12 +26,15 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
+  // 安全获取 imageUrls，确保始终是数组
+  const safeImageUrls = Array.isArray(imageUrls) ? imageUrls : [];
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) {return;}
 
     const newFiles = Array.from(files);
-    const availableSlots = maxImages - imageUrls.length;
+    const availableSlots = maxImages - safeImageUrls.length;
 
     if (newFiles.length > availableSlots) {
       toast.error(`最多只能上传 ${maxImages} 张图片，您还可以上传 ${availableSlots} 张。`);
@@ -43,7 +46,7 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
 
     try {
       const newUrls = await Promise.all(uploadPromises);
-      onImageUrlsChange([...imageUrls, ...newUrls]);
+      onImageUrlsChange([...safeImageUrls, ...newUrls]);
       toast.success('图片上传成功并已优化!');
     } catch (error: any) {
       toast.error(`图片上传失败: ${error.message}`);
@@ -55,20 +58,20 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
   };
 
   const handleRemove = (indexToRemove: number) => {
-    const newUrls = imageUrls.filter((_, index) => index !== indexToRemove);
+    const newUrls = safeImageUrls.filter((_, index) => index !== indexToRemove);
     onImageUrlsChange(newUrls);
   };
 
   const handleMoveLeft = (index: number) => {
     if (index === 0) {return;}
-    const newUrls = [...imageUrls];
+    const newUrls = [...safeImageUrls];
     [newUrls[index - 1], newUrls[index]] = [newUrls[index]!, newUrls[index - 1]!];
     onImageUrlsChange(newUrls);
   };
 
   const handleMoveRight = (index: number) => {
-    if (index === imageUrls.length - 1) {return;}
-    const newUrls = [...imageUrls];
+    if (index === safeImageUrls.length - 1) {return;}
+    const newUrls = [...safeImageUrls];
     [newUrls[index], newUrls[index + 1]] = [newUrls[index + 1]!, newUrls[index]!];
     onImageUrlsChange(newUrls);
   };
@@ -96,7 +99,7 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
       return;
     }
 
-    const newUrls = [...imageUrls];
+    const newUrls = [...safeImageUrls];
     const [draggedItem] = newUrls.splice(draggedIndex, 1);
     if (draggedItem) {
       newUrls.splice(dropIndex, 0, draggedItem);
@@ -115,9 +118,9 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
     <div className="space-y-2">
       <Label>{label}</Label>
       
-      {imageUrls.length > 0 && (
+      {safeImageUrls.length > 0 && (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-          {imageUrls.map((url, index) => (
+          {safeImageUrls.map((url, index) => (
             <div
               key={`image-${index}-${url.slice(-20)}`}
               className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
@@ -165,7 +168,7 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
                     <ChevronLeft className="w-3 h-3" />
                   </button>
                 )}
-                {index < imageUrls.length - 1 && (
+                {index < safeImageUrls.length - 1 && (
                   <button
                     type="button"
                     onClick={() => handleMoveRight(index)}
@@ -180,7 +183,7 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
         </div>
       )}
       
-      {imageUrls.length < maxImages && (
+      {safeImageUrls.length < maxImages && (
         <label className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors bg-gray-50">
           {isUploading ? (
             <div className="flex items-center space-x-2 text-blue-600">

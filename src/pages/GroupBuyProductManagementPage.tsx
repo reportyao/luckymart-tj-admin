@@ -611,8 +611,11 @@ export default function GroupBuyProductManagementPage() {
                   商品图片 *
                 </label>
                 <MultiImageUpload
-                  images={formData.image_urls}
-                  onChange={(urls) => {
+                  label="商品图片"
+                  bucket="products"
+                  folder="group-buy"
+                  imageUrls={formData.image_urls || []}
+                  onImageUrlsChange={(urls) => {
                     setFormData({
                       ...formData,
                       image_urls: urls,
