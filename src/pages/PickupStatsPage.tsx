@@ -12,8 +12,9 @@ interface PickupStats {
 interface PickupLog {
   id: string;
   prize_id: string;
-  verified_by: string;
-  verified_at: string;
+  operator_id: string;
+  action: string;
+  created_at: string;
   notes: string | null;
   prize: {
     id: string;
@@ -76,12 +77,13 @@ export default function PickupStatsPage() {
         .select(`
           id,
           prize_id,
-          verified_by,
-          verified_at,
+          operator_id,
+          action,
+          created_at,
           notes,
           pickup_point:pickup_points(name)
         `)
-        .order('verified_at', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(20);
 
       if (logsError) {throw logsError;}
@@ -329,10 +331,13 @@ export default function PickupStatsPage() {
                       自提点
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      核销人
+                      操作人
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      核销时间
+                      操作
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      时间
                     </th>
                   </tr>
                 </thead>
@@ -349,10 +354,13 @@ export default function PickupStatsPage() {
                         {log.pickup_point?.name || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {log.verified_by || '-'}
+                        {log.operator_id || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(log.verified_at)}
+                        {log.action || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDate(log.created_at)}
                       </td>
                     </tr>
                   ))}
