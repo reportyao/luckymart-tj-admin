@@ -53,7 +53,7 @@ export const PaymentConfigPage: React.FC = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('payment_configs')
+        .from('payment_config')
         .select('*')
         .order('sort_order', { ascending: true });
 
@@ -139,7 +139,7 @@ export const PaymentConfigPage: React.FC = () => {
 
       if (editingConfig) {
         const { error } = await supabase
-          .from('payment_configs')
+          .from('payment_config')
           .update(payload)
           .eq('id', editingConfig.id);
 
@@ -147,7 +147,7 @@ export const PaymentConfigPage: React.FC = () => {
         toast.success('支付配置更新成功');
       } else {
         const { error } = await supabase
-          .from('payment_configs')
+          .from('payment_config')
           .insert({
             ...payload,
             created_at: new Date().toISOString(),
@@ -170,7 +170,7 @@ export const PaymentConfigPage: React.FC = () => {
 
     try {
       const { error } = await supabase
-        .from('payment_configs')
+        .from('payment_config')
         .delete()
         .eq('id', id);
 
@@ -185,7 +185,7 @@ export const PaymentConfigPage: React.FC = () => {
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
       const { error } = await supabase
-        .from('payment_configs')
+        .from('payment_config')
         .update({ 
           is_enabled: !currentStatus,
           is_active: !currentStatus,

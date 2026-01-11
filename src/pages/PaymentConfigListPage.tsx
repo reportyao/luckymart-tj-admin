@@ -26,7 +26,7 @@ const PaymentConfigListPage: React.FC = () => {
   const fetchConfigs = async () => {
     setIsLoading(true);
     const { data, error } = await supabase
-      .from('payment_configs')
+      .from('payment_config')
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -46,7 +46,7 @@ const PaymentConfigListPage: React.FC = () => {
   const handleToggleActive = async (config: PaymentConfig) => {
     const newStatus = !config.is_active;
     const { error } = await supabase
-      .from('payment_configs')
+      .from('payment_config')
       .update({ is_active: newStatus })
       .eq('id', config.id);
 
@@ -65,7 +65,7 @@ const PaymentConfigListPage: React.FC = () => {
     setIsDeleting(true);
 
     const { error } = await supabase
-      .from('payment_configs')
+      .from('payment_config')
       .delete()
       .eq('id', deleteConfigId);
 
