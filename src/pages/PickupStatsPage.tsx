@@ -12,7 +12,6 @@ interface PickupStats {
 interface PickupLog {
   id: string;
   prize_id: string;
-  pickup_code: string;
   verified_by: string;
   verified_at: string;
   notes: string | null;
@@ -77,7 +76,6 @@ export default function PickupStatsPage() {
         .select(`
           id,
           prize_id,
-          pickup_code,
           verified_by,
           verified_at,
           notes,
@@ -322,9 +320,6 @@ export default function PickupStatsPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      提货码
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       商品
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -344,11 +339,6 @@ export default function PickupStatsPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {recentLogs.map((log) => (
                     <tr key={log.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
-                          {log.pickup_code}
-                        </span>
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {getLocalizedTitle(log.prize?.lottery)}
                       </td>
