@@ -21,7 +21,7 @@ interface PickupPoint {
   longitude: number | null;
   contact_phone: string | null;
   contact_person: string | null;
-  business_hours: BusinessHours | string | null;
+  working_hours: BusinessHours | string | null;
   status: string;
   is_active?: boolean;
   created_at: string;
@@ -36,7 +36,7 @@ interface FormData {
   longitude: number | null;
   contact_phone: string;
   contact_person: string;
-  business_hours: BusinessHours;
+  working_hours: BusinessHours;
   status: string;
 }
 
@@ -59,7 +59,7 @@ const emptyPickupPoint: FormData = {
   longitude: null,
   contact_phone: '',
   contact_person: '',
-  business_hours: emptyBusinessHours,
+  working_hours: emptyBusinessHours,
   status: 'ACTIVE',
 };
 
@@ -161,7 +161,7 @@ export default function PickupPointsPage() {
         longitude: point.longitude,
         contact_phone: point.contact_phone || '',
         contact_person: point.contact_person || '',
-        business_hours: parseBusinessHours(point.business_hours),
+        working_hours: parseBusinessHours(point.working_hours),
         status: point.status || 'ACTIVE',
       });
     } else {
@@ -196,7 +196,7 @@ export default function PickupPointsPage() {
         longitude: formData.longitude,
         contact_phone: formData.contact_phone || null,
         contact_person: formData.contact_person || null,
-        business_hours: formData.business_hours,
+        working_hours: formData.working_hours,
         status: formData.status,
       };
 
@@ -336,7 +336,7 @@ export default function PickupPointsPage() {
                     {point.contact_phone || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatBusinessHours(point.business_hours)}
+                    {formatBusinessHours(point.working_hours)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button
@@ -570,11 +570,11 @@ export default function PickupPointsPage() {
                         <span className="text-sm text-gray-600 w-10">{dayNames[day]}</span>
                         <input
                           type="text"
-                          value={formData.business_hours[day] || ''}
+                          value={formData.working_hours[day] || ''}
                           onChange={(e) =>
                             setFormData({
                               ...formData,
-                              business_hours: { ...formData.business_hours, [day]: e.target.value },
+                              working_hours: { ...formData.working_hours, [day]: e.target.value },
                             })
                           }
                           className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
