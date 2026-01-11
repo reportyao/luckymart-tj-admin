@@ -137,7 +137,6 @@ export const LotteryDetailPage: React.FC = () => {
         .from('lottery_entries')
         .select('*')
         .eq('lottery_id', id)
-        .eq('status', 'ACTIVE')
         .order('created_at', { ascending: true })
         .range(from, to);
 

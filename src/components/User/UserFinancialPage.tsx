@@ -221,7 +221,7 @@ const UserFinancialPage: React.FC = () => {
               <span className="text-sm opacity-90">积分余额</span>
               <BanknotesIcon className="w-6 h-6 opacity-80" />
             </div>
-            <div className="text-3xl font-bold">{summary.luckyCoinsBalance.toFixed(2)}</div>
+            <div className="text-3xl font-bold">{summary.luckyCoinsBalance?.toFixed(2) || '0.00'}</div>
           </div>
 
           <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
@@ -229,7 +229,7 @@ const UserFinancialPage: React.FC = () => {
               <span className="text-sm opacity-90">现金余额</span>
               <CurrencyDollarIcon className="w-6 h-6 opacity-80" />
             </div>
-            <div className="text-3xl font-bold">{summary.cashBalance.toFixed(2)}</div>
+            <div className="text-3xl font-bold">{summary.cashBalance?.toFixed(2) || '0.00'}</div>
           </div>
 
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
@@ -237,7 +237,7 @@ const UserFinancialPage: React.FC = () => {
               <span className="text-sm opacity-90">冻结金额</span>
               <BanknotesIcon className="w-6 h-6 opacity-80" />
             </div>
-            <div className="text-3xl font-bold">{summary.frozenBalance.toFixed(2)}</div>
+            <div className="text-3xl font-bold">{summary.frozenBalance?.toFixed(2) || '0.00'}</div>
           </div>
 
           <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white">
@@ -245,51 +245,51 @@ const UserFinancialPage: React.FC = () => {
               <span className="text-sm opacity-90">总佣金</span>
               <ArrowTrendingUpIcon className="w-6 h-6 opacity-80" />
             </div>
-            <div className="text-3xl font-bold">{summary.totalCommission.toFixed(2)}</div>
+            <div className="text-3xl font-bold">{summary.totalCommission?.toFixed(2) || '0.00'}</div>
           </div>
 
           {/* Statistics Cards */}
           <div className="bg-white rounded-xl p-6 border border-gray-200">
             <div className="text-sm text-gray-500 mb-1">累计充值</div>
-            <div className="text-2xl font-bold text-gray-900">{summary.totalDeposits.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-gray-900">{summary.totalDeposits?.toFixed(2) || '0.00'}</div>
           </div>
 
           <div className="bg-white rounded-xl p-6 border border-gray-200">
             <div className="text-sm text-gray-500 mb-1">累计提现</div>
-            <div className="text-2xl font-bold text-gray-900">{summary.totalWithdrawals.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-gray-900">{summary.totalWithdrawals?.toFixed(2) || '0.00'}</div>
           </div>
 
           <div className="bg-white rounded-xl p-6 border border-gray-200">
             <div className="text-sm text-gray-500 mb-1">累计消费</div>
-            <div className="text-2xl font-bold text-gray-900">{summary.totalSpending.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-gray-900">{summary.totalSpending?.toFixed(2) || '0.00'}</div>
           </div>
 
           <div className="bg-white rounded-xl p-6 border border-gray-200">
             <div className="text-sm text-gray-500 mb-1">累计收入</div>
-            <div className="text-2xl font-bold text-gray-900">{summary.totalIncome.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-gray-900">{summary.totalIncome?.toFixed(2) || '0.00'}</div>
           </div>
 
           {/* Commission Breakdown */}
           <div className="bg-white rounded-xl p-6 border border-gray-200">
             <div className="text-sm text-gray-500 mb-1">一级佣金</div>
-            <div className="text-2xl font-bold text-gray-900">{summary.level1Commission.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-gray-900">{summary.level1Commission?.toFixed(2) || '0.00'}</div>
           </div>
 
           <div className="bg-white rounded-xl p-6 border border-gray-200">
             <div className="text-sm text-gray-500 mb-1">二级佣金</div>
-            <div className="text-2xl font-bold text-gray-900">{summary.level2Commission.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-gray-900">{summary.level2Commission?.toFixed(2) || '0.00'}</div>
           </div>
 
           <div className="bg-white rounded-xl p-6 border border-gray-200">
             <div className="text-sm text-gray-500 mb-1">三级佣金</div>
-            <div className="text-2xl font-bold text-gray-900">{summary.level3Commission.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-gray-900">{summary.level3Commission?.toFixed(2) || '0.00'}</div>
           </div>
 
           {/* Period Stats */}
           <div className="bg-white rounded-xl p-6 border border-gray-200">
             <div className="text-sm text-gray-500 mb-1">期间净变化</div>
             <div className={`text-2xl font-bold ${summary.periodStats.netChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {summary.periodStats.netChange >= 0 ? '+' : ''}{summary.periodStats.netChange.toFixed(2)}
+              {summary.periodStats.netChange >= 0 ? '+' : ''}{summary.periodStats.netChange?.toFixed(2) || '0.00'}
             </div>
           </div>
         </div>
@@ -395,11 +395,11 @@ const UserFinancialPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <span className={transaction.isIncome ? 'text-green-600' : 'text-red-600'}>
-                      {transaction.isIncome ? '+' : '-'}{Math.abs(transaction.amount).toFixed(2)}
+                      {transaction.isIncome ? '+' : '-'}{Math.abs(transaction.amount)?.toFixed(2) || '0.00'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {transaction.balance_before.toFixed(2)} → {transaction.balance_after.toFixed(2)}
+                    {transaction.balance_before?.toFixed(2) || '0.00'} → {transaction.balance_after?.toFixed(2) || '0.00'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${
