@@ -163,8 +163,9 @@ export default function OrderShipmentPage() {
           logistics_status,
           batch_id,
           group_buy_products:group_buy_products!group_buy_results_product_id_fkey (
-            title,
-            description,
+            name,
+            name_i18n,
+            description_i18n,
             image_urls,
             original_price
           )
@@ -242,13 +243,11 @@ export default function OrderShipmentPage() {
           let productName = '未知商品';
           let productNameI18n: Record<string, string> = {};
           
-          if (product?.title) {
-            if (typeof product.title === 'object') {
-              productNameI18n = product.title;
-              productName = product.title.zh || product.title.ru || '未知商品';
-            } else {
-              productName = product.title;
-            }
+          if (product?.name_i18n) {
+            productNameI18n = product.name_i18n;
+            productName = product.name_i18n.zh || product.name_i18n.ru || product.name || '未知商品';
+          } else if (product?.name) {
+            productName = product.name;
           }
           
           orders.push({
