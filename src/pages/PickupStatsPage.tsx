@@ -127,15 +127,15 @@ export default function PickupStatsPage() {
 
       const { data: dailyData, error: dailyError } = await supabase
         .from('pickup_logs')
-        .select('verified_at')
-        .gte('verified_at', startDate.toISOString());
+        .select('created_at')
+        .gte('created_at', startDate.toISOString());
 
       if (dailyError) {throw dailyError;}
 
       // 按日期分组统计
       const dailyMap: { [key: string]: number } = {};
       (dailyData || []).forEach((log: any) => {
-        const date = new Date(log.verified_at).toISOString().split('T')[0];
+        const date = new Date(log.created_at).toISOString().split('T')[0];
         dailyMap[date] = (dailyMap[date] || 0) + 1;
       });
 
