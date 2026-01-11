@@ -141,7 +141,6 @@ export const LotteryListPage: React.FC = () => {
         actual_draw_time: null,
         start_time: newStartTime,
         end_time: newEndTime,
-        vrf_seed: null,
         vrf_proof: null,
         vrf_timestamp: null,
         winning_numbers: null,
