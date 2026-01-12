@@ -622,7 +622,7 @@ export default function GroupBuyProductManagementPage() {
                       image_url: urls[0] || '',
                     });
                   }}
-                  maxImages={5}
+                  maxImages={10}
                 />
               </div>
 

@@ -596,7 +596,7 @@ export default function InventoryProductManagementPage() {
                   label="商品图片 (最多5张)"
                   bucket="inventory-products"
                   folder="products"
-                  maxImages={5}
+                  maxImages={10}
                   imageUrls={formData.image_urls}
                   onImageUrlsChange={(urls) => setFormData({ ...formData, image_urls: urls, image_url: urls[0] || '' })}
                 />

@@ -594,7 +594,7 @@ export const LotteryForm: React.FC = () => {
             <ImageUpload
               value={formData.image_urls}
               onChange={(urls) => setFormData((prev) => ({ ...prev, image_urls: urls }))}
-              maxImages={5}
+              maxImages={10}
               maxSizeMB={5}
             />
             <p className="text-sm text-gray-500">支持上传最多5张图片，自动压缩并上传到云存储</p>
