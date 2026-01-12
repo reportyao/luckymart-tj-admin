@@ -48,7 +48,7 @@ function App(): JSX.Element {
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   return (
-    <Router>
+    <Router basename="/admin">
       <AdminAuthProvider>
       <AdminDebugPanel />
       <div className="flex h-screen bg-gray-100">
