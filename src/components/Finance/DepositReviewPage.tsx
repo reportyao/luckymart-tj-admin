@@ -102,6 +102,7 @@ export const DepositReviewPage: React.FC = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`, // 修复: 添加Authorization头部
             'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
             'x-admin-id': admin!.id,
           },

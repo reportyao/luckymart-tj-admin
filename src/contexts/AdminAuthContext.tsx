@@ -72,6 +72,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     'resale.edit': ['/resale-management'],
     'config.payment': ['/payment-config'],
     'config.algorithm': ['/algorithm-config'],
+    'config.banner': ['/banner-management'], // 修复: 添加Banner管理权限映射
 
     'admin.view': ['/admin-management'],
     'admin.create': ['/admin-management'],
@@ -181,6 +182,9 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     
     // 根目录总是允许访问
     if (pagePath === '/') {return true;}
+    
+    // 修复: Banner管理允许所有管理员访问
+    if (pagePath === '/banner-management') {return true;}
     
     // 查找哪些权限ID对应这个页面路径
     for (const [permId, paths] of Object.entries(PERMISSION_TO_PATH_MAP)) {
