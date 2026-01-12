@@ -25,6 +25,8 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [imageUrlInput, setImageUrlInput] = useState<string>('');
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // 安全获取 imageUrls，确保始终是数组
   const safeImageUrls = Array.isArray(imageUrls) ? imageUrls : [];
@@ -60,6 +62,63 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
   const handleRemove = (indexToRemove: number) => {
     const newUrls = safeImageUrls.filter((_, index) => index !== indexToRemove);
     onImageUrlsChange(newUrls);
+  };
+
+  const handleAddImageUrl = async () => {
+    const url = imageUrlInput.trim();
+    if (!url) {
+      toast.error('请输入图片链接');
+      return;
+    }
+
+    if (safeImageUrls.length >= maxImages) {
+      toast.error(`最多只能上传 ${maxImages} 张图片`);
+      return;
+    }
+
+    // 验证URL格式
+    try {
+      new URL(url);
+    } catch (error) {
+      toast.error('请输入有效的URL');
+      return;
+    }
+
+    setIsDownloading(true);
+    try {
+      // 调用后端云函数下载并上传图片
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/download-and-upload-image`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            imageUrl: url,
+            bucket: bucket,
+            folder: folder,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || '下载图片失败');
+      }
+
+      onImageUrlsChange([...safeImageUrls, result.publicUrl]);
+      setImageUrlInput('');
+      toast.success('图片下载并上传成功!');
+    } catch (error: any) {
+      toast.error(`操作失败: ${error.message}`);
+      console.error('Download and upload error:', error);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const handleMoveLeft = (index: number) => {
@@ -184,27 +243,56 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
       )}
       
       {safeImageUrls.length < maxImages && (
-        <label className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors bg-gray-50">
-          {isUploading ? (
-            <div className="flex items-center space-x-2 text-blue-600">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>上传中...</span>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center text-gray-500">
-              <Upload className="w-6 h-6" />
-              <span className="mt-1 text-sm">点击上传图片 (最多 {maxImages} 张)</span>
-            </div>
-          )}
-          <Input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleImageUpload}
-            className="hidden"
-            disabled={isUploading}
-          />
-        </label>
+        <>
+          <label className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors bg-gray-50">
+            {isUploading ? (
+              <div className="flex items-center space-x-2 text-blue-600">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>上传中...</span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center text-gray-500">
+                <Upload className="w-6 h-6" />
+                <span className="mt-1 text-sm">点击上传图片 (最多 {maxImages} 张)</span>
+              </div>
+            )}
+            <Input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageUpload}
+              className="hidden"
+              disabled={isUploading}
+            />
+          </label>
+          
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              placeholder="或输入图片链接URL"
+              value={imageUrlInput}
+              onChange={(e) => setImageUrlInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleAddImageUrl()}
+              disabled={isDownloading}
+              className="flex-1"
+            />
+            <button
+              type="button"
+              onClick={handleAddImageUrl}
+              disabled={isDownloading || !imageUrlInput.trim()}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isDownloading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>下载中...</span>
+                </>
+              ) : (
+                <span>添加</span>
+              )}
+            </button>
+          </div>
+        </>
       )}
       <p className="text-xs text-gray-500">
         图片将自动压缩并转换为 WebP 格式 (最大 1MB, 1920px)。拖动图片可排序，第一张为主图。
