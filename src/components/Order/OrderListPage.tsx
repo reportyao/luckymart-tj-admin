@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
-type Order = Tables<'orders'>;
+type Order = Tables<'full_purchase_orders'>;
 type OrderStatus = Enums<'OrderStatus'>;
 
 interface OrderWithDetails extends Order {
@@ -49,7 +49,7 @@ export const OrderListPage: React.FC = () => {
     try {
       // 查询订单并关联用户和商品信息
       const { data, error } = await supabase
-        .from('orders')
+        .from('full_purchase_orders')
         .select(`
           *,
           user:users(id, username),

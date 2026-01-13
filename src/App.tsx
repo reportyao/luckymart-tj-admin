@@ -87,11 +87,11 @@ function App(): JSX.Element {
       <AdminDebugPanel />
       <div className="flex h-screen bg-gray-100">
         {/* Sidebar */}
-        <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gray-900 text-white transition-all duration-300 overflow-hidden`}>
+        <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gray-900 text-white transition-all duration-300 overflow-y-auto`}>
           <div className="p-4 border-b border-gray-700">
             <h1 className="font-bold text-xl">LuckyMart Admin</h1>
           </div>
-          <nav className="mt-4 space-y-2 px-2">
+          <nav className="mt-2 space-y-1 px-2 pb-4">
             <NavLink to="/" label="仪表盘" icon="📊" />
             <NavLink to="/users" label="用户列表" icon="👥" />
             <NavLink to="/user-management" label="用户管理" icon="👤" />
@@ -192,7 +192,7 @@ function NavLink({ to, label, icon }: { to: string; label: string; icon: string 
   return (
     <Link
       to={to}
-      className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+      className="flex items-center space-x-3 px-3 py-1.5 rounded-lg hover:bg-gray-800 transition-colors text-sm"
     >
       <span className="text-xl">{icon}</span>
       <span>{label}</span>
