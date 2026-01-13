@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom'
 import { LotteryForm } from './components/Lottery/LotteryForm'
 import { LotteryListPage } from './components/Lottery/LotteryListPage'
 import { LotteryDetailPage } from './components/Lottery/LotteryDetailPage'
@@ -29,6 +29,7 @@ import DashboardPage from './pages/DashboardPage';
 import GroupBuyProductManagementPage from './pages/GroupBuyProductManagementPage';
 import GroupBuySessionManagementPage from './pages/GroupBuySessionManagementPage';
 import BannerManagementPage from './pages/BannerManagementPage';
+import AIManagementPage from './pages/AIManagementPage';
 import PickupVerificationPage from './pages/PickupVerificationPage';
 import PickupPointsPage from './pages/PickupPointsPage';
 import PickupStatsPage from './pages/PickupStatsPage';
@@ -39,9 +40,42 @@ import OrderShipmentPage from './pages/OrderShipmentPage';
 import BatchArrivalConfirmPage from './pages/BatchArrivalConfirmPage';
 import BatchStatisticsPage from './pages/BatchStatisticsPage';
 
-import { AdminAuthProvider } from './contexts/AdminAuthContext';
+import { AdminAuthProvider, useAdminAuth } from './contexts/AdminAuthContext';
 import LoginPage from './pages/LoginPage';
 import { AdminDebugPanel } from './components/Debug/AdminDebugPanel';
+
+// Header Component with Logout
+function AppHeader({ sidebarOpen, setSidebarOpen }: { sidebarOpen: boolean; setSidebarOpen: (open: boolean) => void }): JSX.Element {
+  const { admin, logout } = useAdminAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  return (
+    <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="text-gray-600 hover:text-gray-900"
+      >
+        ☰
+      </button>
+      <div className="flex items-center space-x-4">
+        <div className="text-gray-600">
+          {admin?.display_name || admin?.username}
+        </div>
+        <button
+          onClick={handleLogout}
+          className="px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+        >
+          退出登录
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // Simplified Admin Dashboard
 function App(): JSX.Element {
@@ -88,6 +122,7 @@ function App(): JSX.Element {
             <NavLink to="/admin-management" label="管理员管理" icon="👨‍💼" />
             <NavLink to="/permission-management" label="权限管理" icon="🔐" />
             <NavLink to="/banner-management" label="Banner管理" icon="🖼️" />
+            <NavLink to="/ai-management" label="AI管理" icon="🤖" />
             <NavLink to="/audit-logs" label="审计日志" icon="📋" />
           </nav>
         </div>
@@ -95,15 +130,7 @@ function App(): JSX.Element {
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="text-gray-600 hover:text-gray-900"
-            >
-              ☰
-            </button>
-            <div className="text-gray-600">Admin Panel</div>
-          </div>
+          <AppHeader sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
           {/* Content */}
           <div className="flex-1 overflow-auto p-6">
@@ -146,6 +173,7 @@ function App(): JSX.Element {
               <Route path="/algorithm-config" element={<ProtectedRoute element={<AlgorithmConfigPage />} requiredRole="admin" />} />
               <Route path="/draw-logs" element={<ProtectedRoute element={<DrawLogsPage />} requiredRole="admin" />} />
               <Route path="/banner-management" element={<ProtectedRoute element={<BannerManagementPage />} requiredRole="admin" />} />
+              <Route path="/ai-management" element={<ProtectedRoute element={<AIManagementPage />} requiredRole="admin" />} />
               <Route path="/audit-logs" element={<ProtectedRoute element={<PagePlaceholder title="Audit Logs" />} requiredRole="admin" />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
               <Route path="/forbidden" element={<ForbiddenPage />} />
