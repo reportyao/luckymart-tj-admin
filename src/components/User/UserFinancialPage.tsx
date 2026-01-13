@@ -83,7 +83,9 @@ const UserFinancialPage: React.FC = () => {
       const summaryResponse = await fetch(summaryUrl, {
         headers: {
           'X-Admin-Id': JSON.parse(localStorage.getItem('admin_user') || '{}').id || '',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
         }
       });
       const summaryData = await summaryResponse.json();
@@ -105,7 +107,9 @@ const UserFinancialPage: React.FC = () => {
       const transactionsResponse = await fetch(transactionsUrl.toString(), {
         headers: {
           'X-Admin-Id': JSON.parse(localStorage.getItem('admin_user') || '{}').id || '',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
         }
       });
       const transactionsData = await transactionsResponse.json();
@@ -132,7 +136,9 @@ const UserFinancialPage: React.FC = () => {
 
       const response = await fetch(exportUrl.toString(), {
         headers: {
-          'X-Admin-Id': JSON.parse(localStorage.getItem('admin_user') || '{}').id || ''
+          'X-Admin-Id': JSON.parse(localStorage.getItem('admin_user') || '{}').id || '',
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
         }
       });
 
