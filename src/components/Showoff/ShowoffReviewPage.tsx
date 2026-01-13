@@ -147,8 +147,8 @@ export const ShowoffReviewPage: React.FC = () => {
                       <TableCell>{showoff.user_id.substring(0, 8)}...</TableCell>
                       <TableCell className="max-w-xs truncate">{showoff.content}</TableCell>
                       <TableCell>
-                        {showoff.images && showoff.images.length > 0 ? (
-                          <span className="text-sm text-gray-600">{showoff.images.length} 张</span>
+                        {showoff.image_urls && showoff.image_urls.length > 0 ? (
+                          <span className="text-sm text-gray-600">{showoff.image_urls.length} 张</span>
                         ) : (
                           <span className="text-sm text-gray-400">无</span>
                         )}
@@ -231,11 +231,11 @@ export const ShowoffReviewPage: React.FC = () => {
             </div>
 
             {/* 晒单图片 */}
-            {selectedShowoff?.images && selectedShowoff.images.length > 0 && (
+            {selectedShowoff?.image_urls && selectedShowoff.image_urls.length > 0 && (
               <div>
                 <h3 className="font-semibold mb-2">晒单图片</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {selectedShowoff.images.map((imageUrl, index) => (
+                  {selectedShowoff.image_urls.map((imageUrl, index) => (
                     <div key={index} className="border rounded-lg overflow-hidden">
                       <img
                         src={imageUrl}

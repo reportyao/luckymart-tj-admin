@@ -380,33 +380,60 @@ export type Database = {
           created_at: string
           id: string
           image_url: string | null
+          image_urls: string[] | null
           lottery_id: string
+          prize_id: string | null
           status: Database['public']['Enums']['ShowoffStatus']
-          title: string
+          title: string | null
           updated_at: string
           user_id: string
+          likes_count: number
+          comments_count: number
+          reviewed_at: string | null
+          rejected_reason: string | null
+          approved_at: string | null
+          reward_coins: number | null
+          admin_note: string | null
         }
         Insert: {
           content: string
           created_at?: string
           id?: string
           image_url?: string | null
+          image_urls?: string[] | null
           lottery_id: string
+          prize_id?: string | null
           status?: Database['public']['Enums']['ShowoffStatus']
-          title: string
+          title?: string | null
           updated_at?: string
           user_id: string
+          likes_count?: number
+          comments_count?: number
+          reviewed_at?: string | null
+          rejected_reason?: string | null
+          approved_at?: string | null
+          reward_coins?: number | null
+          admin_note?: string | null
         }
         Update: {
           content?: string
           created_at?: string
           id?: string
           image_url?: string | null
+          image_urls?: string[] | null
           lottery_id?: string
+          prize_id?: string | null
           status?: Database['public']['Enums']['ShowoffStatus']
-          title?: string
+          title?: string | null
           updated_at?: string
           user_id?: string
+          likes_count?: number
+          comments_count?: number
+          reviewed_at?: string | null
+          rejected_reason?: string | null
+          approved_at?: string | null
+          reward_coins?: number | null
+          admin_note?: string | null
         }
         Relationships: [
           {
