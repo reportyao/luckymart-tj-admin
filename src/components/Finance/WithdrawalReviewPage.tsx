@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 type Withdrawal = Tables<'withdrawal_requests'> & {
   users?: {
     id: string;
-    nickname?: string;
+    display_name?: string;
     telegram_username?: string;
   };
 };
@@ -45,7 +45,7 @@ export const WithdrawalReviewPage: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('withdrawal_requests')
-        .select('*, users(id, nickname, telegram_username)')
+        .select('*, users(id, display_name, telegram_username)')
         .order('created_at', { ascending: false });
 
       if (error) {throw error;}
@@ -131,7 +131,7 @@ export const WithdrawalReviewPage: React.FC = () => {
                     <TableCell className="font-medium">{withdrawal.id.substring(0, 8)}...</TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        <div className="font-medium">{withdrawal.users?.nickname || withdrawal.users?.telegram_username || '未知用户'}</div>
+                        <div className="font-medium">{withdrawal.users?.display_name || withdrawal.users?.telegram_username || '未知用户'}</div>
                         <div className="text-gray-500 text-xs">ID: {withdrawal.user_id.substring(0, 8)}...</div>
                       </div>
                     </TableCell>
