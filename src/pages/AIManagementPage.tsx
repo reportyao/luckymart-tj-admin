@@ -15,8 +15,8 @@ interface AILog {
   username?: string;
   question: string;
   answer: string | null;
-  model: string | null;
-  tokens_used: number | null;
+  is_blocked: boolean;
+  response_time: number | null;
   created_at: string;
 }
 
@@ -56,9 +56,9 @@ export default function AIManagementPage() {
   };
 
   const loadStats = async () => {
-    // 总统计
+    // 总统计 - 使用 ai_chat_history 表
     const { data: totalData, error: totalError } = await supabase
-      .from('ai_chat_logs')
+      .from('ai_chat_history')
       .select('id, user_id');
 
     if (totalError) throw totalError;
@@ -69,7 +69,7 @@ export default function AIManagementPage() {
     // 今日统计
     const today = new Date().toISOString().split('T')[0];
     const { data: todayData, error: todayError } = await supabase
-      .from('ai_chat_logs')
+      .from('ai_chat_history')
       .select('id, user_id')
       .gte('created_at', `${today}T00:00:00`)
       .lt('created_at', `${today}T23:59:59`);
@@ -88,15 +88,16 @@ export default function AIManagementPage() {
   };
 
   const loadLogs = async () => {
+    // 使用 ai_chat_history 表，字段名为 user_message 和 ai_response
     let query = supabase
-      .from('ai_chat_logs')
+      .from('ai_chat_history')
       .select(`
         id,
         user_id,
-        question,
-        answer,
-        model,
-        tokens_used,
+        user_message,
+        ai_response,
+        is_blocked,
+        response_time,
         created_at
       `)
       .order('created_at', { ascending: false })
@@ -123,13 +124,20 @@ export default function AIManagementPage() {
       const userIds = [...new Set(data.map(log => log.user_id))];
       const { data: userData } = await supabase
         .from('users')
-        .select('id, username')
+        .select('id, display_name, first_name')
         .in('id', userIds);
 
-      const userMap = new Map(userData?.map(u => [u.id, u.username]) || []);
+      const userMap = new Map(userData?.map(u => [u.id, u.display_name || u.first_name || u.id]) || []);
 
+      // 映射字段名
       const logsWithUsername = data.map(log => ({
-        ...log,
+        id: log.id,
+        user_id: log.user_id,
+        question: log.user_message,
+        answer: log.ai_response,
+        is_blocked: log.is_blocked,
+        response_time: log.response_time,
+        created_at: log.created_at,
         username: userMap.get(log.user_id) || log.user_id
       }));
 
@@ -140,9 +148,9 @@ export default function AIManagementPage() {
   };
 
   const loadDailyStats = async () => {
-    // 获取最近30天的统计
+    // 获取最近30天的统计 - 使用 ai_chat_history 表
     const { data, error } = await supabase
-      .from('ai_chat_logs')
+      .from('ai_chat_history')
       .select('created_at, user_id')
       .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
@@ -295,8 +303,8 @@ export default function AIManagementPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">用户</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">问题</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">回答</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">模型</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tokens</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">状态</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">响应时间</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -315,11 +323,15 @@ export default function AIManagementPage() {
                   <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
                     {log.answer || '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {log.model || '-'}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    {log.is_blocked ? (
+                      <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">已拦截</span>
+                    ) : (
+                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">正常</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {log.tokens_used || '-'}
+                    {log.response_time ? `${(log.response_time / 1000).toFixed(1)}s` : '-'}
                   </td>
                 </tr>
               ))}

@@ -5,6 +5,8 @@ import { useSupabase } from '../contexts/SupabaseContext';
 interface CommissionRecord {
   id: string;
   user_id: string;
+  beneficiary_id: string;
+  source_user_id: string;
   from_user_id: string;
   level: number;
   rate: number;
@@ -13,12 +15,17 @@ interface CommissionRecord {
   status: string;
   created_at: string;
   paid_at: string | null;
+  settled_at: string | null;
   user?: {
-    username: string;
+    id: string;
+    display_name: string;
+    first_name: string;
     telegram_id: string;
   };
   from_user?: {
-    username: string;
+    id: string;
+    display_name: string;
+    first_name: string;
     telegram_id: string;
   };
 }
@@ -61,24 +68,28 @@ export default function CommissionRecordsPage() {
 
       if (error) {throw error;}
 
-      // 获取所有相关的用户ID
+      // 获取所有相关的用户ID（使用 beneficiary_id 和 source_user_id）
       const userIds = new Set<string>();
       commissionsData?.forEach(c => {
+        if (c.beneficiary_id) {userIds.add(c.beneficiary_id);}
+        if (c.source_user_id) {userIds.add(c.source_user_id);}
         if (c.user_id) {userIds.add(c.user_id);}
         if (c.from_user_id) {userIds.add(c.from_user_id);}
       });
 
-      // 查询用户信息
+      // 查询用户信息 - 使用正确的字段名
       const { data: usersData } = await supabase
         .from('users')
-        .select('id, username, telegram_id')
+        .select('id, display_name, first_name, telegram_id')
         .in('id', Array.from(userIds));
 
       // 组装数据
       const recordsWithUsers = commissionsData?.map(commission => ({
         ...commission,
-        user: usersData?.find(u => u.id === commission.user_id) || null,
-        from_user: usersData?.find(u => u.id === commission.from_user_id) || null
+        // user 是受益人（beneficiary_id 或 user_id）
+        user: usersData?.find(u => u.id === commission.beneficiary_id || u.id === commission.user_id) || null,
+        // from_user 是来源用户（source_user_id 或 from_user_id）
+        from_user: usersData?.find(u => u.id === commission.source_user_id || u.id === commission.from_user_id) || null
       })) || [];
 
       setRecords(recordsWithUsers);
@@ -102,7 +113,7 @@ export default function CommissionRecordsPage() {
       const { data: users, error: userError } = await supabase
         .from('users')
         .select('id')
-        .or(`username.ilike.%${searchTerm}%,telegram_id.ilike.%${searchTerm}%`);
+        .or(`display_name.ilike.%${searchTerm}%,first_name.ilike.%${searchTerm}%,telegram_id.ilike.%${searchTerm}%`);
 
       if (userError) {throw userError;}
 
@@ -111,12 +122,32 @@ export default function CommissionRecordsPage() {
       const { data, error } = await supabase
         .from('commissions')
         .select('*')
-        .in('user_id', userIds)
+        .or(`beneficiary_id.in.(${userIds.join(',')}),user_id.in.(${userIds.join(',')})`)
         .order('created_at', { ascending: false });
 
       if (error) {throw error;}
 
-      setRecords(data || []);
+      // 获取用户信息
+      const allUserIds = new Set<string>();
+      data?.forEach(c => {
+        if (c.beneficiary_id) {allUserIds.add(c.beneficiary_id);}
+        if (c.source_user_id) {allUserIds.add(c.source_user_id);}
+        if (c.user_id) {allUserIds.add(c.user_id);}
+        if (c.from_user_id) {allUserIds.add(c.from_user_id);}
+      });
+
+      const { data: usersData } = await supabase
+        .from('users')
+        .select('id, display_name, first_name, telegram_id')
+        .in('id', Array.from(allUserIds));
+
+      const recordsWithUsers = data?.map(commission => ({
+        ...commission,
+        user: usersData?.find(u => u.id === commission.beneficiary_id || u.id === commission.user_id) || null,
+        from_user: usersData?.find(u => u.id === commission.source_user_id || u.id === commission.from_user_id) || null
+      })) || [];
+
+      setRecords(recordsWithUsers);
     } catch (error: any) {
       console.error('搜索失败:', error);
       alert('搜索失败: ' + error.message);
@@ -153,19 +184,27 @@ export default function CommissionRecordsPage() {
     }
   };
 
+  // 获取用户显示名称
+  const getUserDisplayName = (user: CommissionRecord['user']) => {
+    if (!user) return '-';
+    return user.display_name || user.first_name || user.telegram_id || '-';
+  };
+
   const exportData = () => {
     const csvData = records.map(r => ({
       返利ID: r.id,
-      用户名: r.user?.username || '',
+      用户ID: r.beneficiary_id || r.user_id || '',
+      用户名: getUserDisplayName(r.user),
       用户TG: r.user?.telegram_id || '',
-      邀请人: r.referrer?.username || '',
-      邀请人TG: r.referrer?.telegram_id || '',
+      邀请人ID: r.source_user_id || r.from_user_id || '',
+      邀请人: getUserDisplayName(r.from_user),
+      邀请人TG: r.from_user?.telegram_id || '',
       层级: r.level,
       比例: `${(r.rate * 100).toFixed(2)}%`,
       金额: r.amount,
-      状态: r.status === 'pending' ? '待发放' : r.status === 'paid' ? '已发放' : '已取消',
+      状态: getStatusText(r.status),
       创建时间: new Date(r.created_at).toLocaleString('zh-CN'),
-      发放时间: r.paid_at ? new Date(r.paid_at).toLocaleString('zh-CN') : ''
+      发放时间: r.settled_at ? new Date(r.settled_at).toLocaleString('zh-CN') : (r.paid_at ? new Date(r.paid_at).toLocaleString('zh-CN') : '')
     }));
 
     const headers = Object.keys(csvData[0]);
@@ -199,13 +238,24 @@ export default function CommissionRecordsPage() {
     setSelectedRecords(newSelected);
   };
 
+  const getStatusText = (status: string) => {
+    const statusMap: Record<string, string> = {
+      pending: '待发放',
+      paid: '已发放',
+      settled: '已结算',
+      cancelled: '已取消'
+    };
+    return statusMap[status] || status;
+  };
+
   const getStatusBadge = (status: string) => {
-    const configs = {
+    const configs: Record<string, { icon: any; text: string; color: string }> = {
       pending: { icon: Clock, text: '待发放', color: 'bg-yellow-100 text-yellow-800' },
       paid: { icon: CheckCircle, text: '已发放', color: 'bg-green-100 text-green-800' },
+      settled: { icon: CheckCircle, text: '已结算', color: 'bg-blue-100 text-blue-800' },
       cancelled: { icon: XCircle, text: '已取消', color: 'bg-gray-100 text-gray-800' }
     };
-    const config = configs[status as keyof typeof configs] || configs.pending;
+    const config = configs[status] || { icon: Clock, text: status, color: 'bg-gray-100 text-gray-800' };
     const Icon = config.icon;
 
     return (
@@ -249,6 +299,7 @@ export default function CommissionRecordsPage() {
             <option value="all">全部状态</option>
             <option value="pending">待发放</option>
             <option value="paid">已发放</option>
+            <option value="settled">已结算</option>
             <option value="cancelled">已取消</option>
           </select>
           <select
@@ -302,8 +353,10 @@ export default function CommissionRecordsPage() {
                     className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                   />
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">用户</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">邀请人</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">用户ID</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">用户名</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">邀请人ID</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">邀请人名</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">层级</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">比例</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">金额</th>
@@ -312,7 +365,7 @@ export default function CommissionRecordsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {(records || []).map((record) => (
+              {records.map((record) => (
                 <tr key={record.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
                     {record.status === 'pending' && (
@@ -325,21 +378,31 @@ export default function CommissionRecordsPage() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="text-sm font-medium text-gray-900">{record.user?.username}</div>
-                    <div className="text-xs text-gray-500">{record.user?.telegram_id}</div>
+                    <div className="text-xs text-gray-500 font-mono max-w-[100px] truncate" title={record.beneficiary_id || record.user_id}>
+                      {(record.beneficiary_id || record.user_id || '').slice(0, 8)}...
+                    </div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="text-sm font-medium text-gray-900">{record.from_user?.username}</div>
-                    <div className="text-xs text-gray-500">{record.from_user?.telegram_id}</div>
+                    <div className="text-sm font-medium text-gray-900">{getUserDisplayName(record.user)}</div>
+                    <div className="text-xs text-gray-500">{record.user?.telegram_id || '-'}</div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="text-xs text-gray-500 font-mono max-w-[100px] truncate" title={record.source_user_id || record.from_user_id}>
+                      {(record.source_user_id || record.from_user_id || '').slice(0, 8)}...
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="text-sm font-medium text-gray-900">{getUserDisplayName(record.from_user)}</div>
+                    <div className="text-xs text-gray-500">{record.from_user?.telegram_id || '-'}</div>
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-sm text-gray-900">L{record.level}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-sm text-gray-900">{(record.rate * 100).toFixed(2)}%</span>
+                    <span className="text-sm text-gray-900">{((record.rate || 0) * 100).toFixed(2)}%</span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-sm font-medium text-gray-900">¥{record.amount.toFixed(2)}</span>
+                    <span className="text-sm font-medium text-gray-900">¥{Number(record.amount).toFixed(2)}</span>
                   </td>
                   <td className="px-4 py-3">
                     {getStatusBadge(record.status)}

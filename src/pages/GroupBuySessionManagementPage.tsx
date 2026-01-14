@@ -17,10 +17,13 @@ interface GroupBuySession {
   expires_at: string;
   winner_id: string | null;
   product: {
-    title: { zh: string; ru: string; tg: string };
-    image_url: string;
+    title: { zh: string; ru: string; tg: string } | null;
+    name: string | null;
+    name_i18n: { zh: string; ru: string; tg: string } | null;
+    image_url: string | null;
+    image_urls: string[] | null;
     price_per_person: number;
-  };
+  } | null;
   orders: Array<{
     id: string;
     user_id: string;
@@ -28,6 +31,25 @@ interface GroupBuySession {
     created_at: string;
   }>;
 }
+
+// 获取产品标题（兼容多种字段）
+const getProductTitle = (product: GroupBuySession['product']): string => {
+  if (!product) return '未知商品';
+  // 优先使用 title.zh，然后是 name_i18n.zh，最后是 name
+  if (product.title?.zh) return product.title.zh;
+  if (product.name_i18n?.zh) return product.name_i18n.zh;
+  if (product.name) return product.name;
+  return '未知商品';
+};
+
+// 获取产品图片（兼容多种字段）
+const getProductImage = (product: GroupBuySession['product']): string => {
+  if (!product) return '';
+  // 优先使用 image_url，然后是 image_urls[0]
+  if (product.image_url) return product.image_url;
+  if (product.image_urls && product.image_urls.length > 0) return product.image_urls[0];
+  return '';
+};
 
 export default function GroupBuySessionManagementPage() {
   const [sessions, setSessions] = useState<GroupBuySession[]>([]);
@@ -52,7 +74,7 @@ export default function GroupBuySessionManagementPage() {
         .from('group_buy_sessions')
         .select(`
           *,
-          product:group_buy_products!product_id(*),
+          product:group_buy_products!product_id(title, name, name_i18n, image_url, image_urls, price_per_person),
           orders:group_buy_orders!session_id(id, user_id, amount, created_at)
         `)
         .order('created_at', { ascending: false });
@@ -188,83 +210,95 @@ export default function GroupBuySessionManagementPage() {
         <div className="text-center py-12 text-gray-500">暂无拼团会话</div>
       ) : (
         <div className="space-y-4">
-          {(sessions || []).map((session) => (
-            <div key={session.id} className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex gap-4">
-                {/* Product Image */}
-                <img
-                  src={session.product.image_url}
-                  alt={session.product.title.zh}
-                  className="w-24 h-24 object-cover rounded-lg"
-                />
-
-                {/* Session Info */}
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h3 className="font-bold text-lg">{session.product?.title?.zh || '未知商品'}</h3>
-                      <p className="text-sm text-gray-600">会话编号: {session.session_code}</p>
-                    </div>
-                    {getStatusBadge(session.status)}
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">参与人数</div>
-                      <div className="flex items-center gap-1 font-bold">
-                        <Users className="w-4 h-4" />
-                        {session.current_participants}/{session.max_participants}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">人均价格</div>
-                      <div className="font-bold text-orange-600">
-                        ₽{session.product.price_per_person}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">创建时间</div>
-                      <div className="text-sm">
-                        {new Date(session.created_at).toLocaleString('zh-CN')}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">剩余时间</div>
-                      <div className="flex items-center gap-1 text-sm">
-                        <Clock className="w-4 h-4" />
-                        {getTimeRemaining(session.expires_at)}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Participants */}
-                  {session.orders && session.orders.length > 0 && (
-                    <div>
-                      <div className="text-sm font-medium text-gray-700 mb-2">参与者:</div>
-                      <div className="flex flex-wrap gap-2">
-                        {(session.orders || []).map((order, index) => (
-                          <div
-                            key={order.id}
-                            className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
-                              session.winner_id === order.user_id
-                                ? 'bg-yellow-100 text-yellow-700 border-2 border-yellow-400'
-                                : 'bg-gray-100 text-gray-700'
-                            }`}
-                          >
-                            {session.winner_id === order.user_id && (
-                              <Trophy className="w-4 h-4" />
-                            )}
-                            <span className="font-medium">{index + 1}.</span>
-                            <span>用户 #{index + 1}</span>
-                          </div>
-                        ))}
-                      </div>
+          {(sessions || []).map((session) => {
+            const productTitle = getProductTitle(session.product);
+            const productImage = getProductImage(session.product);
+            const pricePerPerson = session.product?.price_per_person || 0;
+            
+            return (
+              <div key={session.id} className="bg-white rounded-lg shadow-md p-6">
+                <div className="flex gap-4">
+                  {/* Product Image */}
+                  {productImage ? (
+                    <img
+                      src={productImage}
+                      alt={productTitle}
+                      className="w-24 h-24 object-cover rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400">
+                      无图片
                     </div>
                   )}
+
+                  {/* Session Info */}
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h3 className="font-bold text-lg">{productTitle}</h3>
+                        <p className="text-sm text-gray-600">会话编号: {session.session_code || session.id.slice(0, 8)}</p>
+                      </div>
+                      {getStatusBadge(session.status)}
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div>
+                        <div className="text-xs text-gray-600 mb-1">参与人数</div>
+                        <div className="flex items-center gap-1 font-bold">
+                          <Users className="w-4 h-4" />
+                          {session.current_participants}/{session.max_participants || session.current_participants}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-600 mb-1">人均价格</div>
+                        <div className="font-bold text-orange-600">
+                          ₽{pricePerPerson}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-600 mb-1">创建时间</div>
+                        <div className="text-sm">
+                          {new Date(session.created_at).toLocaleString('zh-CN')}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-600 mb-1">剩余时间</div>
+                        <div className="flex items-center gap-1 text-sm">
+                          <Clock className="w-4 h-4" />
+                          {getTimeRemaining(session.expires_at)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Participants */}
+                    {session.orders && session.orders.length > 0 && (
+                      <div>
+                        <div className="text-sm font-medium text-gray-700 mb-2">参与者:</div>
+                        <div className="flex flex-wrap gap-2">
+                          {(session.orders || []).map((order, index) => (
+                            <div
+                              key={order.id}
+                              className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
+                                session.winner_id === order.user_id
+                                  ? 'bg-yellow-100 text-yellow-700 border-2 border-yellow-400'
+                                  : 'bg-gray-100 text-gray-700'
+                              }`}
+                            >
+                              {session.winner_id === order.user_id && (
+                                <Trophy className="w-4 h-4" />
+                              )}
+                              <span className="font-medium">{index + 1}.</span>
+                              <span>用户 #{index + 1}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
