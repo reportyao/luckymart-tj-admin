@@ -33,6 +33,9 @@ const initialFormData = {
   phone_number: '',
   qr_code_urls: [] as string[],
   instructions: { zh: '', ru: '', tg: '' } as any,
+  require_payer_name: false,
+  require_payer_account: false,
+  require_payer_phone: false,
   min_amount: 10,
   max_amount: 10000,
   processing_time: '10-30分钟',
@@ -84,6 +87,9 @@ export const PaymentConfigPage: React.FC = () => {
         bank_name: configData.bank_name || '',
         phone_number: configData.phone_number || '',
         qr_code_urls: configData.qr_code_url ? [configData.qr_code_url] : [],
+        require_payer_name: config.require_payer_name || false,
+        require_payer_account: config.require_payer_account || false,
+        require_payer_phone: config.require_payer_phone || false,
         instructions: configData.instructions || { zh: '', ru: '', tg: '' },
         min_amount: configData.min_amount || 10,
         max_amount: configData.max_amount || 10000,
@@ -117,7 +123,10 @@ export const PaymentConfigPage: React.FC = () => {
         account_name: formData.account_name,
         bank_name: formData.bank_name,
         phone_number: formData.phone_number,
-        qr_code_url: formData.qr_code_urls[0] || null,
+        qr_code_url: formData.qr_code_urls[0] || '',
+        require_payer_name: formData.require_payer_name,
+        require_payer_account: formData.require_payer_account,
+        require_payer_phone: formData.require_payer_phone,
         instructions: formData.instructions,
         min_amount: formData.min_amount,
         max_amount: formData.max_amount,
@@ -137,6 +146,9 @@ export const PaymentConfigPage: React.FC = () => {
         is_enabled: formData.is_enabled,
         is_active: formData.is_enabled,
         sort_order: formData.sort_order,
+        require_payer_name: formData.require_payer_name,
+        require_payer_account: formData.require_payer_account,
+        require_payer_phone: formData.require_payer_phone,
         updated_at: new Date().toISOString(),
       };
 
@@ -365,6 +377,39 @@ export const PaymentConfigPage: React.FC = () => {
                   value={formData.phone_number} 
                   onChange={(e) => setFormData({...formData, phone_number: e.target.value})}
                 />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>付款人信息要求</Label>
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.require_payer_name}
+                    onChange={(e) => setFormData({...formData, require_payer_name: e.target.checked})}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm">要求填写付款人姓名</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.require_payer_account}
+                    onChange={(e) => setFormData({...formData, require_payer_account: e.target.checked})}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm">要求填写付款人账号</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.require_payer_phone}
+                    onChange={(e) => setFormData({...formData, require_payer_phone: e.target.checked})}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm">要求填写付款人手机号</span>
+                </label>
               </div>
             </div>
 
