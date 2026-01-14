@@ -100,12 +100,12 @@ const PickupVerificationPage: React.FC = () => {
           userInfo = userData;
         }
 
-        // 获取抽奖信息
+        // 获取抽奖信息（包括图片和价格）
         let lotteryInfo = null;
         if (prize.lottery_id) {
           const { data: lotteryData } = await supabase
             .from('lotteries')
-            .select('title, title_i18n')
+            .select('title, title_i18n, image_url, original_price')
             .eq('id', prize.lottery_id)
             .single();
           lotteryInfo = lotteryData;
@@ -125,8 +125,8 @@ const PickupVerificationPage: React.FC = () => {
         setPrizeInfo({
           id: prize.id,
           prize_name: prize.prize_name || getLocalizedText(lotteryInfo?.title_i18n) || lotteryInfo?.title || '积分商城奖品',
-          prize_image: prize.prize_image || '',
-          prize_value: prize.prize_value || 0,
+          prize_image: prize.prize_image || lotteryInfo?.image_url || '',
+          prize_value: prize.prize_value || lotteryInfo?.original_price || 0,
           pickup_code: prize.pickup_code,
           pickup_status: prize.pickup_status || 'PENDING_CLAIM',
           expires_at: prize.expires_at,
