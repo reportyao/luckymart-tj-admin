@@ -61,7 +61,7 @@ export default function AIManagementPage() {
       .from('ai_chat_history')
       .select('id, user_id');
 
-    if (totalError) throw totalError;
+    if (totalError) {throw totalError;}
 
     const totalQuestions = totalData?.length || 0;
     const totalUsers = new Set(totalData?.map(log => log.user_id)).size;
@@ -74,7 +74,7 @@ export default function AIManagementPage() {
       .gte('created_at', `${today}T00:00:00`)
       .lt('created_at', `${today}T23:59:59`);
 
-    if (todayError) throw todayError;
+    if (todayError) {throw todayError;}
 
     const todayQuestions = todayData?.length || 0;
     const todayUsers = new Set(todayData?.map(log => log.user_id)).size;
@@ -117,7 +117,7 @@ export default function AIManagementPage() {
 
     const { data, error } = await query;
 
-    if (error) throw error;
+    if (error) {throw error;}
 
     // 获取用户名
     if (data && data.length > 0) {
@@ -154,7 +154,7 @@ export default function AIManagementPage() {
       .select('created_at, user_id')
       .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
-    if (error) throw error;
+    if (error) {throw error;}
 
     // 按日期分组统计
     const statsMap = new Map<string, { users: Set<string>; count: number }>();

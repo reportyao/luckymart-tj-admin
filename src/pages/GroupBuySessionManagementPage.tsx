@@ -34,20 +34,20 @@ interface GroupBuySession {
 
 // 获取产品标题（兼容多种字段）
 const getProductTitle = (product: GroupBuySession['product']): string => {
-  if (!product) return '未知商品';
+  if (!product) {return '未知商品';}
   // 优先使用 title.zh，然后是 name_i18n.zh，最后是 name
-  if (product.title?.zh) return product.title.zh;
-  if (product.name_i18n?.zh) return product.name_i18n.zh;
-  if (product.name) return product.name;
+  if (product.title?.zh) {return product.title.zh;}
+  if (product.name_i18n?.zh) {return product.name_i18n.zh;}
+  if (product.name) {return product.name;}
   return '未知商品';
 };
 
 // 获取产品图片（兼容多种字段）
 const getProductImage = (product: GroupBuySession['product']): string => {
-  if (!product) return '';
+  if (!product) {return '';}
   // 优先使用 image_url，然后是 image_urls[0]
-  if (product.image_url) return product.image_url;
-  if (product.image_urls && product.image_urls.length > 0) return product.image_urls[0];
+  if (product.image_url) {return product.image_url;}
+  if (product.image_urls && product.image_urls.length > 0) {return product.image_urls[0];}
   return '';
 };
 

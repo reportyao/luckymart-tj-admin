@@ -186,7 +186,7 @@ export default function CommissionRecordsPage() {
 
   // 获取用户显示名称
   const getUserDisplayName = (user: CommissionRecord['user']) => {
-    if (!user) return '-';
+    if (!user) {return '-';}
     return user.display_name || user.first_name || user.telegram_id || '-';
   };
 
