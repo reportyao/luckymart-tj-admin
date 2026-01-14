@@ -9,7 +9,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
-type Withdrawal = Tables<'withdrawal_requests'>;
+type Withdrawal = Tables<'withdrawal_requests'> & {
+  users?: {
+    id: string;
+    nickname?: string;
+    telegram_username?: string;
+  };
+};
 type WithdrawalStatus = Enums<'WithdrawalStatus'>;
 
 const getStatusColor = (status: WithdrawalStatus) => {
@@ -39,7 +45,7 @@ export const WithdrawalReviewPage: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('withdrawal_requests')
-        .select('*')
+        .select('*, users(id, nickname, telegram_username)')
         .order('created_at', { ascending: false });
 
       if (error) {throw error;}
@@ -111,7 +117,7 @@ export const WithdrawalReviewPage: React.FC = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>ID</TableHead>
-                  <TableHead>用户 ID</TableHead>
+                  <TableHead>用户信息</TableHead>
                   <TableHead>金额</TableHead>
                   <TableHead>收款信息</TableHead>
                   <TableHead>状态</TableHead>
@@ -123,20 +129,27 @@ export const WithdrawalReviewPage: React.FC = () => {
                 {withdrawals.map((withdrawal) => (
                   <TableRow key={withdrawal.id}>
                     <TableCell className="font-medium">{withdrawal.id.substring(0, 8)}...</TableCell>
-                    <TableCell>{withdrawal.user_id.substring(0, 8)}...</TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        <div className="font-medium">{withdrawal.users?.nickname || withdrawal.users?.telegram_username || '未知用户'}</div>
+                        <div className="text-gray-500 text-xs">ID: {withdrawal.user_id.substring(0, 8)}...</div>
+                      </div>
+                    </TableCell>
                     <TableCell>{withdrawal.amount} {withdrawal.currency}</TableCell>
                     <TableCell>
-                      {withdrawal.withdrawal_method === 'BANK_TRANSFER' && (
+                      {(withdrawal.withdrawal_method === 'ALIF_MOBI' || withdrawal.withdrawal_method === 'DC_BANK') && (
                         <div className="text-sm">
-                          <div>{withdrawal.bank_name}</div>
-                          <div>{withdrawal.bank_account_number}</div>
-                          <div>{withdrawal.bank_account_name}</div>
+                          <div className="font-medium">{withdrawal.withdrawal_method === 'ALIF_MOBI' ? 'Alif Mobi' : 'DC Bank'}</div>
+                          <div className="text-gray-600">账户: {withdrawal.mobile_wallet_number || 'N/A'}</div>
+                          <div className="text-gray-600">手机号: {withdrawal.mobile_wallet_name || 'N/A'}</div>
                         </div>
                       )}
-                      {withdrawal.withdrawal_method === 'MOBILE_WALLET' && (
+                      {withdrawal.withdrawal_method === 'BANK_TRANSFER' && (
                         <div className="text-sm">
-                          <div>{withdrawal.mobile_wallet_name}</div>
-                          <div>{withdrawal.mobile_wallet_number}</div>
+                          <div className="font-medium">银行转账</div>
+                          <div className="text-gray-600">银行: {withdrawal.bank_name || 'N/A'}</div>
+                          <div className="text-gray-600">账号: {withdrawal.bank_account_number || 'N/A'}</div>
+                          <div className="text-gray-600">户名: {withdrawal.bank_account_name || 'N/A'}</div>
                         </div>
                       )}
                     </TableCell>
