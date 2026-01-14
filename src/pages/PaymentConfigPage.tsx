@@ -30,6 +30,7 @@ const initialFormData = {
   account_number: '',
   account_name: '',
   bank_name: '',
+  phone_number: '',
   qr_code_urls: [] as string[],
   instructions: { zh: '', ru: '', tg: '' } as any,
   min_amount: 10,
@@ -81,6 +82,7 @@ export const PaymentConfigPage: React.FC = () => {
         account_number: configData.account_number || '',
         account_name: configData.account_name || '',
         bank_name: configData.bank_name || '',
+        phone_number: configData.phone_number || '',
         qr_code_urls: configData.qr_code_url ? [configData.qr_code_url] : [],
         instructions: configData.instructions || { zh: '', ru: '', tg: '' },
         min_amount: configData.min_amount || 10,
@@ -114,6 +116,7 @@ export const PaymentConfigPage: React.FC = () => {
         account_number: formData.account_number,
         account_name: formData.account_name,
         bank_name: formData.bank_name,
+        phone_number: formData.phone_number,
         qr_code_url: formData.qr_code_urls[0] || null,
         instructions: formData.instructions,
         min_amount: formData.min_amount,
@@ -338,7 +341,7 @@ export const PaymentConfigPage: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>收款账号信息</Label>
+              <Label>收款账号信息（选填）</Label>
               <div className="grid grid-cols-2 gap-2">
                 <Input 
                   placeholder="账号"
@@ -351,12 +354,18 @@ export const PaymentConfigPage: React.FC = () => {
                   onChange={(e) => setFormData({...formData, account_name: e.target.value})}
                 />
               </div>
-              <Input 
-                className="mt-2"
-                placeholder="银行名称"
-                value={formData.bank_name} 
-                onChange={(e) => setFormData({...formData, bank_name: e.target.value})}
-              />
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <Input 
+                  placeholder="银行名称"
+                  value={formData.bank_name} 
+                  onChange={(e) => setFormData({...formData, bank_name: e.target.value})}
+                />
+                <Input 
+                  placeholder="付款电话号码"
+                  value={formData.phone_number} 
+                  onChange={(e) => setFormData({...formData, phone_number: e.target.value})}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
