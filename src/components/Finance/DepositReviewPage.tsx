@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { toast } from 'react-hot-toast';
+import { Settings, Gift } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../ui/dialog';
+import { FirstDepositBonusConfig } from './FirstDepositBonusConfig';
 
 interface DepositRequest {
   id: string;
@@ -35,6 +37,7 @@ export const DepositReviewPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDeposit, setSelectedDeposit] = useState<DepositRequest | null>(null);
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
+  const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchDeposits();
@@ -102,7 +105,7 @@ export const DepositReviewPage: React.FC = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`, // 修复: 添加Authorization头部
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
             'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
             'x-admin-id': admin!.id,
           },
@@ -132,6 +135,15 @@ export const DepositReviewPage: React.FC = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-2xl font-bold">充值审核</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsConfigDialogOpen(true)}
+            className="flex items-center space-x-2"
+          >
+            <Gift className="h-4 w-4" />
+            <span>首充奖励配置</span>
+          </Button>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -296,6 +308,13 @@ export const DepositReviewPage: React.FC = () => {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 首充奖励配置对话框 */}
+      <Dialog open={isConfigDialogOpen} onOpenChange={setIsConfigDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <FirstDepositBonusConfig />
         </DialogContent>
       </Dialog>
     </>
