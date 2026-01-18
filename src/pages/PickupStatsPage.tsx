@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { useSupabase } from '../contexts/SupabaseContext';
 
 interface PickupStats {
   total_prizes: number;
@@ -57,6 +57,7 @@ interface DailyStats {
 }
 
 export default function PickupStatsPage() {
+  const { supabase } = useSupabase();
   const [stats, setStats] = useState<PickupStats>({
     total_prizes: 0,
     pending_claim: 0,
