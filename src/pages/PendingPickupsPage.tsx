@@ -16,7 +16,7 @@ import {
 // 统一的待核销奖品接口
 interface PendingPickup {
   id: string;
-  type: 'lottery' | 'group_buy';
+  type: 'lottery' | 'group_buy' | 'full_purchase';
   prize_name: string;
   prize_image: string;
   prize_value: number;
@@ -55,7 +55,7 @@ interface PendingPickup {
 }
 
 type FilterStatus = 'all' | 'PENDING_CLAIM' | 'PENDING_PICKUP' | 'EXPIRED';
-type FilterType = 'all' | 'lottery' | 'group_buy';
+type FilterType = 'all' | 'lottery' | 'group_buy' | 'full_purchase';
 
 export default function PendingPickupsPage() {
   const [pickups, setPickups] = useState<PendingPickup[]>([]);
@@ -221,6 +221,86 @@ export default function PendingPickupsPage() {
         }
       }
 
+      // 3. 加载全款购买记录
+      const { data: fullPurchaseOrders, error: fullPurchaseError } = await supabase
+        .from('full_purchase_orders')
+        .select(`
+          id,
+          order_number,
+          user_id,
+          lottery_id,
+          pickup_code,
+          pickup_status,
+          expires_at,
+          claimed_at,
+          created_at,
+          pickup_point_id,
+          metadata
+        `)
+        .in('pickup_status', ['PENDING_CLAIM', 'PENDING_PICKUP', 'EXPIRED'])
+        .order('created_at', { ascending: false });
+
+      if (fullPurchaseError) {
+        console.error('加载全款购买记录失败:', fullPurchaseError);
+      } else if (fullPurchaseOrders) {
+        for (const order of fullPurchaseOrders) {
+          // 获取用户信息
+          let user = null;
+          if (order.user_id) {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('id, telegram_id, telegram_username, first_name, last_name, avatar_url')
+              .eq('id', order.user_id)
+              .single();
+            user = userData;
+          }
+
+          // 获取抽奖信息
+          let lottery = null;
+          if (order.lottery_id) {
+            const { data: lotteryData } = await supabase
+              .from('lotteries')
+              .select('id, title, title_i18n, image_url, original_price')
+              .eq('id', order.lottery_id)
+              .single();
+            lottery = lotteryData;
+          }
+
+          // 获取自提点信息
+          let pickupPoint = null;
+          if (order.pickup_point_id) {
+            const { data: pointData } = await supabase
+              .from('pickup_points')
+              .select('id, name, name_i18n, address, address_i18n, contact_phone')
+              .eq('id', order.pickup_point_id)
+              .single();
+            pickupPoint = pointData;
+          }
+
+          // 从 metadata 中获取商品信息
+          const metadata = order.metadata || {};
+          const productTitle = metadata.product_title || getLocalizedText(lottery?.title_i18n) || lottery?.title || '全款购买商品';
+          const productImage = metadata.product_image || lottery?.image_url || '';
+          const productPrice = lottery?.original_price || 0;
+
+          allPickups.push({
+            id: order.id,
+            type: 'full_purchase',
+            prize_name: productTitle,
+            prize_image: productImage,
+            prize_value: productPrice,
+            pickup_code: order.pickup_code,
+            pickup_status: order.pickup_status || 'PENDING_CLAIM',
+            expires_at: order.expires_at,
+            claimed_at: order.claimed_at,
+            created_at: order.created_at,
+            user,
+            pickup_point: pickupPoint,
+            lottery,
+          });
+        }
+      }
+
       // 按创建时间排序
       allPickups.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       setPickups(allPickups);
@@ -287,6 +367,7 @@ export default function PendingPickupsPage() {
     const typeMap: Record<string, { text: string; color: string }> = {
       'lottery': { text: '积分商城', color: 'bg-purple-100 text-purple-800' },
       'group_buy': { text: '拼团', color: 'bg-pink-100 text-pink-800' },
+      'full_purchase': { text: '全款购买', color: 'bg-indigo-100 text-indigo-800' },
     };
     const badge = typeMap[type] || { text: type, color: 'bg-gray-100 text-gray-800' };
     return (
@@ -345,7 +426,12 @@ export default function PendingPickupsPage() {
         throw new Error('未登录');
       }
 
-      const tableName = selectedPickup.type === 'lottery' ? 'prizes' : 'group_buy_results';
+      let tableName = 'prizes';
+      if (selectedPickup.type === 'group_buy') {
+        tableName = 'group_buy_results';
+      } else if (selectedPickup.type === 'full_purchase') {
+        tableName = 'full_purchase_orders';
+      }
       
       const { error: updateError } = await supabase
         .from(tableName)
@@ -390,6 +476,7 @@ export default function PendingPickupsPage() {
     expired: pickups.filter(p => p.pickup_status === 'EXPIRED').length,
     lottery: pickups.filter(p => p.type === 'lottery').length,
     groupBuy: pickups.filter(p => p.type === 'group_buy').length,
+    fullPurchase: pickups.filter(p => p.type === 'full_purchase').length,
   };
 
   return (

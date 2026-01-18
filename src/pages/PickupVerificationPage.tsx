@@ -22,7 +22,7 @@ interface PrizeInfo {
   pickup_status: string;
   expires_at: string;
   claimed_at: string;
-  source_type: 'lottery' | 'group_buy';
+  source_type: 'lottery' | 'group_buy' | 'full_purchase';
   user: {
     id: string;
     telegram_username: string;
@@ -156,56 +156,131 @@ const PickupVerificationPage: React.FC = () => {
         .eq('pickup_code', pickupCode)
         .single();
 
-      if (groupBuyError || !groupBuyPrize) {
+      if (!groupBuyError && groupBuyPrize) {
+        // 获取商品信息
+        let productInfo = null;
+        if (groupBuyPrize.product_id) {
+          const { data: productData } = await supabase
+            .from('group_buy_products')
+            .select('title, image_url, original_price')
+            .eq('id', groupBuyPrize.product_id)
+            .single();
+          productInfo = productData;
+        }
+
+        // 获取用户信息（通过telegram_id）
+        let userInfo = null;
+        if (groupBuyPrize.winner_id) {
+          const { data: userData } = await supabase
+            .from('users')
+            .select('id, telegram_username, first_name, last_name, avatar_url')
+            .eq('telegram_id', groupBuyPrize.winner_id)
+            .single();
+          userInfo = userData;
+        }
+
+        // 获取自提点信息
+        let pickupPointInfo = null;
+        if (groupBuyPrize.pickup_point_id) {
+          const { data: pointData } = await supabase
+            .from('pickup_points')
+            .select('id, name, name_i18n, address, address_i18n')
+            .eq('id', groupBuyPrize.pickup_point_id)
+            .single();
+          pickupPointInfo = pointData;
+        }
+
+        setPrizeInfo({
+          id: groupBuyPrize.id,
+          prize_name: getLocalizedText(productInfo?.title) || '拼团商品',
+          prize_image: productInfo?.image_url || '',
+          prize_value: productInfo?.original_price || 0,
+          pickup_code: groupBuyPrize.pickup_code,
+          pickup_status: groupBuyPrize.pickup_status || 'PENDING_CLAIM',
+          expires_at: groupBuyPrize.expires_at,
+          claimed_at: groupBuyPrize.claimed_at,
+          source_type: 'group_buy',
+          user: userInfo,
+          lottery: { title: '拼团商品', title_i18n: { zh: '拼团商品', ru: 'Групповая покупка', tg: 'Ҳаридҳои гурӯҳӣ' } },
+          pickup_point: pickupPointInfo,
+        });
+        return;
+      }
+
+      // 3. 如果 prizes 和 group_buy_results 都没找到，尝试查询 full_purchase_orders 表（全款购买）
+      const { data: fullPurchaseOrder, error: fullPurchaseError } = await supabase
+        .from('full_purchase_orders')
+        .select(`
+          id,
+          order_number,
+          pickup_code,
+          pickup_status,
+          expires_at,
+          claimed_at,
+          user_id,
+          lottery_id,
+          pickup_point_id,
+          metadata
+        `)
+        .eq('pickup_code', pickupCode)
+        .single();
+
+      if (fullPurchaseError || !fullPurchaseOrder) {
         toast.error('未找到该提货码对应的奖品');
         return;
       }
 
-      // 获取商品信息
-      let productInfo = null;
-      if (groupBuyPrize.product_id) {
-        const { data: productData } = await supabase
-          .from('group_buy_products')
-          .select('title, image_url, original_price')
-          .eq('id', groupBuyPrize.product_id)
-          .single();
-        productInfo = productData;
-      }
-
-      // 获取用户信息（通过telegram_id）
+      // 获取用户信息
       let userInfo = null;
-      if (groupBuyPrize.winner_id) {
+      if (fullPurchaseOrder.user_id) {
         const { data: userData } = await supabase
           .from('users')
           .select('id, telegram_username, first_name, last_name, avatar_url')
-          .eq('telegram_id', groupBuyPrize.winner_id)
+          .eq('id', fullPurchaseOrder.user_id)
           .single();
         userInfo = userData;
       }
 
+      // 获取抽奖信息（包括图片和价格）
+      let lotteryInfo = null;
+      if (fullPurchaseOrder.lottery_id) {
+        const { data: lotteryData } = await supabase
+          .from('lotteries')
+          .select('title, title_i18n, image_url, original_price')
+          .eq('id', fullPurchaseOrder.lottery_id)
+          .single();
+        lotteryInfo = lotteryData;
+      }
+
       // 获取自提点信息
       let pickupPointInfo = null;
-      if (groupBuyPrize.pickup_point_id) {
+      if (fullPurchaseOrder.pickup_point_id) {
         const { data: pointData } = await supabase
           .from('pickup_points')
           .select('id, name, name_i18n, address, address_i18n')
-          .eq('id', groupBuyPrize.pickup_point_id)
+          .eq('id', fullPurchaseOrder.pickup_point_id)
           .single();
         pickupPointInfo = pointData;
       }
 
+      // 从 metadata 中获取商品信息
+      const metadata = fullPurchaseOrder.metadata || {};
+      const productTitle = metadata.product_title || getLocalizedText(lotteryInfo?.title_i18n) || lotteryInfo?.title || '全款购买商品';
+      const productImage = metadata.product_image || lotteryInfo?.image_url || '';
+      const productPrice = lotteryInfo?.original_price || 0;
+
       setPrizeInfo({
-        id: groupBuyPrize.id,
-        prize_name: getLocalizedText(productInfo?.title) || '拼团商品',
-        prize_image: productInfo?.image_url || '',
-        prize_value: productInfo?.original_price || 0,
-        pickup_code: groupBuyPrize.pickup_code,
-        pickup_status: groupBuyPrize.pickup_status || 'PENDING_CLAIM',
-        expires_at: groupBuyPrize.expires_at,
-        claimed_at: groupBuyPrize.claimed_at,
-        source_type: 'group_buy',
+        id: fullPurchaseOrder.id,
+        prize_name: productTitle,
+        prize_image: productImage,
+        prize_value: productPrice,
+        pickup_code: fullPurchaseOrder.pickup_code,
+        pickup_status: fullPurchaseOrder.pickup_status || 'PENDING_CLAIM',
+        expires_at: fullPurchaseOrder.expires_at,
+        claimed_at: fullPurchaseOrder.claimed_at,
+        source_type: 'full_purchase',
         user: userInfo,
-        lottery: { title: '拼团商品', title_i18n: { zh: '拼团商品', ru: 'Групповая покупка', tg: 'Харидҳои гурӯҳӣ' } },
+        lottery: lotteryInfo,
         pickup_point: pickupPointInfo,
       });
 
@@ -247,7 +322,12 @@ const PickupVerificationPage: React.FC = () => {
       const adminId = admin.id;
 
       // 根据来源类型确定表名
-      const tableName = prizeInfo.source_type === 'group_buy' ? 'group_buy_results' : 'prizes';
+      let tableName = 'prizes';
+      if (prizeInfo.source_type === 'group_buy') {
+        tableName = 'group_buy_results';
+      } else if (prizeInfo.source_type === 'full_purchase') {
+        tableName = 'full_purchase_orders';
+      }
       
       const { error: updateError } = await supabase
         .from(tableName)
@@ -271,7 +351,7 @@ const PickupVerificationPage: React.FC = () => {
           pickup_point_id: prizeInfo.pickup_point?.id,
           operator_id: adminId,
           operation_type: 'PICKUP',
-          notes: `管理员核销${prizeInfo.source_type === 'group_buy' ? '拼团' : '积分商城'}提货码: ${prizeInfo.pickup_code}`,
+          notes: `管理员核销${prizeInfo.source_type === 'group_buy' ? '拼团' : prizeInfo.source_type === 'full_purchase' ? '全款购买' : '积分商城'}提货码: ${prizeInfo.pickup_code}`,
         });
 
       if (logError) {
