@@ -334,17 +334,12 @@ const PickupVerificationPage: React.FC = () => {
         tableName = 'full_purchase_orders';
       }
       
-      // 根据表类型准备不同的更新字段
-      let updateData: any = {
+      // 所有表都更新相同的字段
+      const updateData: any = {
         pickup_status: 'PICKED_UP',
+        picked_up_at: new Date().toISOString(),
+        picked_up_by: adminId,
       };
-      
-      // prizes 和 group_buy_results 表有 picked_up_at 和 picked_up_by 字段
-      if (tableName === 'prizes' || tableName === 'group_buy_results') {
-        updateData.picked_up_at = new Date().toISOString();
-        updateData.picked_up_by = adminId;
-      }
-      // full_purchase_orders 表只有 pickup_status
       
       const { error: updateError } = await supabase
         .from(tableName)

@@ -18,35 +18,21 @@ interface PickupStats {
   groupbuy_pending_pickup: number;
   groupbuy_picked_up: number;
   groupbuy_expired: number;
+  fullpurchase_total: number;
+  fullpurchase_pending_claim: number;
+  fullpurchase_pending_pickup: number;
+  fullpurchase_picked_up: number;
+  fullpurchase_expired: number;
 }
 
-interface PickupLog {
+interface PickupRecord {
   id: string;
-  prize_id: string;
-  order_id: string | null;
-  operator_id: string;
-  action: string;
-  created_at: string;
-  notes: string | null;
-  source: 'lottery' | 'groupbuy';
-  prize: {
-    id: string;
-    user_id: string;
-    lottery: {
-      title: string;
-      title_i18n: { zh: string; ru: string; tg: string } | null;
-    } | null;
-    product: {
-      name_i18n: { zh: string; ru: string; tg: string } | null;
-    } | null;
-    user: {
-      username: string;
-      first_name: string;
-    } | null;
-  } | null;
-  pickup_point: {
-    name: string;
-  } | null;
+  pickup_code: string;
+  picked_up_at: string;
+  picked_up_by: string;
+  source: 'lottery' | 'groupbuy' | 'fullpurchase';
+  user_id: string;
+  product_name: string;
 }
 
 interface DailyStats {
@@ -54,6 +40,7 @@ interface DailyStats {
   count: number;
   lottery_count: number;
   groupbuy_count: number;
+  fullpurchase_count: number;
 }
 
 export default function PickupStatsPage() {
@@ -74,12 +61,17 @@ export default function PickupStatsPage() {
     groupbuy_pending_pickup: 0,
     groupbuy_picked_up: 0,
     groupbuy_expired: 0,
+    fullpurchase_total: 0,
+    fullpurchase_pending_claim: 0,
+    fullpurchase_pending_pickup: 0,
+    fullpurchase_picked_up: 0,
+    fullpurchase_expired: 0,
   });
-  const [recentLogs, setRecentLogs] = useState<PickupLog[]>([]);
+  const [recentRecords, setRecentRecords] = useState<PickupRecord[]>([]);
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<'7d' | '30d' | 'all'>('7d');
-  const [viewMode, setViewMode] = useState<'all' | 'lottery' | 'groupbuy'>('all');
+  const [viewMode, setViewMode] = useState<'all' | 'lottery' | 'groupbuy' | 'fullpurchase'>('all');
 
   // 加载统计数据
   const loadStats = async () => {
@@ -90,7 +82,7 @@ export default function PickupStatsPage() {
         .from('prizes')
         .select('pickup_status');
 
-      if (prizesError) {throw prizesError;}
+      if (prizesError) throw prizesError;
 
       const lotteryStats = {
         total: prizes?.length || 0,
@@ -105,7 +97,7 @@ export default function PickupStatsPage() {
         .from('group_buy_results')
         .select('pickup_status');
 
-      if (groupBuyError) {throw groupBuyError;}
+      if (groupBuyError) throw groupBuyError;
 
       const groupBuyStats = {
         total: groupBuyResults?.length || 0,
@@ -115,13 +107,28 @@ export default function PickupStatsPage() {
         expired: groupBuyResults?.filter(p => p.pickup_status === 'EXPIRED').length || 0,
       };
 
-      // 3. 合并统计数据
+      // 3. 获取全款购买统计 (full_purchase_orders表)
+      const { data: fullPurchaseOrders, error: fullPurchaseError } = await supabase
+        .from('full_purchase_orders')
+        .select('pickup_status');
+
+      if (fullPurchaseError) throw fullPurchaseError;
+
+      const fullPurchaseStats = {
+        total: fullPurchaseOrders?.length || 0,
+        pending_claim: fullPurchaseOrders?.filter(p => p.pickup_status === 'PENDING_CLAIM' || !p.pickup_status).length || 0,
+        pending_pickup: fullPurchaseOrders?.filter(p => p.pickup_status === 'PENDING_PICKUP' || p.pickup_status === 'PENDING').length || 0,
+        picked_up: fullPurchaseOrders?.filter(p => p.pickup_status === 'PICKED_UP').length || 0,
+        expired: fullPurchaseOrders?.filter(p => p.pickup_status === 'EXPIRED').length || 0,
+      };
+
+      // 4. 合并统计数据
       const combinedStats: PickupStats = {
-        total_prizes: lotteryStats.total + groupBuyStats.total,
-        pending_claim: lotteryStats.pending_claim + groupBuyStats.pending_claim,
-        pending_pickup: lotteryStats.pending_pickup + groupBuyStats.pending_pickup,
-        picked_up: lotteryStats.picked_up + groupBuyStats.picked_up,
-        expired: lotteryStats.expired + groupBuyStats.expired,
+        total_prizes: lotteryStats.total + groupBuyStats.total + fullPurchaseStats.total,
+        pending_claim: lotteryStats.pending_claim + groupBuyStats.pending_claim + fullPurchaseStats.pending_claim,
+        pending_pickup: lotteryStats.pending_pickup + groupBuyStats.pending_pickup + fullPurchaseStats.pending_pickup,
+        picked_up: lotteryStats.picked_up + groupBuyStats.picked_up + fullPurchaseStats.picked_up,
+        expired: lotteryStats.expired + groupBuyStats.expired + fullPurchaseStats.expired,
         lottery_total: lotteryStats.total,
         lottery_pending_claim: lotteryStats.pending_claim,
         lottery_pending_pickup: lotteryStats.pending_pickup,
@@ -132,144 +139,150 @@ export default function PickupStatsPage() {
         groupbuy_pending_pickup: groupBuyStats.pending_pickup,
         groupbuy_picked_up: groupBuyStats.picked_up,
         groupbuy_expired: groupBuyStats.expired,
+        fullpurchase_total: fullPurchaseStats.total,
+        fullpurchase_pending_claim: fullPurchaseStats.pending_claim,
+        fullpurchase_pending_pickup: fullPurchaseStats.pending_pickup,
+        fullpurchase_picked_up: fullPurchaseStats.picked_up,
+        fullpurchase_expired: fullPurchaseStats.expired,
       };
       setStats(combinedStats);
 
-      // 4. 获取最近核销记录 - 从pickup_logs表
-      const { data: logs, error: logsError } = await supabase
-        .from('pickup_logs')
-        .select(`
-          id,
-          prize_id,
-          order_id,
-          operator_id,
-          action,
-          created_at,
-          notes,
-          pickup_point:pickup_points(name)
-        `)
-        .order('created_at', { ascending: false })
+      // 5. 获取最近核销记录 - 从三个表查询
+      const records: PickupRecord[] = [];
+
+      // 从prizes表获取
+      const { data: lotteryPickups } = await supabase
+        .from('prizes')
+        .select('id, pickup_code, picked_up_at, picked_up_by, user_id, prize_name')
+        .eq('pickup_status', 'PICKED_UP')
+        .not('picked_up_at', 'is', null)
+        .order('picked_up_at', { ascending: false })
         .limit(20);
 
-      if (logsError) {throw logsError;}
+      (lotteryPickups || []).forEach((item: any) => {
+        records.push({
+          id: item.id,
+          pickup_code: item.pickup_code || '',
+          picked_up_at: item.picked_up_at,
+          picked_up_by: item.picked_up_by || '',
+          source: 'lottery',
+          user_id: item.user_id || '',
+          product_name: item.prize_name || '抽奖奖品',
+        });
+      });
 
-      // 为每条记录获取奖品和用户信息
-      const logsWithDetails = await Promise.all(
-        (logs || []).map(async (log: any) => {
-          let prize = null;
-          let user = null;
-          let source: 'lottery' | 'groupbuy' = 'lottery';
+      // 从group_buy_results表获取
+      const { data: groupBuyPickups } = await supabase
+        .from('group_buy_results')
+        .select('id, pickup_code, picked_up_at, picked_up_by, winner_id')
+        .eq('pickup_status', 'PICKED_UP')
+        .not('picked_up_at', 'is', null)
+        .order('picked_up_at', { ascending: false })
+        .limit(20);
 
-          // 先尝试从prizes表查询
-          if (log.prize_id) {
-            const { data: prizeData } = await supabase
-              .from('prizes')
-              .select(`
-                id,
-                user_id,
-                lottery:lotteries(title, title_i18n)
-              `)
-              .eq('id', log.prize_id)
-              .single();
+      (groupBuyPickups || []).forEach((item: any) => {
+        records.push({
+          id: item.id,
+          pickup_code: item.pickup_code || '',
+          picked_up_at: item.picked_up_at,
+          picked_up_by: item.picked_up_by || '',
+          source: 'groupbuy',
+          user_id: item.winner_id || '',
+          product_name: '拼团商品',
+        });
+      });
 
-            if (prizeData) {
-              prize = prizeData;
-              source = 'lottery';
-            }
-          }
+      // 从full_purchase_orders表获取
+      const { data: fullPurchasePickups } = await supabase
+        .from('full_purchase_orders')
+        .select('id, pickup_code, picked_up_at, picked_up_by, user_id')
+        .eq('pickup_status', 'PICKED_UP')
+        .not('picked_up_at', 'is', null)
+        .order('picked_up_at', { ascending: false })
+        .limit(20);
 
-          // 如果prizes表没有找到，尝试从group_buy_results表查询
-          if (!prize && log.order_id) {
-            const { data: groupBuyData } = await supabase
-              .from('group_buy_results')
-              .select(`
-                id,
-                user_id,
-                product:group_buy_products(name_i18n)
-              `)
-              .eq('id', log.order_id)
-              .single();
+      (fullPurchasePickups || []).forEach((item: any) => {
+        records.push({
+          id: item.id,
+          pickup_code: item.pickup_code || '',
+          picked_up_at: item.picked_up_at,
+          picked_up_by: item.picked_up_by || '',
+          source: 'fullpurchase',
+          user_id: item.user_id || '',
+          product_name: '全款购买',
+        });
+      });
 
-            if (groupBuyData) {
-              prize = {
-                id: groupBuyData.id,
-                user_id: groupBuyData.user_id,
-                lottery: null,
-                product: groupBuyData.product,
-              };
-              source = 'groupbuy';
-            }
-          }
+      // 按时间排序并取前20条
+      records.sort((a, b) => new Date(b.picked_up_at).getTime() - new Date(a.picked_up_at).getTime());
+      setRecentRecords(records.slice(0, 20));
 
-          // 获取用户信息
-          const userId = prize?.user_id;
-          if (userId) {
-            const { data: userData } = await supabase
-              .from('users')
-              .select('username, first_name')
-              .eq('id', userId)
-              .single();
-            user = userData;
-          }
-
-          return {
-            ...log,
-            source,
-            prize: prize ? { ...prize, user } : null,
-          };
-        })
-      );
-
-      setRecentLogs(logsWithDetails);
-
-      // 5. 获取每日核销统计 - 基于prizes和group_buy_results的picked_up_at字段
+      // 6. 获取每日核销统计
       const daysAgo = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 365;
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysAgo);
 
       // 从prizes表获取已提货记录
-      const { data: lotteryPickups } = await supabase
+      const { data: lotteryDailyPickups } = await supabase
         .from('prizes')
         .select('picked_up_at')
         .eq('pickup_status', 'PICKED_UP')
         .gte('picked_up_at', startDate.toISOString());
 
       // 从group_buy_results表获取已提货记录
-      const { data: groupBuyPickups } = await supabase
+      const { data: groupBuyDailyPickups } = await supabase
         .from('group_buy_results')
         .select('picked_up_at')
         .eq('pickup_status', 'PICKED_UP')
         .gte('picked_up_at', startDate.toISOString());
 
+      // 从full_purchase_orders表获取已提货记录
+      const { data: fullPurchaseDailyPickups } = await supabase
+        .from('full_purchase_orders')
+        .select('picked_up_at')
+        .eq('pickup_status', 'PICKED_UP')
+        .gte('picked_up_at', startDate.toISOString());
+
       // 按日期分组统计
-      const dailyMap: { [key: string]: { lottery: number; groupbuy: number } } = {};
+      const dailyMap: { [key: string]: { lottery: number; groupbuy: number; fullpurchase: number } } = {};
       
-      (lotteryPickups || []).forEach((item: any) => {
+      (lotteryDailyPickups || []).forEach((item: any) => {
         if (item.picked_up_at) {
           const date = new Date(item.picked_up_at).toISOString().split('T')[0];
           if (!dailyMap[date]) {
-            dailyMap[date] = { lottery: 0, groupbuy: 0 };
+            dailyMap[date] = { lottery: 0, groupbuy: 0, fullpurchase: 0 };
           }
           dailyMap[date].lottery += 1;
         }
       });
 
-      (groupBuyPickups || []).forEach((item: any) => {
+      (groupBuyDailyPickups || []).forEach((item: any) => {
         if (item.picked_up_at) {
           const date = new Date(item.picked_up_at).toISOString().split('T')[0];
           if (!dailyMap[date]) {
-            dailyMap[date] = { lottery: 0, groupbuy: 0 };
+            dailyMap[date] = { lottery: 0, groupbuy: 0, fullpurchase: 0 };
           }
           dailyMap[date].groupbuy += 1;
+        }
+      });
+
+      (fullPurchaseDailyPickups || []).forEach((item: any) => {
+        if (item.picked_up_at) {
+          const date = new Date(item.picked_up_at).toISOString().split('T')[0];
+          if (!dailyMap[date]) {
+            dailyMap[date] = { lottery: 0, groupbuy: 0, fullpurchase: 0 };
+          }
+          dailyMap[date].fullpurchase += 1;
         }
       });
 
       const dailyStatsArray = Object.entries(dailyMap)
         .map(([date, counts]) => ({ 
           date, 
-          count: counts.lottery + counts.groupbuy,
+          count: counts.lottery + counts.groupbuy + counts.fullpurchase,
           lottery_count: counts.lottery,
           groupbuy_count: counts.groupbuy,
+          fullpurchase_count: counts.fullpurchase,
         }))
         .sort((a, b) => a.date.localeCompare(b.date));
 
@@ -285,332 +298,223 @@ export default function PickupStatsPage() {
     loadStats();
   }, [dateRange]);
 
-  // 格式化日期
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">加载中...</div>
+      </div>
+    );
+  }
 
-  // 获取本地化标题
-  const getLocalizedTitle = (log: PickupLog) => {
-    if (!log.prize) {return '未知商品';}
-    
-    if (log.source === 'lottery' && log.prize.lottery) {
-      if (log.prize.lottery.title_i18n?.zh) {return log.prize.lottery.title_i18n.zh;}
-      return log.prize.lottery.title || '未知商品';
-    }
-    
-    if (log.source === 'groupbuy' && log.prize.product) {
-      if (log.prize.product.name_i18n?.zh) {return log.prize.product.name_i18n.zh;}
-    }
-    
-    return '未知商品';
-  };
+  // 根据视图模式过滤数据
+  const filteredRecords = viewMode === 'all' 
+    ? recentRecords 
+    : recentRecords.filter(r => r.source === viewMode);
 
-  // 根据视图模式获取显示的统计数据
-  const getDisplayStats = () => {
+  const filteredDailyStats = dailyStats.map(day => {
     if (viewMode === 'lottery') {
-      return {
-        total: stats.lottery_total,
-        pending_claim: stats.lottery_pending_claim,
-        pending_pickup: stats.lottery_pending_pickup,
-        picked_up: stats.lottery_picked_up,
-        expired: stats.lottery_expired,
-      };
+      return { ...day, count: day.lottery_count };
+    } else if (viewMode === 'groupbuy') {
+      return { ...day, count: day.groupbuy_count };
+    } else if (viewMode === 'fullpurchase') {
+      return { ...day, count: day.fullpurchase_count };
     }
-    if (viewMode === 'groupbuy') {
-      return {
-        total: stats.groupbuy_total,
-        pending_claim: stats.groupbuy_pending_claim,
-        pending_pickup: stats.groupbuy_pending_pickup,
-        picked_up: stats.groupbuy_picked_up,
-        expired: stats.groupbuy_expired,
-      };
-    }
-    return {
-      total: stats.total_prizes,
-      pending_claim: stats.pending_claim,
-      pending_pickup: stats.pending_pickup,
-      picked_up: stats.picked_up,
-      expired: stats.expired,
-    };
-  };
-
-  const displayStats = getDisplayStats();
-
-  // 根据视图模式过滤日志
-  const filteredLogs = viewMode === 'all' 
-    ? recentLogs 
-    : recentLogs.filter(log => log.source === viewMode);
-
-  // 根据视图模式获取每日统计
-  const getDisplayDailyStats = () => {
-    return dailyStats.map(day => ({
-      date: day.date,
-      count: viewMode === 'lottery' ? day.lottery_count : 
-             viewMode === 'groupbuy' ? day.groupbuy_count : 
-             day.count,
-    }));
-  };
-
-  const displayDailyStats = getDisplayDailyStats();
+    return day;
+  });
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">核销统计报表</h1>
-        <div className="flex space-x-2">
-          <button
-            onClick={loadStats}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
-          >
-            刷新数据
-          </button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">核销统计</h1>
+        <button
+          onClick={loadStats}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          刷新数据
+        </button>
+      </div>
+
+      {/* 统计卡片 */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="text-sm text-gray-500">总订单</div>
+          <div className="text-3xl font-bold text-gray-900">{stats.total_prizes}</div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="text-sm text-gray-500">待领取</div>
+          <div className="text-3xl font-bold text-yellow-600">{stats.pending_claim}</div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="text-sm text-gray-500">待提货</div>
+          <div className="text-3xl font-bold text-blue-600">{stats.pending_pickup}</div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="text-sm text-gray-500">已核销</div>
+          <div className="text-3xl font-bold text-green-600">{stats.picked_up}</div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="text-sm text-gray-500">已过期</div>
+          <div className="text-3xl font-bold text-red-600">{stats.expired}</div>
         </div>
       </div>
 
-      {/* 视图切换 */}
-      <div className="mb-6 flex space-x-2">
+      {/* 分类统计 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-4">抽奖奖品</h3>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-gray-600">总数:</span>
+              <span className="font-semibold">{stats.lottery_total}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">已核销:</span>
+              <span className="font-semibold text-green-600">{stats.lottery_picked_up}</span>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-4">拼团商品</h3>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-gray-600">总数:</span>
+              <span className="font-semibold">{stats.groupbuy_total}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">已核销:</span>
+              <span className="font-semibold text-green-600">{stats.groupbuy_picked_up}</span>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-4">全款购买</h3>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-gray-600">总数:</span>
+              <span className="font-semibold">{stats.fullpurchase_total}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">已核销:</span>
+              <span className="font-semibold text-green-600">{stats.fullpurchase_picked_up}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 视图模式切换 */}
+      <div className="flex gap-2">
         <button
           onClick={() => setViewMode('all')}
-          className={`px-4 py-2 rounded-lg transition ${
-            viewMode === 'all'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
+          className={`px-4 py-2 rounded-lg ${viewMode === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
         >
           全部
         </button>
         <button
           onClick={() => setViewMode('lottery')}
-          className={`px-4 py-2 rounded-lg transition ${
-            viewMode === 'lottery'
-              ? 'bg-purple-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
+          className={`px-4 py-2 rounded-lg ${viewMode === 'lottery' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
         >
-          抽奖 ({stats.lottery_total})
+          抽奖
         </button>
         <button
           onClick={() => setViewMode('groupbuy')}
-          className={`px-4 py-2 rounded-lg transition ${
-            viewMode === 'groupbuy'
-              ? 'bg-pink-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
+          className={`px-4 py-2 rounded-lg ${viewMode === 'groupbuy' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
         >
-          拼团 ({stats.groupbuy_total})
+          拼团
+        </button>
+        <button
+          onClick={() => setViewMode('fullpurchase')}
+          className={`px-4 py-2 rounded-lg ${viewMode === 'fullpurchase' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+        >
+          全款购买
         </button>
       </div>
 
-      {loading ? (
-        <div className="text-center py-10">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-500">加载中...</p>
+      {/* 每日核销趋势 */}
+      <div className="bg-white p-6 rounded-lg shadow">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">每日核销趋势</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setDateRange('7d')}
+              className={`px-3 py-1 rounded ${dateRange === '7d' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+            >
+              近7天
+            </button>
+            <button
+              onClick={() => setDateRange('30d')}
+              className={`px-3 py-1 rounded ${dateRange === '30d' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+            >
+              近30天
+            </button>
+            <button
+              onClick={() => setDateRange('all')}
+              className={`px-3 py-1 rounded ${dateRange === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+            >
+              全部
+            </button>
+          </div>
         </div>
-      ) : (
-        <>
-          {/* 总体统计卡片 */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-sm text-gray-500 mb-1">
-                {viewMode === 'all' ? '总奖品数' : viewMode === 'lottery' ? '抽奖奖品数' : '拼团奖品数'}
-              </div>
-              <div className="text-3xl font-bold text-gray-900">{displayStats.total}</div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-sm text-gray-500 mb-1">待确认领取</div>
-              <div className="text-3xl font-bold text-yellow-600">{displayStats.pending_claim}</div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-sm text-gray-500 mb-1">待提货</div>
-              <div className="text-3xl font-bold text-blue-600">{displayStats.pending_pickup}</div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-sm text-gray-500 mb-1">已提货</div>
-              <div className="text-3xl font-bold text-green-600">{displayStats.picked_up}</div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-sm text-gray-500 mb-1">已过期</div>
-              <div className="text-3xl font-bold text-red-600">{displayStats.expired}</div>
-            </div>
-          </div>
-
-          {/* 提货率 */}
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <h2 className="text-lg font-semibold mb-4">提货率统计</h2>
-            <div className="flex items-center">
-              <div className="flex-1 bg-gray-200 rounded-full h-4 overflow-hidden">
-                <div
-                  className="bg-green-500 h-full transition-all duration-500"
-                  style={{
-                    width: `${displayStats.total > 0 ? (displayStats.picked_up / displayStats.total) * 100 : 0}%`,
-                  }}
-                ></div>
-              </div>
-              <div className="ml-4 text-lg font-semibold">
-                {displayStats.total > 0
-                  ? ((displayStats.picked_up / displayStats.total) * 100).toFixed(1)
-                  : 0}
-                %
-              </div>
-            </div>
-            <div className="mt-2 text-sm text-gray-500">
-              已提货 {displayStats.picked_up} / 总计 {displayStats.total}
-            </div>
-          </div>
-
-          {/* 每日核销趋势 */}
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">每日核销趋势</h2>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setDateRange('7d')}
-                  className={`px-3 py-1 rounded ${
-                    dateRange === '7d'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700'
-                  }`}
-                >
-                  近7天
-                </button>
-                <button
-                  onClick={() => setDateRange('30d')}
-                  className={`px-3 py-1 rounded ${
-                    dateRange === '30d'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700'
-                  }`}
-                >
-                  近30天
-                </button>
-                <button
-                  onClick={() => setDateRange('all')}
-                  className={`px-3 py-1 rounded ${
-                    dateRange === 'all'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700'
-                  }`}
-                >
-                  全部
-                </button>
-              </div>
-            </div>
-
-            {displayDailyStats.length === 0 ? (
-              <div className="text-center py-10 text-gray-500">
-                暂无核销记录
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <div className="flex items-end space-x-2 h-40 min-w-max">
-                  {displayDailyStats.map((day) => {
-                    const maxCount = Math.max(...displayDailyStats.map(d => d.count), 1);
-                    const height = (day.count / maxCount) * 100;
-                    return (
-                      <div key={day.date} className="flex flex-col items-center">
-                        <div className="text-xs text-gray-500 mb-1">{day.count}</div>
-                        <div
-                          className={`w-8 rounded-t transition-all duration-300 ${
-                            viewMode === 'lottery' ? 'bg-purple-500' :
-                            viewMode === 'groupbuy' ? 'bg-pink-500' :
-                            'bg-blue-500'
-                          }`}
-                          style={{ height: `${Math.max(height, 5)}%` }}
-                        ></div>
-                        <div className="text-xs text-gray-500 mt-1 transform -rotate-45 origin-top-left w-16">
-                          {day.date.slice(5)}
-                        </div>
-                      </div>
-                    );
-                  })}
+        {filteredDailyStats.length > 0 ? (
+          <div className="space-y-2">
+            {filteredDailyStats.map(day => (
+              <div key={day.date} className="flex items-center gap-4">
+                <div className="w-24 text-sm text-gray-600">{day.date}</div>
+                <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
+                  <div
+                    className="bg-blue-600 h-6 rounded-full flex items-center justify-end pr-2"
+                    style={{ width: `${Math.min(100, (day.count / Math.max(...filteredDailyStats.map(d => d.count))) * 100)}%` }}
+                  >
+                    <span className="text-white text-sm font-semibold">{day.count}</span>
+                  </div>
                 </div>
               </div>
-            )}
+            ))}
           </div>
+        ) : (
+          <div className="text-center text-gray-500 py-8">暂无数据</div>
+        )}
+      </div>
 
-          {/* 最近核销记录 */}
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="px-6 py-4 border-b">
-              <h2 className="text-lg font-semibold">最近核销记录</h2>
-            </div>
-
-            {filteredLogs.length === 0 ? (
-              <div className="text-center py-10 text-gray-500">
-                暂无核销记录
-              </div>
-            ) : (
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      类型
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      商品
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      用户
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      自提点
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      操作人
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      操作
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      时间
-                    </th>
+      {/* 今日核销记录 */}
+      <div className="bg-white p-6 rounded-lg shadow">
+        <h2 className="text-xl font-semibold mb-4">最近核销记录</h2>
+        {filteredRecords.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead>
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">提货码</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">类型</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">商品</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">核销时间</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredRecords.map(record => (
+                  <tr key={record.id}>
+                    <td className="px-4 py-3 text-sm font-mono">{record.pickup_code}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        record.source === 'lottery' ? 'bg-purple-100 text-purple-800' :
+                        record.source === 'groupbuy' ? 'bg-green-100 text-green-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                        {record.source === 'lottery' ? '抽奖' : record.source === 'groupbuy' ? '拼团' : '全款购买'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm">{record.product_name}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">
+                      {new Date(record.picked_up_at).toLocaleString('zh-CN')}
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          log.source === 'lottery' 
-                            ? 'bg-purple-100 text-purple-700' 
-                            : 'bg-pink-100 text-pink-700'
-                        }`}>
-                          {log.source === 'lottery' ? '抽奖' : '拼团'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {getLocalizedTitle(log)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {log.prize?.user?.first_name || log.prize?.user?.username || '未知用户'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {log.pickup_point?.name || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {log.operator_id || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {log.action || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(log.created_at)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                ))}
+              </tbody>
+            </table>
           </div>
-        </>
-      )}
+        ) : (
+          <div className="text-center text-gray-500 py-8">暂无核销记录</div>
+        )}
+      </div>
     </div>
   );
 }
