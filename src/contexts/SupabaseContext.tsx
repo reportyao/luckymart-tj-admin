@@ -23,6 +23,10 @@ let supabaseServiceInstance: SupabaseClient<DB> | null = null
 
 function getSupabaseClient(): SupabaseClient<DB> {
   if (!supabaseServiceInstance) {
+    console.log('[Supabase] Creating service role client...');
+    console.log('[Supabase] URL:', supabaseUrl);
+    console.log('[Supabase] Service Role Key (first 20 chars):', supabaseServiceRoleKey.substring(0, 20) + '...');
+    
     supabaseServiceInstance = createClient<DB>(supabaseUrl, supabaseServiceRoleKey, {
       auth: {
         autoRefreshToken: false,
@@ -36,8 +40,13 @@ function getSupabaseClient(): SupabaseClient<DB> {
           'apikey': supabaseServiceRoleKey,
           'Authorization': `Bearer ${supabaseServiceRoleKey}`
         }
+      },
+      db: {
+        schema: 'public'
       }
-    })
+    });
+    
+    console.log('[Supabase] Service role client created successfully');
   }
   return supabaseServiceInstance
 }
