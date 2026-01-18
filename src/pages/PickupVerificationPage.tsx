@@ -45,8 +45,8 @@ interface PrizeInfo {
 
 // 获取本地化文本
 const getLocalizedText = (text: any): string => {
-  if (!text) {return '';}
-  if (typeof text === 'string') {return text;}
+  if (!text) return '';
+  if (typeof text === 'string') return text;
   return text.zh || text.ru || text.tg || '';
 };
 
@@ -69,8 +69,10 @@ const PickupVerificationPage: React.FC = () => {
     setPrizeInfo(null);
 
     try {
+      console.log('Searching for pickup code:', pickupCode);
+
       // 1. 首先查询 prizes 表（积分商城）
-      const { data: prize, error } = await supabase
+      const { data: prizes, error: prizeError } = await supabase
         .from('prizes')
         .select(`
           id,
@@ -85,10 +87,12 @@ const PickupVerificationPage: React.FC = () => {
           lottery_id,
           pickup_point_id
         `)
-        .eq('pickup_code', pickupCode)
-        .single();
+        .eq('pickup_code', pickupCode);
 
-      if (!error && prize) {
+      if (!prizeError && prizes && prizes.length > 0) {
+        const prize = prizes[0];
+        console.log('Found in prizes:', prize);
+        
         // 获取用户信息
         let userInfo = null;
         if (prize.user_id) {
@@ -96,18 +100,18 @@ const PickupVerificationPage: React.FC = () => {
             .from('users')
             .select('id, telegram_username, first_name, last_name, avatar_url')
             .eq('id', prize.user_id)
-            .single();
+            .maybeSingle();
           userInfo = userData;
         }
 
-        // 获取抽奖信息（包括图片和价格）
+        // 获取抽奖信息
         let lotteryInfo = null;
         if (prize.lottery_id) {
           const { data: lotteryData } = await supabase
             .from('lotteries')
             .select('title, title_i18n, image_url, original_price')
             .eq('id', prize.lottery_id)
-            .single();
+            .maybeSingle();
           lotteryInfo = lotteryData;
         }
 
@@ -118,7 +122,7 @@ const PickupVerificationPage: React.FC = () => {
             .from('pickup_points')
             .select('id, name, name_i18n, address, address_i18n')
             .eq('id', prize.pickup_point_id)
-            .single();
+            .maybeSingle();
           pickupPointInfo = pointData;
         }
 
@@ -139,8 +143,8 @@ const PickupVerificationPage: React.FC = () => {
         return;
       }
 
-      // 2. 如果 prizes 表没找到，尝试查询 group_buy_results 表（拼团）
-      const { data: groupBuyPrize, error: groupBuyError } = await supabase
+      // 2. 尝试查询 group_buy_results 表（拼团）
+      const { data: groupBuyResults, error: groupBuyError } = await supabase
         .from('group_buy_results')
         .select(`
           id,
@@ -153,10 +157,12 @@ const PickupVerificationPage: React.FC = () => {
           session_id,
           pickup_point_id
         `)
-        .eq('pickup_code', pickupCode)
-        .single();
+        .eq('pickup_code', pickupCode);
 
-      if (!groupBuyError && groupBuyPrize) {
+      if (!groupBuyError && groupBuyResults && groupBuyResults.length > 0) {
+        const groupBuyPrize = groupBuyResults[0];
+        console.log('Found in group_buy_results:', groupBuyPrize);
+
         // 获取商品信息
         let productInfo = null;
         if (groupBuyPrize.product_id) {
@@ -164,18 +170,18 @@ const PickupVerificationPage: React.FC = () => {
             .from('group_buy_products')
             .select('title, image_url, original_price')
             .eq('id', groupBuyPrize.product_id)
-            .single();
+            .maybeSingle();
           productInfo = productData;
         }
 
-        // 获取用户信息（通过telegram_id）
+        // 获取用户信息
         let userInfo = null;
         if (groupBuyPrize.winner_id) {
           const { data: userData } = await supabase
             .from('users')
             .select('id, telegram_username, first_name, last_name, avatar_url')
             .eq('telegram_id', groupBuyPrize.winner_id)
-            .single();
+            .maybeSingle();
           userInfo = userData;
         }
 
@@ -186,7 +192,7 @@ const PickupVerificationPage: React.FC = () => {
             .from('pickup_points')
             .select('id, name, name_i18n, address, address_i18n')
             .eq('id', groupBuyPrize.pickup_point_id)
-            .single();
+            .maybeSingle();
           pickupPointInfo = pointData;
         }
 
@@ -207,8 +213,8 @@ const PickupVerificationPage: React.FC = () => {
         return;
       }
 
-      // 3. 如果 prizes 和 group_buy_results 都没找到，尝试查询 full_purchase_orders 表（全款购买）
-      const { data: fullPurchaseOrder, error: fullPurchaseError } = await supabase
+      // 3. 尝试查询 full_purchase_orders 表（全款购买）
+      const { data: fullPurchaseOrders, error: fullPurchaseError } = await supabase
         .from('full_purchase_orders')
         .select(`
           id,
@@ -222,67 +228,69 @@ const PickupVerificationPage: React.FC = () => {
           pickup_point_id,
           metadata
         `)
-        .eq('pickup_code', pickupCode)
-        .single();
+        .eq('pickup_code', pickupCode);
 
-      if (fullPurchaseError || !fullPurchaseOrder) {
-        toast.error('未找到该提货码对应的奖品');
+      if (!fullPurchaseError && fullPurchaseOrders && fullPurchaseOrders.length > 0) {
+        const fullPurchaseOrder = fullPurchaseOrders[0];
+        console.log('Found in full_purchase_orders:', fullPurchaseOrder);
+
+        // 获取用户信息
+        let userInfo = null;
+        if (fullPurchaseOrder.user_id) {
+          const { data: userData } = await supabase
+            .from('users')
+            .select('id, telegram_username, first_name, last_name, avatar_url')
+            .eq('id', fullPurchaseOrder.user_id)
+            .maybeSingle();
+          userInfo = userData;
+        }
+
+        // 获取抽奖信息
+        let lotteryInfo = null;
+        if (fullPurchaseOrder.lottery_id) {
+          const { data: lotteryData } = await supabase
+            .from('lotteries')
+            .select('title, title_i18n, image_url, original_price')
+            .eq('id', fullPurchaseOrder.lottery_id)
+            .maybeSingle();
+          lotteryInfo = lotteryData;
+        }
+
+        // 获取自提点信息
+        let pickupPointInfo = null;
+        if (fullPurchaseOrder.pickup_point_id) {
+          const { data: pointData } = await supabase
+            .from('pickup_points')
+            .select('id, name, name_i18n, address, address_i18n')
+            .eq('id', fullPurchaseOrder.pickup_point_id)
+            .maybeSingle();
+          pickupPointInfo = pointData;
+        }
+
+        // 从 metadata 中获取商品信息
+        const metadata = fullPurchaseOrder.metadata || {};
+        const productTitle = metadata.product_title || getLocalizedText(lotteryInfo?.title_i18n) || lotteryInfo?.title || '全款购买商品';
+        const productImage = metadata.product_image || lotteryInfo?.image_url || '';
+        const productPrice = lotteryInfo?.original_price || 0;
+
+        setPrizeInfo({
+          id: fullPurchaseOrder.id,
+          prize_name: productTitle,
+          prize_image: productImage,
+          prize_value: productPrice,
+          pickup_code: fullPurchaseOrder.pickup_code,
+          pickup_status: fullPurchaseOrder.pickup_status || 'PENDING_CLAIM',
+          expires_at: fullPurchaseOrder.expires_at,
+          claimed_at: fullPurchaseOrder.claimed_at,
+          source_type: 'full_purchase',
+          user: userInfo,
+          lottery: lotteryInfo,
+          pickup_point: pickupPointInfo,
+        });
         return;
       }
 
-      // 获取用户信息
-      let userInfo = null;
-      if (fullPurchaseOrder.user_id) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('id, telegram_username, first_name, last_name, avatar_url')
-          .eq('id', fullPurchaseOrder.user_id)
-          .single();
-        userInfo = userData;
-      }
-
-      // 获取抽奖信息（包括图片和价格）
-      let lotteryInfo = null;
-      if (fullPurchaseOrder.lottery_id) {
-        const { data: lotteryData } = await supabase
-          .from('lotteries')
-          .select('title, title_i18n, image_url, original_price')
-          .eq('id', fullPurchaseOrder.lottery_id)
-          .single();
-        lotteryInfo = lotteryData;
-      }
-
-      // 获取自提点信息
-      let pickupPointInfo = null;
-      if (fullPurchaseOrder.pickup_point_id) {
-        const { data: pointData } = await supabase
-          .from('pickup_points')
-          .select('id, name, name_i18n, address, address_i18n')
-          .eq('id', fullPurchaseOrder.pickup_point_id)
-          .single();
-        pickupPointInfo = pointData;
-      }
-
-      // 从 metadata 中获取商品信息
-      const metadata = fullPurchaseOrder.metadata || {};
-      const productTitle = metadata.product_title || getLocalizedText(lotteryInfo?.title_i18n) || lotteryInfo?.title || '全款购买商品';
-      const productImage = metadata.product_image || lotteryInfo?.image_url || '';
-      const productPrice = lotteryInfo?.original_price || 0;
-
-      setPrizeInfo({
-        id: fullPurchaseOrder.id,
-        prize_name: productTitle,
-        prize_image: productImage,
-        prize_value: productPrice,
-        pickup_code: fullPurchaseOrder.pickup_code,
-        pickup_status: fullPurchaseOrder.pickup_status || 'PENDING_CLAIM',
-        expires_at: fullPurchaseOrder.expires_at,
-        claimed_at: fullPurchaseOrder.claimed_at,
-        source_type: 'full_purchase',
-        user: userInfo,
-        lottery: lotteryInfo,
-        pickup_point: pickupPointInfo,
-      });
+      toast.error('未找到该提货码对应的奖品');
 
     } catch (error: any) {
       console.error('Search error:', error);
@@ -294,10 +302,10 @@ const PickupVerificationPage: React.FC = () => {
 
   // 确认核销
   const handleVerify = async () => {
-    if (!prizeInfo) {return;}
+    if (!prizeInfo) return;
 
     // 检查状态
-    if (prizeInfo.pickup_status !== 'PENDING_PICKUP') {
+    if (prizeInfo.pickup_status !== 'PENDING_PICKUP' && prizeInfo.pickup_status !== 'PENDING') {
       toast.error('该奖品状态不允许核销');
       return;
     }
@@ -315,10 +323,7 @@ const PickupVerificationPage: React.FC = () => {
     setIsVerifying(true);
 
     try {
-      // 获取当前管理员ID
-      if (!admin) {
-        throw new Error('未登录');
-      }
+      if (!admin) throw new Error('未登录');
       const adminId = admin.id;
 
       // 根据来源类型确定表名
@@ -338,30 +343,17 @@ const PickupVerificationPage: React.FC = () => {
         })
         .eq('id', prizeInfo.id);
 
-      if (updateError) {
-        throw updateError;
-      }
+      if (updateError) throw updateError;
 
-      // 记录核销日志
-      const { error: logError } = await supabase
-        .from('pickup_logs')
-        .insert({
-          prize_id: prizeInfo.id,
-          pickup_code: prizeInfo.pickup_code,
-          pickup_point_id: prizeInfo.pickup_point?.id,
-          operator_id: adminId,
-          operation_type: 'PICKUP',
-          notes: `管理员核销${prizeInfo.source_type === 'group_buy' ? '拼团' : prizeInfo.source_type === 'full_purchase' ? '全款购买' : '积分商城'}提货码: ${prizeInfo.pickup_code}`,
-        });
-
-      if (logError) {
-        console.error('Log error:', logError);
-        // 不影响主流程
-      }
+      // 核销成功
+      console.log('核销成功:', {
+        prize_id: prizeInfo.id,
+        pickup_code: prizeInfo.pickup_code,
+        source_type: prizeInfo.source_type,
+        operator: adminId,
+      });
 
       toast.success('核销成功！');
-      
-      // 重置状态
       setPickupCode('');
       setPrizeInfo(null);
     } catch (error: any) {
@@ -390,19 +382,15 @@ const PickupVerificationPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
-        {/* 页面标题 */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">自提核销</h1>
           <p className="text-gray-600">扫描或输入用户的提货码进行核销</p>
         </div>
 
-        {/* 搜索区域 */}
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
           <div className="flex items-center space-x-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                提货码
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">提货码</label>
               <div className="relative">
                 <input
                   type="text"
@@ -419,204 +407,109 @@ const PickupVerificationPage: React.FC = () => {
             <div className="pt-7">
               <button
                 onClick={handleSearch}
-                disabled={isSearching || pickupCode.length < 6}
-                className="px-6 py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                disabled={isSearching}
+                className="px-8 py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 focus:ring-4 focus:ring-purple-200 transition-all disabled:opacity-50 flex items-center"
               >
                 {isSearching ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>查询中...</span>
-                  </>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                 ) : (
-                  <>
-                    <MagnifyingGlassIcon className="w-5 h-5" />
-                    <span>查询</span>
-                  </>
+                  <MagnifyingGlassIcon className="w-5 h-5 mr-2" />
                 )}
+                查询
               </button>
             </div>
           </div>
         </div>
 
-        {/* 奖品信息展示 */}
         {prizeInfo && (
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            {/* 状态指示 */}
-            <div className={`px-6 py-4 ${
-              prizeInfo.pickup_status === 'PENDING_PICKUP' 
-                ? 'bg-gradient-to-r from-green-50 to-emerald-50' 
-                : 'bg-gradient-to-r from-red-50 to-orange-50'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  {prizeInfo.pickup_status === 'PENDING_PICKUP' ? (
-                    <>
-                      <CheckCircleIcon className="w-6 h-6 text-green-600" />
-                      <span className="text-green-800 font-medium">可以核销</span>
-                    </>
-                  ) : (
-                    <>
-                      <XCircleIcon className="w-6 h-6 text-red-600" />
-                      <span className="text-red-800 font-medium">
-                        {prizeInfo.pickup_status === 'PICKED_UP' ? '已核销' : 
-                         prizeInfo.pickup_status === 'PENDING_CLAIM' ? '待用户确认领取' :
-                         prizeInfo.pickup_status === 'EXPIRED' ? '已过期' : '不可核销'}
-                      </span>
-                    </>
-                  )}
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    prizeInfo.source_type === 'group_buy' ? 'bg-pink-100 text-pink-800' : 'bg-purple-100 text-purple-800'
-                  }`}>
-                    {prizeInfo.source_type === 'group_buy' ? '拼团' : '积分商城'}
-                  </span>
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden animate-fade-in">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-purple-50 rounded-lg">
+                  <GiftIcon className="w-6 h-6 text-purple-600" />
                 </div>
-                {prizeInfo.expires_at && (
-                  <div className="text-sm text-gray-600">
-                    有效期至: {new Date(prizeInfo.expires_at).toLocaleDateString()}
-                    {getRemainingDays(prizeInfo.expires_at) <= 7 && (
-                      <span className="ml-2 text-red-600 font-medium">
-                        (剩余 {getRemainingDays(prizeInfo.expires_at)} 天)
-                      </span>
-                    )}
-                  </div>
-                )}
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">奖品信息</h2>
+                  <p className="text-sm text-gray-500">
+                    来源: {prizeInfo.source_type === 'group_buy' ? '拼团' : prizeInfo.source_type === 'full_purchase' ? '全款购买' : '积分商城'}
+                  </p>
+                </div>
+              </div>
+              <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                (prizeInfo.pickup_status === 'PENDING_PICKUP' || prizeInfo.pickup_status === 'PENDING') ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-600'
+              }`}>
+                {(prizeInfo.pickup_status === 'PENDING_PICKUP' || prizeInfo.pickup_status === 'PENDING') ? '待提货' : prizeInfo.pickup_status}
               </div>
             </div>
 
-            <div className="p-6 space-y-6">
-              {/* 用户信息 */}
-              <div className="flex items-center space-x-4 pb-6 border-b">
-                <div className="relative">
-                  {prizeInfo.user?.avatar_url ? (
-                    <img
-                      src={prizeInfo.user.avatar_url}
-                      alt="User"
-                      className="w-16 h-16 rounded-full object-cover"
-                    />
+            <div className="p-6">
+              <div className="flex space-x-6">
+                <div className="w-32 h-32 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                  {prizeInfo.prize_image ? (
+                    <img src={prizeInfo.prize_image} alt={prizeInfo.prize_name} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
-                      <UserIcon className="w-8 h-8 text-purple-600" />
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      <GiftIcon className="w-12 h-12" />
                     </div>
                   )}
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-gray-900">
-                    {prizeInfo.user ? `${prizeInfo.user.first_name || ''} ${prizeInfo.user.last_name || ''}`.trim() || '未知用户' : '未知用户'}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    {prizeInfo.user?.telegram_username ? `@${prizeInfo.user.telegram_username}` : '无用户名'}
-                  </p>
-                </div>
-              </div>
-
-              {/* 奖品信息 */}
-              <div className="flex items-start space-x-4 pb-6 border-b">
-                {prizeInfo.prize_image ? (
-                  <img
-                    src={prizeInfo.prize_image}
-                    alt="Prize"
-                    className="w-24 h-24 rounded-xl object-cover"
-                  />
-                ) : (
-                  <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
-                    <GiftIcon className="w-12 h-12 text-purple-600" />
-                  </div>
-                )}
-                <div className="flex-1">
-                  <h4 className="text-lg font-bold text-gray-900 mb-1">
-                    {prizeInfo.prize_name}
-                  </h4>
-                  <p className="text-sm text-gray-500 mb-2">
-                    价值: ₽{prizeInfo.prize_value}
-                  </p>
-                  {prizeInfo.claimed_at && (
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
-                      <ClockIcon className="w-4 h-4" />
-                      <span>领取时间: {new Date(prizeInfo.claimed_at).toLocaleString()}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* 自提点信息 */}
-              {prizeInfo.pickup_point && (
-                <div className="flex items-start space-x-3 pb-6 border-b">
-                  <MapPinIcon className="w-5 h-5 text-purple-600 mt-0.5" />
+                <div className="flex-1 space-y-4">
                   <div>
-                    <h5 className="font-medium text-gray-900 mb-1">
-                      {getLocalizedText(prizeInfo.pickup_point.name_i18n) || prizeInfo.pickup_point.name}
-                    </h5>
-                    <p className="text-sm text-gray-600">
-                      {getLocalizedText(prizeInfo.pickup_point.address_i18n) || prizeInfo.pickup_point.address}
+                    <h3 className="text-lg font-bold text-gray-900">{prizeInfo.prize_name}</h3>
+                    <p className="text-2xl font-bold text-purple-600 mt-1">
+                      {prizeInfo.prize_value} <span className="text-sm font-normal text-gray-500">TJS</span>
                     </p>
                   </div>
-                </div>
-              )}
 
-              {/* 提货码展示 */}
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 text-center">
-                <p className="text-sm text-gray-600 mb-2">提货码</p>
-                <p className="text-4xl font-bold text-purple-600 font-mono tracking-wider">
-                  {prizeInfo.pickup_code}
-                </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2 text-gray-600">
+                      <UserIcon className="w-4 h-4" />
+                      <span className="text-sm">
+                        用户: {prizeInfo.user?.first_name || ''} {prizeInfo.user?.last_name || ''} 
+                        {prizeInfo.user?.telegram_username ? ` (@${prizeInfo.user.telegram_username})` : ''}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-gray-600">
+                      <MapPinIcon className="w-4 h-4" />
+                      <span className="text-sm">自提点: {getLocalizedText(prizeInfo.pickup_point?.name_i18n) || prizeInfo.pickup_point?.name || '未设置'}</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-gray-600">
+                      <ClockIcon className="w-4 h-4" />
+                      <span className="text-sm">
+                        有效期至: {prizeInfo.expires_at ? new Date(prizeInfo.expires_at).toLocaleString() : '永久有效'}
+                        {prizeInfo.expires_at && (
+                          <span className={`ml-2 font-medium ${getRemainingDays(prizeInfo.expires_at) <= 3 ? 'text-red-500' : 'text-green-500'}`}>
+                            (剩余 {getRemainingDays(prizeInfo.expires_at)} 天)
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* 操作按钮 */}
-              <div className="flex space-x-4 pt-4">
-                <button
-                  onClick={handleCancel}
-                  className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
-                >
-                  取消
-                </button>
+              <div className="mt-8 flex space-x-4">
                 <button
                   onClick={handleVerify}
-                  disabled={isVerifying || prizeInfo.pickup_status !== 'PENDING_PICKUP'}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium hover:from-purple-700 hover:to-pink-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  disabled={isVerifying || (prizeInfo.pickup_status !== 'PENDING_PICKUP' && prizeInfo.pickup_status !== 'PENDING')}
+                  className="flex-1 py-4 bg-green-600 text-white rounded-xl font-bold text-lg hover:bg-green-700 focus:ring-4 focus:ring-green-200 transition-all disabled:opacity-50 flex items-center justify-center"
                 >
                   {isVerifying ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      <span>核销中...</span>
-                    </>
+                    <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin mr-2" />
                   ) : (
-                    <>
-                      <CheckCircleIcon className="w-5 h-5" />
-                      <span>确认核销</span>
-                    </>
+                    <CheckCircleIcon className="w-6 h-6 mr-2" />
                   )}
+                  确认核销
+                </button>
+                <button
+                  onClick={handleCancel}
+                  className="px-8 py-4 bg-gray-100 text-gray-600 rounded-xl font-bold text-lg hover:bg-gray-200 transition-all flex items-center justify-center"
+                >
+                  <XCircleIcon className="w-6 h-6 mr-2" />
+                  取消
                 </button>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* 使用说明 */}
-        {!prizeInfo && (
-          <div className="bg-blue-50 rounded-2xl p-6 mt-6">
-            <h3 className="font-medium text-blue-900 mb-3">使用说明</h3>
-            <ul className="space-y-2 text-sm text-blue-800">
-              <li className="flex items-start space-x-2">
-                <span className="text-blue-600 mt-0.5">•</span>
-                <span>请用户出示提货码（6位数字）</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span className="text-blue-600 mt-0.5">•</span>
-                <span>在上方输入框中输入提货码并点击查询</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span className="text-blue-600 mt-0.5">•</span>
-                <span>核对用户信息和商品信息无误后，点击"确认核销"</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span className="text-blue-600 mt-0.5">•</span>
-                <span>核销成功后，用户即可领取商品</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span className="text-blue-600 mt-0.5">•</span>
-                <span>如果提货码已过期，请引导用户在小程序中申请延期</span>
-              </li>
-            </ul>
           </div>
         )}
       </div>

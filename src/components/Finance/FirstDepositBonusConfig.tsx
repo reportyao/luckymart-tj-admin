@@ -83,7 +83,7 @@ export const FirstDepositBonusConfig: React.FC = () => {
           onConflict: 'key'
         });
 
-      if (error) throw error;
+      if (error) {throw error;}
 
       toast.success('配置保存成功！');
     } catch (error: any) {

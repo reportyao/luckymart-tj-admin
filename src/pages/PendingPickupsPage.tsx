@@ -444,17 +444,13 @@ export default function PendingPickupsPage() {
 
       if (updateError) {throw updateError;}
 
-      // 记录核销日志
-      await supabase
-        .from('pickup_logs')
-        .insert({
-          prize_id: selectedPickup.id,
-          pickup_code: selectedPickup.pickup_code,
-          pickup_point_id: selectedPickup.pickup_point?.id,
-          operator_id: user.id,
-          operation_type: 'PICKUP',
-          notes: `管理员核销: ${selectedPickup.prize_name}`,
-        });
+      // 核销成功
+      console.log('核销成功:', {
+        prize_id: selectedPickup.id,
+        pickup_code: selectedPickup.pickup_code,
+        type: selectedPickup.type,
+        operator: user.id,
+      });
 
       toast.success('核销成功！');
       setShowVerifyModal(false);
