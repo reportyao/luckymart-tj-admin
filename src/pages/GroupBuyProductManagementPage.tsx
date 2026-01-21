@@ -232,12 +232,22 @@ export default function GroupBuyProductManagementPage() {
 
   const handleEdit = (product: GroupBuyProduct) => {
     setEditingProduct(product);
-    // 确保 image_urls 始终是数组
-    const imageUrls = Array.isArray(product.image_urls) 
-      ? product.image_urls 
-      : (typeof product.image_urls === 'string' 
-        ? [product.image_urls] 
-        : (product.image_url ? [product.image_url] : []));
+    // 确保 image_urls 始终是数组，处理所有可能的格式
+    let imageUrls: string[] = [];
+    if (Array.isArray(product.image_urls)) {
+      imageUrls = product.image_urls;
+    } else if (typeof product.image_urls === 'string') {
+      // 尝试解析 JSON 字符串
+      try {
+        const parsed = JSON.parse(product.image_urls);
+        imageUrls = Array.isArray(parsed) ? parsed : [product.image_urls];
+      } catch {
+        imageUrls = [product.image_urls];
+      }
+    } else if (product.image_url) {
+      imageUrls = [product.image_url];
+    }
+    console.log('Edit product image_urls:', product.image_urls, '=> parsed:', imageUrls);
     
     setFormData({
       name_zh: product.name_i18n?.zh || product.name || '',
@@ -262,12 +272,22 @@ export default function GroupBuyProductManagementPage() {
 
   const handleDuplicate = (product: GroupBuyProduct) => {
     setEditingProduct(null);
-    // 确保 image_urls 始终是数组
-    const imageUrls = Array.isArray(product.image_urls) 
-      ? product.image_urls 
-      : (typeof product.image_urls === 'string' 
-        ? [product.image_urls] 
-        : (product.image_url ? [product.image_url] : []));
+    // 确保 image_urls 始终是数组，处理所有可能的格式
+    let imageUrls: string[] = [];
+    if (Array.isArray(product.image_urls)) {
+      imageUrls = product.image_urls;
+    } else if (typeof product.image_urls === 'string') {
+      // 尝试解析 JSON 字符串
+      try {
+        const parsed = JSON.parse(product.image_urls);
+        imageUrls = Array.isArray(parsed) ? parsed : [product.image_urls];
+      } catch {
+        imageUrls = [product.image_urls];
+      }
+    } else if (product.image_url) {
+      imageUrls = [product.image_url];
+    }
+    console.log('Duplicate product image_urls:', product.image_urls, '=> parsed:', imageUrls);
     
     setFormData({
       name_zh: (product.name_i18n?.zh || product.name || '') + ' (复制)',
