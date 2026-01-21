@@ -33,7 +33,7 @@ export const FirstDepositBonusConfig: React.FC = () => {
   const fetchConfig = async () => {
     try {
       const { data, error } = await supabase
-        .from('system_config')
+        .from('system_configs')
         .select('value')
         .eq('key', 'first_deposit_bonus')
         .single();
@@ -73,7 +73,7 @@ export const FirstDepositBonusConfig: React.FC = () => {
     setIsSaving(true);
     try {
       const { error } = await supabase
-        .from('system_config')
+        .from('system_configs')
         .upsert({
           key: 'first_deposit_bonus',
           value: config,

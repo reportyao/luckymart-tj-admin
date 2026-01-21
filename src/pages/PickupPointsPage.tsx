@@ -335,7 +335,7 @@ export default function PickupPointsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {point.contact_phone || '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-gray-500 max-w-xs break-words">
                     {formatBusinessHours(point.working_hours)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
