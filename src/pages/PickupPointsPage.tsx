@@ -132,6 +132,7 @@ export default function PickupPointsPage() {
       const { data, error } = await supabase
         .from('pickup_points')
         .select('*')
+        .neq('is_active', false)  // 过滤掉已停用的自提点
         .order('created_at', { ascending: false });
 
       if (error) {throw error;}
@@ -231,12 +232,13 @@ export default function PickupPointsPage() {
 
   // 删除自提点
   const handleDelete = async (id: string) => {
-    if (!confirm('确定要删除这个自提点吗？')) {return;}
+    if (!confirm('确定要删除这个自提点吗？此操作将停用该自提点，但不会删除历史记录。')) {return;}
 
     try {
+      // 使用软删除：设置 is_active 为 false 和 status 为 INACTIVE
       const { error } = await supabase
         .from('pickup_points')
-        .delete()
+        .update({ is_active: false, status: 'INACTIVE' })
         .eq('id', id);
 
       if (error) {throw error;}
