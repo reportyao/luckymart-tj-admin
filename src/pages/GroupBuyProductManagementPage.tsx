@@ -98,6 +98,7 @@ export default function GroupBuyProductManagementPage() {
   };
 
   const handleSelectSku = (product: InventoryProduct) => {
+    const originalPrice = product.original_price || 0;
     setFormData({
       ...formData,
       name_zh: product.name_i18n?.zh || product.name || '',
@@ -108,13 +109,15 @@ export default function GroupBuyProductManagementPage() {
       description_tg: product.description_i18n?.tg || '',
       image_url: product.image_url || '',
       image_urls: Array.isArray(product.image_urls) ? product.image_urls : (product.image_url ? [product.image_url] : []),
-      original_price: product.original_price || 0,
+      original_price: originalPrice,
       stock: product.stock || 100,
+      // 一键导入时：单价默认为1，总票数等于全款购买金额
+      min_participants: Math.round(originalPrice / 1), // 总票数 = 全款金额 / 单价(1)
       // 保留原有的 price_comparisons，不要覆盖
       price_comparisons: formData.price_comparisons || [],
     });
     setShowSkuSelector(false);
-    alert('已从库存商品导入信息');
+    alert('已从库存商品导入信息（单价默认为1，总票数=' + Math.round(originalPrice) + '）');
   };
 
   const fetchProducts = async () => {
@@ -229,6 +232,13 @@ export default function GroupBuyProductManagementPage() {
 
   const handleEdit = (product: GroupBuyProduct) => {
     setEditingProduct(product);
+    // 确保 image_urls 始终是数组
+    const imageUrls = Array.isArray(product.image_urls) 
+      ? product.image_urls 
+      : (typeof product.image_urls === 'string' 
+        ? [product.image_urls] 
+        : (product.image_url ? [product.image_url] : []));
+    
     setFormData({
       name_zh: product.name_i18n?.zh || product.name || '',
       name_ru: product.name_i18n?.ru || '',
@@ -237,7 +247,7 @@ export default function GroupBuyProductManagementPage() {
       description_ru: product.description_i18n?.ru || '',
       description_tg: product.description_i18n?.tg || '',
       image_url: product.image_url || '',
-      image_urls: product.image_urls || [],
+      image_urls: imageUrls,
       original_price: product.original_price || 0,
       min_participants: product.min_participants || 3,
       max_participants: product.max_participants || 10,
@@ -252,6 +262,13 @@ export default function GroupBuyProductManagementPage() {
 
   const handleDuplicate = (product: GroupBuyProduct) => {
     setEditingProduct(null);
+    // 确保 image_urls 始终是数组
+    const imageUrls = Array.isArray(product.image_urls) 
+      ? product.image_urls 
+      : (typeof product.image_urls === 'string' 
+        ? [product.image_urls] 
+        : (product.image_url ? [product.image_url] : []));
+    
     setFormData({
       name_zh: (product.name_i18n?.zh || product.name || '') + ' (复制)',
       name_ru: (product.name_i18n?.ru || '') + ' (копия)',
@@ -260,7 +277,7 @@ export default function GroupBuyProductManagementPage() {
       description_ru: product.description_i18n?.ru || '',
       description_tg: product.description_i18n?.tg || '',
       image_url: product.image_url || '',
-      image_urls: product.image_urls || [],
+      image_urls: imageUrls,
       original_price: product.original_price || 0,
       min_participants: product.min_participants || 3,
       max_participants: product.max_participants || 10,
