@@ -353,6 +353,7 @@ export const LotteryForm: React.FC = () => {
         inventory_product_id: formData.inventory_product_id || null,
         full_purchase_enabled: formData.full_purchase_enabled,
         full_purchase_price: formData.full_purchase_price ? Number(formData.full_purchase_price) : null,
+        original_price: formData.full_purchase_price ? Number(formData.full_purchase_price) : 0,
       };
 
       let result;
