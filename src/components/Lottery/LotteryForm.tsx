@@ -215,7 +215,7 @@ export const LotteryForm: React.FC = () => {
           unlimited_purchase: data.max_per_user === null,
           currency: data.currency,
           status: data.status,
-          image_urls: data.image_url ? [data.image_url] : [],
+          image_urls: data.image_urls && data.image_urls.length > 0 ? data.image_urls : (data.image_url ? [data.image_url] : []),
           start_time: new Date(data.start_time).toISOString().slice(0, 16),
           price_comparisons: priceComparisons,
           inventory_product_id: data.inventory_product_id || null,
