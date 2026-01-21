@@ -82,7 +82,7 @@ export default function PickupStatsPage() {
         .from('prizes')
         .select('pickup_status');
 
-      if (prizesError) throw prizesError;
+      if (prizesError) {throw prizesError;}
 
       const lotteryStats = {
         total: prizes?.length || 0,
@@ -97,7 +97,7 @@ export default function PickupStatsPage() {
         .from('group_buy_results')
         .select('pickup_status');
 
-      if (groupBuyError) throw groupBuyError;
+      if (groupBuyError) {throw groupBuyError;}
 
       const groupBuyStats = {
         total: groupBuyResults?.length || 0,
@@ -112,7 +112,7 @@ export default function PickupStatsPage() {
         .from('full_purchase_orders')
         .select('pickup_status');
 
-      if (fullPurchaseError) throw fullPurchaseError;
+      if (fullPurchaseError) {throw fullPurchaseError;}
 
       const fullPurchaseStats = {
         total: fullPurchaseOrders?.length || 0,

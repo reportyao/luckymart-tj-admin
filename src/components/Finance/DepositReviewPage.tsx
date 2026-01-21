@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { toast } from 'react-hot-toast';
-import { Settings, Gift } from 'lucide-react';
+import { Gift } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -105,8 +105,8 @@ export const DepositReviewPage: React.FC = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY}`,
+            'apikey': import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
             'x-admin-id': admin!.id,
           },
           body: JSON.stringify({

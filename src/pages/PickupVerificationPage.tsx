@@ -45,8 +45,8 @@ interface PrizeInfo {
 
 // 获取本地化文本
 const getLocalizedText = (text: any): string => {
-  if (!text) return '';
-  if (typeof text === 'string') return text;
+  if (!text) {return '';}
+  if (typeof text === 'string') {return text;}
   return text.zh || text.ru || text.tg || '';
 };
 
@@ -302,7 +302,7 @@ const PickupVerificationPage: React.FC = () => {
 
   // 确认核销
   const handleVerify = async () => {
-    if (!prizeInfo) return;
+    if (!prizeInfo) {return;}
 
     // 检查状态
     if (prizeInfo.pickup_status !== 'PENDING_PICKUP' && prizeInfo.pickup_status !== 'PENDING') {
@@ -323,7 +323,7 @@ const PickupVerificationPage: React.FC = () => {
     setIsVerifying(true);
 
     try {
-      if (!admin) throw new Error('未登录');
+      if (!admin) {throw new Error('未登录');}
       const adminId = admin.id;
 
       // 根据来源类型确定表名
@@ -346,7 +346,7 @@ const PickupVerificationPage: React.FC = () => {
         .update(updateData)
         .eq('id', prizeInfo.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {throw updateError;}
 
       // 核销成功
       console.log('核销成功:', {

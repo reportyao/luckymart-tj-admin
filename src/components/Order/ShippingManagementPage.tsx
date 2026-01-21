@@ -84,7 +84,8 @@ export const ShippingManagementPage: React.FC = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'apikey': import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY}`,
             'x-admin-id': admin.id,
           },
           body: JSON.stringify({
@@ -125,7 +126,8 @@ export const ShippingManagementPage: React.FC = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'apikey': import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY}`,
             'x-admin-id': admin.id,
           },
           body: JSON.stringify({

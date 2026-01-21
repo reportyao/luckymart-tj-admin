@@ -84,8 +84,8 @@ const UserFinancialPage: React.FC = () => {
         headers: {
           'X-Admin-Id': JSON.parse(localStorage.getItem('admin_user') || '{}').id || '',
           'Content-Type': 'application/json',
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          'apikey': import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY}`
         }
       });
       const summaryData = await summaryResponse.json();
@@ -108,8 +108,8 @@ const UserFinancialPage: React.FC = () => {
         headers: {
           'X-Admin-Id': JSON.parse(localStorage.getItem('admin_user') || '{}').id || '',
           'Content-Type': 'application/json',
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          'apikey': import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY}`
         }
       });
       const transactionsData = await transactionsResponse.json();
@@ -137,8 +137,8 @@ const UserFinancialPage: React.FC = () => {
       const response = await fetch(exportUrl.toString(), {
         headers: {
           'X-Admin-Id': JSON.parse(localStorage.getItem('admin_user') || '{}').id || '',
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          'apikey': import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY}`
         }
       });
 

@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useSupabase } from './SupabaseContext';
-import { sha256 } from '../utils/sha256';
 
 interface AdminUser {
   id: string;

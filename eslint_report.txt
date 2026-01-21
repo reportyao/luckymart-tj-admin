@@ -1,0 +1,5 @@
+
+> luckymart-tj-admin@0.0.1 lint
+> eslint . --fix
+
+sh: 1: eslint: not found
