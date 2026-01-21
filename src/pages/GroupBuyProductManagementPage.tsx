@@ -468,18 +468,18 @@ export default function GroupBuyProductManagementPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {(products || []).map((product) => (
                 <tr key={product.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4">
                     <div className="flex items-center">
                       <img
                         src={product.image_url}
                         alt={product.name}
-                        className="h-10 w-10 rounded object-cover"
+                        className="h-10 w-10 rounded object-cover flex-shrink-0"
                       />
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
+                      <div className="ml-4 min-w-0 max-w-md">
+                        <div className="text-sm font-medium text-gray-900 truncate">
                           {product.name_i18n?.zh || product.name}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-gray-500 line-clamp-2">
                           {product.description_i18n?.zh || product.description}
                         </div>
                       </div>
