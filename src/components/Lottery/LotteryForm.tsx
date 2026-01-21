@@ -303,10 +303,10 @@ export const LotteryForm: React.FC = () => {
         : prev.image_urls,
       // 自动填充全款购买价格
       full_purchase_price: selectedProduct.original_price,
-      // 自动填充单价（建议为原价的1/100）
-      ticket_price: prev.ticket_price === 0 ? Math.round(selectedProduct.original_price / 100) : prev.ticket_price,
-      // 自动填充总票数（建议为100份）
-      total_tickets: prev.total_tickets === 0 ? 100 : prev.total_tickets,
+      // 自动填充单价（默认为1）
+      ticket_price: prev.ticket_price === 0 ? 1 : prev.ticket_price,
+      // 自动填充总票数（等于全款购买价格）
+      total_tickets: prev.total_tickets === 0 ? Math.round(selectedProduct.original_price / 1) : prev.total_tickets,
     }));
 
     toast.success('已自动填充商品信息！');
