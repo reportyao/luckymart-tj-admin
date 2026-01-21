@@ -326,17 +326,59 @@ export default function GroupBuyProductManagementPage() {
         return;
       }
 
+      // 检查是否有拼团订单
+      const { data: orders, error: ordersError } = await supabase
+        .from('group_buy_orders')
+        .select('id')
+        .eq('product_id', id)
+        .limit(1);
+
+      if (ordersError) {
+        console.error('Error checking orders:', ordersError);
+      }
+
+      if (orders && orders.length > 0) {
+        alert('该商品已有用户下单，无法删除。如需删除，请联系技术人员处理关联数据。');
+        return;
+      }
+
+      // 检查是否有拼团会话（包括已结束的）
+      const { data: allSessions, error: sessionsError } = await supabase
+        .from('group_buy_sessions')
+        .select('id')
+        .eq('product_id', id)
+        .limit(1);
+
+      if (sessionsError) {
+        console.error('Error checking sessions:', sessionsError);
+      }
+
+      if (allSessions && allSessions.length > 0) {
+        alert('该商品已有拼团会话记录，无法删除。如需删除，请联系技术人员处理关联数据。');
+        return;
+      }
+
+      // 如果没有任何关联数据，执行删除
       const { error } = await supabase
         .from('group_buy_products')
         .delete()
         .eq('id', id);
 
-      if (error) {throw error;}
+      if (error) {
+        // 如果仍然有外键约束错误，提供详细信息
+        if (error.code === '23503') {
+          alert(`删除失败：该商品仍有关联数据。\n\n详细信息：${error.message}\n\n请联系技术人员处理。`);
+        } else {
+          throw error;
+        }
+        return;
+      }
+      
       alert('商品删除成功');
       fetchProducts();
     } catch (error) {
       console.error('Failed to delete product:', error);
-      alert('删除商品失败');
+      alert(`删除商品失败：${error instanceof Error ? error.message : '未知错误'}`);
     }
   };
 
