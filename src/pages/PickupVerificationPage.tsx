@@ -150,6 +150,7 @@ const PickupVerificationPage: React.FC = () => {
           id,
           pickup_code,
           pickup_status,
+          logistics_status,
           expires_at,
           claimed_at,
           winner_id,
@@ -168,7 +169,7 @@ const PickupVerificationPage: React.FC = () => {
         if (groupBuyPrize.product_id) {
           const { data: productData } = await supabase
             .from('group_buy_products')
-            .select('title, image_url, original_price')
+            .select('name, title, image_url, original_price, group_price')
             .eq('id', groupBuyPrize.product_id)
             .maybeSingle();
           productInfo = productData;
@@ -180,7 +181,7 @@ const PickupVerificationPage: React.FC = () => {
           const { data: userData } = await supabase
             .from('users')
             .select('id, telegram_username, first_name, last_name, avatar_url')
-            .eq('telegram_id', groupBuyPrize.winner_id)
+            .eq('id', groupBuyPrize.winner_id)
             .maybeSingle();
           userInfo = userData;
         }
@@ -198,11 +199,11 @@ const PickupVerificationPage: React.FC = () => {
 
         setPrizeInfo({
           id: groupBuyPrize.id,
-          prize_name: getLocalizedText(productInfo?.title) || '拼团商品',
+          prize_name: productInfo?.name || getLocalizedText(productInfo?.title) || '拼团商品',
           prize_image: productInfo?.image_url || '',
-          prize_value: productInfo?.original_price || 0,
+          prize_value: productInfo?.group_price || productInfo?.original_price || 0,
           pickup_code: groupBuyPrize.pickup_code,
-          pickup_status: groupBuyPrize.pickup_status || 'PENDING_CLAIM',
+          pickup_status: groupBuyPrize.pickup_status || groupBuyPrize.logistics_status || 'PENDING_CLAIM',
           expires_at: groupBuyPrize.expires_at,
           claimed_at: groupBuyPrize.claimed_at,
           source_type: 'group_buy',
@@ -221,6 +222,7 @@ const PickupVerificationPage: React.FC = () => {
           order_number,
           pickup_code,
           pickup_status,
+          logistics_status,
           expires_at,
           claimed_at,
           user_id,
@@ -279,7 +281,7 @@ const PickupVerificationPage: React.FC = () => {
           prize_image: productImage,
           prize_value: productPrice,
           pickup_code: fullPurchaseOrder.pickup_code,
-          pickup_status: fullPurchaseOrder.pickup_status || 'PENDING_CLAIM',
+          pickup_status: fullPurchaseOrder.pickup_status || fullPurchaseOrder.logistics_status || 'PENDING_CLAIM',
           expires_at: fullPurchaseOrder.expires_at,
           claimed_at: fullPurchaseOrder.claimed_at,
           source_type: 'full_purchase',
@@ -305,8 +307,8 @@ const PickupVerificationPage: React.FC = () => {
     if (!prizeInfo) {return;}
 
     // 检查状态
-    if (prizeInfo.pickup_status !== 'PENDING_PICKUP' && prizeInfo.pickup_status !== 'PENDING') {
-      toast.error('该奖品状态不允许核销');
+    if (prizeInfo.pickup_status !== 'PENDING_PICKUP' && prizeInfo.pickup_status !== 'PENDING' && prizeInfo.pickup_status !== 'READY_FOR_PICKUP') {
+      toast.error('该奖品状态不允许核销: ' + prizeInfo.pickup_status);
       return;
     }
 
