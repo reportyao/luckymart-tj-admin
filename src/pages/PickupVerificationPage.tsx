@@ -339,6 +339,7 @@ const PickupVerificationPage: React.FC = () => {
       // 所有表都更新相同的字段
       const updateData: any = {
         pickup_status: 'PICKED_UP',
+        logistics_status: 'PICKED_UP',  // 同时更新logistics_status
         picked_up_at: new Date().toISOString(),
         picked_up_by: adminId,
       };
