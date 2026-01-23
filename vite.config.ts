@@ -40,9 +40,9 @@ export default defineConfig(({ mode }) => {
     
     // 确保环境变量在构建时可用
     define: {
-      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL || 'https://enndjqqststndfeivwof.supabase.co'),
-      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVubmRqcXFzdHN0bmRmZWl2d29mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI3ODMxNTksImV4cCI6MjA0ODM1OTE1OX0.Ks6h5_r5Hy7KIJqQxWqzVBXH0qYQPeXSfxZC0ksxMIo'),
-      'import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY': JSON.stringify(env.VITE_SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVubmRqcXFzdHN0bmRmZWl2d29mIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NzkyNDY0MiwiZXhwIjoyMDgzNTAwNjQyfQ.x77hm1bJapyVyb6OYimdlACNDVJPDqkm4DnTbvUbd8M'),
+      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL || 'https://zvouvjkrexowtujnqtna.supabase.co'),
+      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2b3V2amtyZXhvd3R1am5xdG5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5MjEzOTgsImV4cCI6MjA4MzQ5NzM5OH0.-fb0nWhyAMdmzKBIzNqV0gXoANT7rPMmwYCwiszd7jM'),
+      'import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY': JSON.stringify(env.VITE_SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2b3V2amtyZXhvd3R1am5xdG5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NzkyMTM5OCwiZXhwIjoyMDgzNDk3Mzk4fQ.9Dkzh2A1bmYF1NM_rxQInLhD_fPsBEFY-RwkEAJb_-I'),
     }
   }
 })
