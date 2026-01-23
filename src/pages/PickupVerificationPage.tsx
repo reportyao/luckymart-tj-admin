@@ -496,7 +496,7 @@ const PickupVerificationPage: React.FC = () => {
               <div className="mt-8 flex space-x-4">
                 <button
                   onClick={handleVerify}
-                  disabled={isVerifying || (prizeInfo.pickup_status !== 'PENDING_PICKUP' && prizeInfo.pickup_status !== 'PENDING')}
+                  disabled={isVerifying || (prizeInfo.pickup_status !== 'PENDING_PICKUP' && prizeInfo.pickup_status !== 'PENDING' && prizeInfo.pickup_status !== 'READY_FOR_PICKUP')}
                   className="flex-1 py-4 bg-green-600 text-white rounded-xl font-bold text-lg hover:bg-green-700 focus:ring-4 focus:ring-green-200 transition-all disabled:opacity-50 flex items-center justify-center"
                 >
                   {isVerifying ? (
