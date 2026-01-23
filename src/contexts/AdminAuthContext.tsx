@@ -144,8 +144,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         .from('admin_audit_logs')
         .insert({
           admin_id: adminUser.id,
-          action: 'login',
-          details: { username }
+          action: 'login'
         });
 
       // 保存到localStorage
