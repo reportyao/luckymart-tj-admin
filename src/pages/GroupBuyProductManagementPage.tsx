@@ -108,13 +108,14 @@ export default function GroupBuyProductManagementPage() {
       image_urls: Array.isArray(product.image_urls) ? product.image_urls : (product.image_url ? [product.image_url] : []),
       original_price: originalPrice,
       stock: product.stock || 100,
-      // 一键导入时：单价默认为1，总票数等于全款购买金额
-      min_participants: Math.round(originalPrice / 1), // 总票数 = 全款金额 / 单价(1)
+      // 一键导入时：参与人数默认为3
+      min_participants: 3,
+      max_participants: 3,
       // 保留原有的 price_comparisons，不要覆盖
       price_comparisons: formData.price_comparisons || [],
     });
     setShowSkuSelector(false);
-    alert('已从库存商品导入信息（单价默认为1，总票数=' + Math.round(originalPrice) + '）');
+    alert('已从库存商品导入信息（最少/最多参与人数默认为3）');
   };
 
   const fetchProducts = async () => {
