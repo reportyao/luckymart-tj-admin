@@ -306,8 +306,9 @@ const PickupVerificationPage: React.FC = () => {
   const handleVerify = async () => {
     if (!prizeInfo) {return;}
 
-    // 检查状态
-    if (prizeInfo.pickup_status !== 'PENDING_PICKUP' && prizeInfo.pickup_status !== 'PENDING' && prizeInfo.pickup_status !== 'READY_FOR_PICKUP') {
+    // 检查状态 - 允许多种待提货状态
+    const allowedStatuses = ['PENDING_PICKUP', 'PENDING', 'READY_FOR_PICKUP', 'PENDING_CLAIM'];
+    if (!allowedStatuses.includes(prizeInfo.pickup_status)) {
       toast.error('该奖品状态不允许核销: ' + prizeInfo.pickup_status);
       return;
     }
@@ -442,9 +443,9 @@ const PickupVerificationPage: React.FC = () => {
                 </div>
               </div>
               <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                (prizeInfo.pickup_status === 'PENDING_PICKUP' || prizeInfo.pickup_status === 'PENDING') ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-600'
+                (prizeInfo.pickup_status === 'PENDING_PICKUP' || prizeInfo.pickup_status === 'PENDING' || prizeInfo.pickup_status === 'READY_FOR_PICKUP') ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-600'
               }`}>
-                {(prizeInfo.pickup_status === 'PENDING_PICKUP' || prizeInfo.pickup_status === 'PENDING') ? '待提货' : prizeInfo.pickup_status}
+                {(prizeInfo.pickup_status === 'PENDING_PICKUP' || prizeInfo.pickup_status === 'PENDING' || prizeInfo.pickup_status === 'READY_FOR_PICKUP') ? '待提货' : prizeInfo.pickup_status}
               </div>
             </div>
 
@@ -497,7 +498,7 @@ const PickupVerificationPage: React.FC = () => {
               <div className="mt-8 flex space-x-4">
                 <button
                   onClick={handleVerify}
-                  disabled={isVerifying || (prizeInfo.pickup_status !== 'PENDING_PICKUP' && prizeInfo.pickup_status !== 'PENDING' && prizeInfo.pickup_status !== 'READY_FOR_PICKUP')}
+                  disabled={isVerifying || !['PENDING_PICKUP', 'PENDING', 'READY_FOR_PICKUP', 'PENDING_CLAIM'].includes(prizeInfo.pickup_status)}
                   className="flex-1 py-4 bg-green-600 text-white rounded-xl font-bold text-lg hover:bg-green-700 focus:ring-4 focus:ring-green-200 transition-all disabled:opacity-50 flex items-center justify-center"
                 >
                   {isVerifying ? (
