@@ -1,12 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Edit, Trash2, Eye, EyeOff, Package, History, ArrowUpDown } from 'lucide-react';
 import { MultiImageUpload } from '@/components/MultiImageUpload';
 import toast from 'react-hot-toast';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { useSupabase } from '@/contexts/SupabaseContext';
 
 interface InventoryProduct {
   id: string;
@@ -45,6 +41,7 @@ interface InventoryTransaction {
 }
 
 export default function InventoryProductManagementPage() {
+  const { supabase } = useSupabase();
   const [products, setProducts] = useState<InventoryProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);

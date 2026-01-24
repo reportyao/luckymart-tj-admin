@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { Users, Clock, Trophy, RefreshCw } from 'lucide-react';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { useSupabase } from '@/contexts/SupabaseContext';
 
 interface GroupBuySession {
   id: string;
@@ -52,6 +48,7 @@ const getProductImage = (product: GroupBuySession['product']): string => {
 };
 
 export default function GroupBuySessionManagementPage() {
+  const { supabase } = useSupabase();
   const [sessions, setSessions] = useState<GroupBuySession[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'active' | 'success' | 'timeout'>('active');

@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { Plus, Edit, Copy, Trash2, Eye, EyeOff } from 'lucide-react';
 import { MultiImageUpload } from '@/components/MultiImageUpload';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { useSupabase } from '@/contexts/SupabaseContext';
 
 interface PriceComparisonItem {
   platform: string;
@@ -48,6 +44,7 @@ interface GroupBuyProduct {
 }
 
 export default function GroupBuyProductManagementPage() {
+  const { supabase } = useSupabase();
   const [products, setProducts] = useState<GroupBuyProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);

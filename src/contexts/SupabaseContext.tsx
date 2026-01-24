@@ -38,11 +38,18 @@ function getSupabaseClient(): SupabaseClient<DB> {
       global: {
         headers: {
           'apikey': supabaseServiceRoleKey,
-          'Authorization': `Bearer ${supabaseServiceRoleKey}`
+          'Authorization': `Bearer ${supabaseServiceRoleKey}`,
+          'Prefer': 'return=representation'
         }
       },
       db: {
         schema: 'public'
+      },
+      // 确保使用 service_role 权限绕过 RLS
+      realtime: {
+        params: {
+          eventsPerSecond: 10
+        }
       }
     });
     
