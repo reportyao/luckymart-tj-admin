@@ -256,7 +256,7 @@ export default function PickupPointsPage() {
       const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
       const { error } = await supabase
         .from('pickup_points')
-        .update({ status: newStatus })
+        .update({ status: newStatus, is_active: newStatus === 'ACTIVE' })
         .eq('id', id);
 
       if (error) {throw error;}
