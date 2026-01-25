@@ -1,6 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL || ''
-const supabaseAnonKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY || ''
+const supabaseServiceKey = (import.meta as any).env.VITE_SUPABASE_SERVICE_KEY || ''
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// 管理后台使用 Service Role Key 以绕过 RLS 策略
+export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+})
