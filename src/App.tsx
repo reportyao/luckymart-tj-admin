@@ -39,6 +39,7 @@ import ShipmentBatchManagementPage from './pages/ShipmentBatchManagementPage';
 import OrderShipmentPage from './pages/OrderShipmentPage';
 import BatchArrivalConfirmPage from './pages/BatchArrivalConfirmPage';
 import BatchStatisticsPage from './pages/BatchStatisticsPage';
+import ErrorLogsPage from './pages/ErrorLogsPage';
 
 import { AdminAuthProvider, useAdminAuth } from './contexts/AdminAuthContext';
 import LoginPage from './pages/LoginPage';
@@ -123,6 +124,7 @@ function App(): JSX.Element {
             <NavLink to="/permission-management" label="权限管理" icon="🔐" />
             <NavLink to="/banner-management" label="Banner管理" icon="🖼️" />
             <NavLink to="/ai-management" label="AI管理" icon="🤖" />
+            <NavLink to="/error-logs" label="错误监控" icon="⚠️" />
             <NavLink to="/audit-logs" label="审计日志" icon="📋" />
           </nav>
         </div>
@@ -174,6 +176,7 @@ function App(): JSX.Element {
               <Route path="/draw-logs" element={<ProtectedRoute element={<DrawLogsPage />} requiredRole="admin" />} />
               <Route path="/banner-management" element={<ProtectedRoute element={<BannerManagementPage />} requiredRole="admin" />} />
               <Route path="/ai-management" element={<ProtectedRoute element={<AIManagementPage />} requiredRole="admin" />} />
+              <Route path="/error-logs" element={<ProtectedRoute element={<ErrorLogsPage />} requiredRole="admin" />} />
               <Route path="/audit-logs" element={<ProtectedRoute element={<PagePlaceholder title="Audit Logs" />} requiredRole="admin" />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
               <Route path="/forbidden" element={<ForbiddenPage />} />
