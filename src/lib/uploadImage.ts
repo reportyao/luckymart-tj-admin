@@ -1,8 +1,32 @@
 import { createClient } from '@supabase/supabase-js'
+import imageCompression from 'browser-image-compression'
 
 const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL || ''
 const supabaseServiceKey = (import.meta as any).env.VITE_SUPABASE_SERVICE_ROLE_KEY || ''
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+/**
+ * 压缩图片
+ * @param file 原始图片文件
+ * @returns 压缩后的图片文件
+ */
+async function compressImage(file: File): Promise<File> {
+  const options = {
+    maxSizeMB: 1, // 最大文件大小1MB
+    maxWidthOrHeight: 1920, // 最大宽度或高度
+    useWebWorker: true,
+    fileType: 'image/jpeg' as const, // 统一转换为JPEG格式以获得更好的压缩率
+  }
+  
+  try {
+    const compressedFile = await imageCompression(file, options)
+    console.log(`图片压缩: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`)
+    return compressedFile
+  } catch (error) {
+    console.warn('图片压缩失败，使用原图:', error)
+    return file
+  }
+}
 
 /**
  * 上传图片到Supabase Storage
@@ -17,17 +41,20 @@ export async function uploadImage(
   folder?: string
 ): Promise<string> {
   try {
-    // 生成唯一文件名
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+    // 压缩图片
+    const compressedFile = await compressImage(file)
+    
+    // 生成唯一文件名 (统一使用.jpg扩展名)
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`
     const filePath = folder ? `${folder}/${fileName}` : fileName
 
     // 上传文件
     const { error } = await supabase.storage
       .from(bucket)
-      .upload(filePath, file, {
+      .upload(filePath, compressedFile, {
         cacheControl: '3600',
-        upsert: false
+        upsert: false,
+        contentType: 'image/jpeg'
       })
 
     if (error) {

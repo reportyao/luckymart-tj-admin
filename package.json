@@ -34,6 +34,7 @@
     "@radix-ui/react-switch": "^1.2.6",
     "@twa-dev/sdk": "^8.0.2",
     "array-move": "^4.0.0",
+    "browser-image-compression": "^2.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "express": "^4.21.2",
