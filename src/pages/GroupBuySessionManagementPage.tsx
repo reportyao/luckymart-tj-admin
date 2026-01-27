@@ -25,6 +25,12 @@ interface GroupBuySession {
     user_id: string;
     amount: number;
     created_at: string;
+    user: {
+      id: string;
+      username: string | null;
+      first_name: string | null;
+      last_name: string | null;
+    } | null;
   }>;
 }
 
@@ -45,6 +51,17 @@ const getProductImage = (product: GroupBuySession['product']): string => {
   if (product.image_url) {return product.image_url;}
   if (product.image_urls && product.image_urls.length > 0) {return product.image_urls[0];}
   return '';
+};
+
+// 获取用户显示名称
+const getUserDisplayName = (user: { username: string | null; first_name: string | null; last_name: string | null } | null | undefined, userId: string): string => {
+  if (!user) {return `用户 ${userId.slice(0, 8)}...`;}
+  // 优先使用 username，然后是 first_name + last_name
+  if (user.username) {return user.username;}
+  if (user.first_name || user.last_name) {
+    return `${user.first_name || ''} ${user.last_name || ''}`.trim();
+  }
+  return `用户 ${userId.slice(0, 8)}...`;
 };
 
 export default function GroupBuySessionManagementPage() {
@@ -72,7 +89,7 @@ export default function GroupBuySessionManagementPage() {
         .select(`
           *,
           product:group_buy_products!product_id(title, name, name_i18n, image_url, image_urls, price_per_person),
-          orders:group_buy_orders!session_id(id, user_id, amount, created_at)
+          orders:group_buy_orders!session_id(id, user_id, amount, created_at, user:users!user_id(id, username, first_name, last_name))
         `)
         .order('created_at', { ascending: false });
 
@@ -210,7 +227,10 @@ export default function GroupBuySessionManagementPage() {
           {(sessions || []).map((session) => {
             const productTitle = getProductTitle(session.product);
             const productImage = getProductImage(session.product);
-            const pricePerPerson = session.product?.price_per_person || 0;
+            // 使用订单的实际金额作为人均价格
+            const pricePerPerson = session.orders && session.orders.length > 0 
+              ? session.orders[0].amount 
+              : (session.product?.price_per_person || 0);
             
             return (
               <div key={session.id} className="bg-white rounded-lg shadow-md p-6">
@@ -285,7 +305,7 @@ export default function GroupBuySessionManagementPage() {
                                 <Trophy className="w-4 h-4" />
                               )}
                               <span className="font-medium">{index + 1}.</span>
-                              <span>用户 #{index + 1}</span>
+                              <span>{getUserDisplayName(order.user, order.user_id)}</span>
                             </div>
                           ))}
                         </div>
