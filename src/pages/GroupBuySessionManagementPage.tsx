@@ -100,6 +100,11 @@ export default function GroupBuySessionManagementPage() {
       const { data, error } = await query;
 
       if (error) {throw error;}
+      console.log('=== Fetched sessions data ===', data);
+      if (data && data.length > 0) {
+        console.log('First session:', data[0]);
+        console.log('First session orders:', data[0].orders);
+      }
       setSessions(data || []);
     } catch (error) {
       console.error('Failed to fetch sessions:', error);
