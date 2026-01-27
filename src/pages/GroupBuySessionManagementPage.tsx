@@ -27,7 +27,8 @@ interface GroupBuySession {
     created_at: string;
     user: {
       id: string;
-      username: string | null;
+      telegram_username: string | null;
+      display_name: string | null;
       first_name: string | null;
       last_name: string | null;
     } | null;
@@ -54,10 +55,10 @@ const getProductImage = (product: GroupBuySession['product']): string => {
 };
 
 // 获取用户显示名称
-const getUserDisplayName = (user: { username: string | null; first_name: string | null; last_name: string | null } | null | undefined, userId: string): string => {
+const getUserDisplayName = (user: { telegram_username?: string | null; display_name?: string | null; first_name: string | null; last_name: string | null } | null, userId: string) => {
   if (!user) {return `用户 ${userId.slice(0, 8)}...`;}
-  // 优先使用 username，然后是 first_name + last_name
-  if (user.username) {return user.username;}
+  if (user.display_name) {return user.display_name;}
+  if (user.telegram_username) {return `@${user.telegram_username}`;}
   if (user.first_name || user.last_name) {
     return `${user.first_name || ''} ${user.last_name || ''}`.trim();
   }
@@ -89,7 +90,7 @@ export default function GroupBuySessionManagementPage() {
         .select(`
           *,
           product:group_buy_products!product_id(title, name, name_i18n, image_url, image_urls, price_per_person),
-          orders:group_buy_orders!session_id(id, user_id, amount, created_at, user:users!user_id(id, username, first_name, last_name))
+          orders:group_buy_orders!session_id(id, user_id, amount, created_at, user:users!user_id(id, telegram_username, display_name, first_name, last_name))
         `)
         .order('created_at', { ascending: false });
 
