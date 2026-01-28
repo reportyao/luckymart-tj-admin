@@ -1,0 +1,274 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  /* TezBarakat Brand Colors */
+  --color-tez-green: #0D5C3D;
+  --color-tez-green-light: #15803D;
+  --color-tez-green-dark: #064E3B;
+  --color-tez-gold: #D4AF37;
+  --color-tez-gold-light: #F5D76E;
+  --color-tez-gold-dark: #B8860B;
+}
+
+:root {
+  /* TezBarakat Brand Theme - Silk Road Luxury */
+  --primary: oklch(0.45 0.12 160);
+  --primary-foreground: oklch(0.98 0.01 90);
+  --sidebar-primary: oklch(0.45 0.12 160);
+  --sidebar-primary-foreground: oklch(0.98 0.01 90);
+  --chart-1: oklch(0.55 0.15 160);
+  --chart-2: oklch(0.65 0.12 85);
+  --chart-3: oklch(0.45 0.12 160);
+  --chart-4: oklch(0.75 0.15 85);
+  --chart-5: oklch(0.35 0.10 160);
+  --radius: 0.75rem;
+  --background: oklch(0.995 0.005 90);
+  --foreground: oklch(0.20 0.02 160);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.20 0.02 160);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.20 0.02 160);
+  --secondary: oklch(0.96 0.01 90);
+  --secondary-foreground: oklch(0.35 0.05 160);
+  --muted: oklch(0.94 0.01 90);
+  --muted-foreground: oklch(0.50 0.03 160);
+  --accent: oklch(0.75 0.15 85);
+  --accent-foreground: oklch(0.20 0.02 30);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.90 0.02 160);
+  --input: oklch(0.92 0.01 160);
+  --ring: oklch(0.45 0.12 160);
+  --sidebar: oklch(0.98 0.005 90);
+  --sidebar-foreground: oklch(0.20 0.02 160);
+  --sidebar-accent: oklch(0.94 0.02 160);
+  --sidebar-accent-foreground: oklch(0.20 0.02 160);
+  --sidebar-border: oklch(0.90 0.02 160);
+  --sidebar-ring: oklch(0.45 0.12 160);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [type="button"]:not(:disabled),
+  [type="submit"]:not(:disabled),
+  [type="reset"]:not(:disabled),
+  a[href],
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled) {
+    @apply cursor-pointer;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 700;
+  }
+}
+
+@layer components {
+  .container {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .flex {
+    min-height: 0;
+    min-width: 0;
+  }
+
+  @media (min-width: 640px) {
+    .container {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container {
+      padding-left: 2rem;
+      padding-right: 2rem;
+      max-width: 1280px;
+    }
+  }
+
+  /* TezBarakat Custom Components */
+  .tez-gradient-green {
+    background: linear-gradient(135deg, #0D5C3D 0%, #15803D 50%, #064E3B 100%);
+  }
+
+  .tez-gradient-gold {
+    background: linear-gradient(135deg, #D4AF37 0%, #F5D76E 50%, #B8860B 100%);
+  }
+
+  .tez-card {
+    @apply bg-white rounded-xl shadow-md border border-border/50;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .tez-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px -5px rgba(13, 92, 61, 0.15);
+  }
+
+  .tez-btn-primary {
+    @apply px-6 py-3 rounded-lg font-semibold text-white;
+    background: linear-gradient(135deg, #0D5C3D 0%, #15803D 100%);
+    transition: all 0.2s ease;
+  }
+
+  .tez-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px -3px rgba(13, 92, 61, 0.4);
+  }
+
+  .tez-btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .tez-btn-gold {
+    @apply px-6 py-3 rounded-lg font-semibold;
+    background: linear-gradient(135deg, #D4AF37 0%, #F5D76E 50%, #B8860B 100%);
+    color: #1a1a1a;
+    transition: all 0.2s ease;
+  }
+
+  .tez-btn-gold:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px -3px rgba(212, 175, 55, 0.5);
+  }
+
+  .tez-section-title {
+    @apply text-2xl md:text-3xl font-bold text-center mb-2;
+    color: #0D5C3D;
+  }
+
+  .tez-section-subtitle {
+    @apply text-base text-center text-muted-foreground mb-8;
+  }
+
+  /* Geometric Pattern Decoration */
+  .tez-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230D5C3D' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  /* Copy Button Animation */
+  .copy-success {
+    animation: copyPulse 0.3s ease;
+  }
+
+  @keyframes copyPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+
+  /* Skeleton Loading for Weak Network */
+  .skeleton {
+    @apply animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200;
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+  }
+
+  @keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Lazy Load Image Placeholder */
+  .img-placeholder {
+    @apply bg-gray-100 flex items-center justify-center;
+    min-height: 100px;
+  }
+
+  /* Bottom Navigation */
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 bg-white border-t border-border;
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 50;
+  }
+
+  .bottom-nav-item {
+    @apply flex flex-col items-center justify-center py-2 px-3 text-xs;
+    color: #6b7280;
+    transition: color 0.2s ease;
+  }
+
+  .bottom-nav-item.active {
+    color: #0D5C3D;
+  }
+
+  .bottom-nav-item svg {
+    @apply w-6 h-6 mb-1;
+  }
+}
+
+/* Performance: Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Low bandwidth mode styles */
+.low-bandwidth .img-lazy {
+  display: none;
+}
+
+.low-bandwidth .img-placeholder-text {
+  display: block;
+}
