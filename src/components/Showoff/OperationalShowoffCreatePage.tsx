@@ -11,7 +11,7 @@ import { MultiImageUpload } from '../MultiImageUpload';
 import { SingleImageUpload } from '../SingleImageUpload';
 import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Loader2, Sparkles, User, Image, Gift, ThumbsUp, MessageCircle, Calendar } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles, User, Image, Gift, ThumbsUp, Calendar } from 'lucide-react';
 
 interface Lottery {
   id: string;
@@ -35,7 +35,7 @@ export const OperationalShowoffCreatePage: React.FC = () => {
   const [title, setTitle] = useState('');
   const [rewardCoins, setRewardCoins] = useState<number>(0);
   const [likesCount, setLikesCount] = useState<number | ''>('');
-  const [commentsCount, setCommentsCount] = useState<number | ''>('');
+
   const [createdAt, setCreatedAt] = useState('');
 
   // ========== 商品列表状态 ==========
@@ -129,7 +129,7 @@ export const OperationalShowoffCreatePage: React.FC = () => {
             title: title.trim() || null,
             reward_coins: rewardCoins || 0,
             likes_count: likesCount !== '' ? likesCount : null,
-            comments_count: commentsCount !== '' ? commentsCount : null,
+
             created_at: createdAt || null,
           }),
         }
@@ -152,7 +152,7 @@ export const OperationalShowoffCreatePage: React.FC = () => {
       setTitle('');
       setRewardCoins(0);
       setLikesCount('');
-      setCommentsCount('');
+
       setCreatedAt('');
 
       // 可选: 跳转到晒单列表
@@ -347,8 +347,8 @@ export const OperationalShowoffCreatePage: React.FC = () => {
 
             <MultiImageUpload
               label="晒单图片 *"
-              bucket="showoff-images"
-              folder="operational"
+              bucket="lottery-images"
+              folder="operational-showoff"
               maxImages={9}
               imageUrls={images}
               onImageUrlsChange={setImages}
@@ -368,7 +368,7 @@ export const OperationalShowoffCreatePage: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="rewardCoins" className="flex items-center space-x-1">
                   <Gift className="w-4 h-4 text-amber-500" />
@@ -404,25 +404,6 @@ export const OperationalShowoffCreatePage: React.FC = () => {
                 />
                 <p className="text-xs text-gray-500">
                   留空则随机 20-100
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="commentsCount" className="flex items-center space-x-1">
-                  <MessageCircle className="w-4 h-4 text-blue-500" />
-                  <span>初始评论数</span>
-                </Label>
-                <Input
-                  id="commentsCount"
-                  type="number"
-                  min="0"
-                  max="999"
-                  placeholder="随机生成"
-                  value={commentsCount}
-                  onChange={(e) => setCommentsCount(e.target.value ? parseInt(e.target.value) : '')}
-                />
-                <p className="text-xs text-gray-500">
-                  留空则随机 3-18
                 </p>
               </div>
 
