@@ -13,6 +13,7 @@ import AlgorithmConfigPage from './pages/AlgorithmConfigPage'
 import { WithdrawalReviewPage } from './components/Finance/WithdrawalReviewPage'
 import { ShippingManagementPage } from './components/Order/ShippingManagementPage'
 import { ShowoffReviewPage } from './components/Showoff/ShowoffReviewPage'
+import { OperationalShowoffCreatePage } from './components/Showoff/OperationalShowoffCreatePage'
 import { Toaster } from 'react-hot-toast'
 import { useState } from 'react'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -114,6 +115,7 @@ function App(): JSX.Element {
             <NavLink to="/pickup-stats" label="核销统计" icon="📈" />
             <NavLink to="/pending-pickups" label="待核销列表" icon="📋" />
             <NavLink to="/showoff-review" label="晒单审核" icon="📸" />
+            <NavLink to="/showoff-create" label="运营晒单" icon="✨" />
             <NavLink to="/resale-management" label="转售管理" icon="🔄" />
             <NavLink to="/payment-config" label="支付配置" icon="⚙️" />
             <NavLink to="/commission-config" label="佣金配置" icon="💵" />
@@ -164,6 +166,7 @@ function App(): JSX.Element {
               <Route path="/pickup-stats" element={<ProtectedRoute element={<PickupStatsPage />} requiredRole="admin" />} />
               <Route path="/pending-pickups" element={<ProtectedRoute element={<PendingPickupsPage />} requiredRole="admin" />} />
               <Route path="/showoff-review" element={<ProtectedRoute element={<ShowoffReviewPage />} requiredRole="admin" />} />
+              <Route path="/showoff-create" element={<ProtectedRoute element={<OperationalShowoffCreatePage />} requiredRole="admin" />} />
               <Route path="/resale-management" element={<ProtectedRoute element={<ResaleManagementPage />} requiredRole="admin" />} />
           <Route path="/admin-management" element={<ProtectedRoute element={<AdminManagementPage />} requiredRole="super_admin" />} />
           <Route path="/permission-management" element={<ProtectedRoute element={<PermissionManagementPage />} requiredRole="super_admin" />} />
