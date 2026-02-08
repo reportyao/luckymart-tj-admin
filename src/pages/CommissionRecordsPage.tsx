@@ -21,12 +21,14 @@ interface CommissionRecord {
     display_name: string;
     first_name: string;
     telegram_id: string;
+    telegram_username: string | null;
   };
   from_user?: {
     id: string;
     display_name: string;
     first_name: string;
     telegram_id: string;
+    telegram_username: string | null;
   };
 }
 
@@ -80,7 +82,7 @@ export default function CommissionRecordsPage() {
       // 查询用户信息 - 使用正确的字段名
       const { data: usersData } = await supabase
         .from('users')
-        .select('id, display_name, first_name, telegram_id')
+        .select('id, display_name, first_name, telegram_id, telegram_username')
         .in('id', Array.from(userIds));
 
       // 组装数据
@@ -113,7 +115,7 @@ export default function CommissionRecordsPage() {
       const { data: users, error: userError } = await supabase
         .from('users')
         .select('id')
-        .or(`display_name.ilike.%${searchTerm}%,first_name.ilike.%${searchTerm}%,telegram_id.ilike.%${searchTerm}%`);
+        .or(`display_name.ilike.%${searchTerm}%,first_name.ilike.%${searchTerm}%,telegram_id.ilike.%${searchTerm}%,telegram_username.ilike.%${searchTerm}%`);
 
       if (userError) {throw userError;}
 
@@ -138,7 +140,7 @@ export default function CommissionRecordsPage() {
 
       const { data: usersData } = await supabase
         .from('users')
-        .select('id, display_name, first_name, telegram_id')
+        .select('id, display_name, first_name, telegram_id, telegram_username')
         .in('id', Array.from(allUserIds));
 
       const recordsWithUsers = data?.map(commission => ({
@@ -187,7 +189,7 @@ export default function CommissionRecordsPage() {
   // 获取用户显示名称
   const getUserDisplayName = (user: CommissionRecord['user']) => {
     if (!user) {return '-';}
-    return user.display_name || user.first_name || user.telegram_id || '-';
+    return user.display_name || user.telegram_username || user.first_name || user.telegram_id || '-';
   };
 
   const exportData = () => {

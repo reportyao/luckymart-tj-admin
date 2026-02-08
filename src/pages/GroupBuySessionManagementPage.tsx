@@ -18,7 +18,7 @@ interface GroupBuySession {
     name_i18n: { zh: string; ru: string; tg: string } | null;
     image_url: string | null;
     image_urls: string[] | null;
-    price_per_person: number;
+    group_price: number;
   } | null;
   orders: Array<{
     id: string;
@@ -28,7 +28,6 @@ interface GroupBuySession {
     user: {
       id: string;
       telegram_username: string | null;
-      display_name: string | null;
       first_name: string | null;
       last_name: string | null;
     } | null;
@@ -55,10 +54,10 @@ const getProductImage = (product: GroupBuySession['product']): string => {
 };
 
 // 获取用户显示名称
-const getUserDisplayName = (user: { telegram_username?: string | null; display_name?: string | null; first_name: string | null; last_name: string | null } | null, userId: string) => {
+const getUserDisplayName = (user: { telegram_username: string | null; first_name: string | null; last_name: string | null } | null | undefined, userId: string): string => {
   if (!user) {return `用户 ${userId.slice(0, 8)}...`;}
-  if (user.display_name) {return user.display_name;}
-  if (user.telegram_username) {return `@${user.telegram_username}`;}
+  // 优先使用 telegram_username，然后是 first_name + last_name
+  if (user.telegram_username) {return user.telegram_username;}
   if (user.first_name || user.last_name) {
     return `${user.first_name || ''} ${user.last_name || ''}`.trim();
   }
@@ -89,8 +88,8 @@ export default function GroupBuySessionManagementPage() {
         .from('group_buy_sessions')
         .select(`
           *,
-          product:group_buy_products!product_id(title, name, name_i18n, image_url, image_urls, price_per_person),
-          orders:group_buy_orders!session_id(id, user_id, amount, created_at, user:users!user_id(id, telegram_username, display_name, first_name, last_name))
+          product:group_buy_products!product_id(title, name, name_i18n, image_url, image_urls, group_price),
+          orders:group_buy_orders!session_id(id, user_id, amount, created_at, user:users!user_id(id, telegram_username, first_name, last_name))
         `)
         .order('created_at', { ascending: false });
 
@@ -101,11 +100,6 @@ export default function GroupBuySessionManagementPage() {
       const { data, error } = await query;
 
       if (error) {throw error;}
-      console.log('=== Fetched sessions data ===', data);
-      if (data && data.length > 0) {
-        console.log('First session:', data[0]);
-        console.log('First session orders:', data[0].orders);
-      }
       setSessions(data || []);
     } catch (error) {
       console.error('Failed to fetch sessions:', error);
@@ -236,7 +230,7 @@ export default function GroupBuySessionManagementPage() {
             // 使用订单的实际金额作为人均价格
             const pricePerPerson = session.orders && session.orders.length > 0 
               ? session.orders[0].amount 
-              : (session.product?.price_per_person || 0);
+              : (session.product?.group_price || 0);
             
             return (
               <div key={session.id} className="bg-white rounded-lg shadow-md p-6">

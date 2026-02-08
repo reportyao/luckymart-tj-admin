@@ -17,6 +17,8 @@ export default defineConfig(({ mode }) => {
       allowedHosts: [
         'admin.seardao.org',
         '47.243.83.253',
+        '47.82.73.79',
+        'tezbarakat.com',
         'localhost'
       ],
     },
