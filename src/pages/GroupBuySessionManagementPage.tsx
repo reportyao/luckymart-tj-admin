@@ -18,7 +18,7 @@ interface GroupBuySession {
     name_i18n: { zh: string; ru: string; tg: string } | null;
     image_url: string | null;
     image_urls: string[] | null;
-    price_per_person: number;
+    group_price: number;
   } | null;
   orders: Array<{
     id: string;
@@ -88,7 +88,7 @@ export default function GroupBuySessionManagementPage() {
         .from('group_buy_sessions')
         .select(`
           *,
-          product:group_buy_products!product_id(title, name, name_i18n, image_url, image_urls, price_per_person),
+          product:group_buy_products!product_id(title, name, name_i18n, image_url, image_urls, group_price),
           orders:group_buy_orders!session_id(id, user_id, amount, created_at, user:users!user_id(id, username, first_name, last_name))
         `)
         .order('created_at', { ascending: false });
@@ -230,7 +230,7 @@ export default function GroupBuySessionManagementPage() {
             // 使用订单的实际金额作为人均价格
             const pricePerPerson = session.orders && session.orders.length > 0 
               ? session.orders[0].amount 
-              : (session.product?.price_per_person || 0);
+              : (session.product?.group_price || 0);
             
             return (
               <div key={session.id} className="bg-white rounded-lg shadow-md p-6">
