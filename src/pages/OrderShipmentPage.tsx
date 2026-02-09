@@ -586,7 +586,7 @@ export default function OrderShipmentPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {activeBatches.length === 0 ? (
-                    <SelectItem value="" disabled>
+                    <SelectItem value="__placeholder__" disabled>
                       暂无可用批次，请先创建批次
                     </SelectItem>
                   ) : (

@@ -77,16 +77,19 @@ export const LotteryListPage: React.FC = () => {
     if (!window.confirm('确定要立即开奖吗？开奖后将无法修改。')) {return;}
 
     try {
-      // 假设存在一个 Supabase RPC 或 Edge Function 来执行开奖逻辑
-      const { data, error } = await supabase.rpc('draw_lottery', { p_lottery_id: id });
+      // 统一使用 auto-lottery-draw Edge Function 执行开奖逻辑
+      const { data, error } = await supabase.functions.invoke('auto-lottery-draw', {
+        body: { lotteryId: id }
+      });
 
       if (error) {throw error;}
+      if (!data?.success) {throw new Error(data?.error || '开奖失败');}
 
-      toast.success(`积分商城 ${id} 开奖成功! 中奖号码: ${(data as any).winning_number}`);
+      toast.success(`积分商城开奖成功! 中奖号码: ${data.winningNumber}`);
       fetchLotteries(); // 刷新列表
     } catch (error: any) {
       toast.error(`开奖失败: ${error.message}`);
-      console.error('Error drawing lottery:', error);
+      console.error('[Admin] Error drawing lottery:', error);
     }
   };
 
@@ -222,12 +225,12 @@ export const LotteryListPage: React.FC = () => {
                     </TableCell>
                     <TableCell>{formatDateTime(lottery.start_time)}</TableCell>
                     <TableCell className="flex space-x-2">
-                      {(lottery.status === 'ACTIVE' && new Date(lottery.end_time) < new Date()) && lottery.status !== 'DRAWN' && (
+                      {(lottery.status === 'SOLD_OUT' || (lottery.status === 'ACTIVE' && lottery.sold_tickets >= lottery.total_tickets)) && (
                         <Button variant="default" size="sm" onClick={() => handleDraw(lottery.id)}>
                           立即开奖
                         </Button>
                       )}
-                      {lottery.status === 'DRAWN' && (
+                      {lottery.status === 'COMPLETED' && (
                         <Button variant="outline" size="sm" onClick={() => handleViewResult(lottery.id)}>
                           查看结果
                         </Button>
