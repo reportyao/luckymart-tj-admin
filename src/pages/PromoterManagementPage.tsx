@@ -314,6 +314,28 @@ export default function PromoterManagementPage() {
     else if (activeTab === 'points') fetchPoints();
   }, [activeTab, fetchPromoters, fetchTeams, fetchPoints]);
 
+  // Always load teams and points on mount (needed for dropdown menus in promoter dialogs)
+  useEffect(() => {
+    const loadDropdownData = async () => {
+      try {
+        const { data: tData } = await supabase
+          .from('promoter_teams')
+          .select('id, name, leader_user_id, created_at')
+          .order('created_at', { ascending: false });
+        if (tData && tData.length > 0) setTeams(prev => prev.length === 0 ? tData.map(t => ({ ...t, leader_name: '', member_count: 0 })) : prev);
+
+        const { data: pData } = await supabase
+          .from('promotion_points')
+          .select('id, name, address, latitude, longitude, area_size, point_status, created_at')
+          .order('created_at', { ascending: false });
+        if (pData && pData.length > 0) setPoints(prev => prev.length === 0 ? pData.map(p => ({ ...p, staff_count: 0 })) : prev);
+      } catch (err) {
+        console.error('Failed to load dropdown data:', err);
+      }
+    };
+    loadDropdownData();
+  }, [supabase]);
+
   // ============================================================
   // User Search (for adding promoters)
   // ============================================================
@@ -322,10 +344,17 @@ export default function PromoterManagementPage() {
     if (!newPromoterSearch.trim()) return;
     setSearchingUser(true);
     try {
+      // Sanitize input: remove special characters that could break PostgREST filter syntax
+      const sanitized = newPromoterSearch.trim().replace(/[,().'"\\]/g, '');
+      if (!sanitized) {
+        setSearchedUsers([]);
+        setSearchingUser(false);
+        return;
+      }
       const { data, error } = await supabase
         .from('users')
         .select('id, first_name, last_name, telegram_id, telegram_username, referral_code')
-        .or(`telegram_id.eq.${newPromoterSearch},telegram_username.ilike.%${newPromoterSearch}%,referral_code.eq.${newPromoterSearch}`)
+        .or(`telegram_id.eq.${sanitized},telegram_username.ilike.%${sanitized}%,referral_code.eq.${sanitized}`)
         .limit(10);
 
       if (error) throw error;
@@ -639,6 +668,14 @@ export default function PromoterManagementPage() {
   // Export
   // ============================================================
 
+  const csvEscape = (val: any): string => {
+    const str = String(val ?? '');
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
   const exportPromoters = () => {
     const headers = ['姓名', 'Telegram ID', '邀请码', '团队', '点位', '状态', '日薪(TJS)', '入职日期'];
     const rows = promoters.map(p => [
@@ -651,7 +688,7 @@ export default function PromoterManagementPage() {
       p.daily_base_salary,
       p.hire_date || '--',
     ]);
-    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const csvContent = [headers.map(csvEscape).join(','), ...rows.map(r => r.map(csvEscape).join(','))].join('\n');
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);

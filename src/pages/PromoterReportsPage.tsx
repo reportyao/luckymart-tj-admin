@@ -291,7 +291,7 @@ export default function PromoterReportsPage() {
 
       const aggList = Object.values(aggMap)
         .filter(a => a.total_registrations > 0 || a.working_days > 0)
-        .sort((a, b) => b.total_registrations - a.registrations);
+        .sort((a, b) => b.total_registrations - a.total_registrations);
 
       setAggregatedReports(aggList);
 
@@ -381,6 +381,14 @@ export default function PromoterReportsPage() {
   // Export
   // ============================================================
 
+  const csvEscape = (val: any): string => {
+    const str = String(val ?? '');
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
   const exportReport = () => {
     let csvContent = '';
 
@@ -391,7 +399,7 @@ export default function PromoterReportsPage() {
         r.contacts, r.registrations, r.first_charges,
         r.first_charge_amount.toFixed(0), r.reg_rate, r.charge_rate,
       ]);
-      csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      csvContent = [headers.map(csvEscape).join(','), ...rows.map(r => r.map(csvEscape).join(','))].join('\n');
     } else if (reportView === 'summary') {
       const headers = ['姓名', '团队', '点位', '工作天数', '总接触', '总注册', '总首充', '总金额(TJS)', '日均注册', '注册率%', '充值率%', '日薪', '总薪资', '注册成本', '充值成本'];
       const rows = aggregatedReports.map(r => [
@@ -402,7 +410,7 @@ export default function PromoterReportsPage() {
         r.total_salary_cost.toFixed(0), r.cost_per_registration.toFixed(2),
         r.cost_per_charge.toFixed(2),
       ]);
-      csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      csvContent = [headers.map(csvEscape).join(','), ...rows.map(r => r.map(csvEscape).join(','))].join('\n');
     } else {
       const headers = ['团队', '人数', '总注册', '总充值', '总金额(TJS)', '总薪资(TJS)', '注册成本', '充值成本'];
       const rows = teamSummaries.map(r => [
@@ -410,7 +418,7 @@ export default function PromoterReportsPage() {
         r.total_charge_amount.toFixed(0), r.total_salary_cost.toFixed(0),
         r.cost_per_reg.toFixed(2), r.cost_per_charge.toFixed(2),
       ]);
-      csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      csvContent = [headers.map(csvEscape).join(','), ...rows.map(r => r.map(csvEscape).join(','))].join('\n');
     }
 
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
