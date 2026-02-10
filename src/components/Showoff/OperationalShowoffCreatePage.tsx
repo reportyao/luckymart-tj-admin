@@ -13,10 +13,10 @@ import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Loader2, Sparkles, User, Image, Gift, ThumbsUp, Calendar } from 'lucide-react';
 
-interface Lottery {
+interface InventoryProduct {
   id: string;
-  title: string;
-  title_i18n: any;
+  name: string;
+  name_i18n: any;
   image_url: string | null;
   status: string;
 }
@@ -39,46 +39,47 @@ export const OperationalShowoffCreatePage: React.FC = () => {
   const [createdAt, setCreatedAt] = useState('');
 
   // ========== 商品列表状态 ==========
-  const [lotteries, setLotteries] = useState<Lottery[]>([]);
-  const [isLoadingLotteries, setIsLoadingLotteries] = useState(false);
-  const [lotterySearchTerm, setLotterySearchTerm] = useState('');
+  const [products, setProducts] = useState<InventoryProduct[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [productSearchTerm, setProductSearchTerm] = useState('');
 
   // ========== 提交状态 ==========
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // ========== 加载商品列表 ==========
-  const fetchLotteries = useCallback(async () => {
-    setIsLoadingLotteries(true);
+  const fetchProducts = useCallback(async () => {
+    setIsLoadingProducts(true);
     try {
       const { data, error } = await supabase
-        .from('lotteries')
-        .select('id, title, title_i18n, image_url, status')
+        .from('inventory_products')
+        .select('id, name, name_i18n, image_url, status')
+        .eq('status', 'ACTIVE')
         .order('created_at', { ascending: false })
         .limit(100);
 
       if (error) throw error;
-      setLotteries(data || []);
+      setProducts(data || []);
     } catch (error: any) {
       console.error('加载商品列表失败:', error);
       toast.error('加载商品列表失败');
     } finally {
-      setIsLoadingLotteries(false);
+      setIsLoadingProducts(false);
     }
   }, [supabase]);
 
   useEffect(() => {
-    fetchLotteries();
-  }, [fetchLotteries]);
+    fetchProducts();
+  }, [fetchProducts]);
 
   // ========== 过滤商品列表 ==========
-  const filteredLotteries = lotteries.filter(lottery => {
-    if (!lotterySearchTerm) return true;
-    const searchLower = lotterySearchTerm.toLowerCase();
-    return lottery.title.toLowerCase().includes(searchLower);
+  const filteredProducts = products.filter(product => {
+    if (!productSearchTerm) return true;
+    const searchLower = productSearchTerm.toLowerCase();
+    return product.name.toLowerCase().includes(searchLower);
   });
 
   // ========== 获取选中商品的信息 ==========
-  const selectedLottery = lotteries.find(l => l.id === lotteryId);
+  const selectedProduct = products.find(p => p.id === lotteryId);
 
   // ========== 提交表单 ==========
   const handleSubmit = async (e: React.FormEvent) => {
@@ -245,57 +246,56 @@ export const OperationalShowoffCreatePage: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="lotterySearch">搜索商品</Label>
+              <Label htmlFor="productSearch">搜索商品</Label>
               <Input
-                id="lotterySearch"
+                id="productSearch"
                 placeholder="输入商品名称搜索..."
-                value={lotterySearchTerm}
-                onChange={(e) => setLotterySearchTerm(e.target.value)}
+                value={productSearchTerm}
+                onChange={(e) => setProductSearchTerm(e.target.value)}
               />
             </div>
             
-            {isLoadingLotteries ? (
+            {isLoadingProducts ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
-                {filteredLotteries.map((lottery) => (
+                {filteredProducts.map((product) => (
                   <div
-                    key={lottery.id}
-                    onClick={() => setLotteryId(lottery.id === lotteryId ? '' : lottery.id)}
+                    key={product.id}
+                    onClick={() => setLotteryId(product.id === lotteryId ? '' : product.id)}
                     className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                      lottery.id === lotteryId
+                      product.id === lotteryId
                         ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    {lottery.image_url && (
+                    {product.image_url && (
                       <img
-                        src={lottery.image_url}
-                        alt={lottery.title}
+                        src={product.image_url}
+                        alt={product.name}
                         className="w-full h-20 object-cover rounded mb-2"
                       />
                     )}
                     <p className="text-sm font-medium text-gray-900 truncate">
-                      {lottery.title}
+                      {product.name}
                     </p>
                     <span className={`text-xs px-1.5 py-0.5 rounded ${
-                      lottery.status === 'ACTIVE' ? 'bg-green-100 text-green-700' :
-                      lottery.status === 'COMPLETED' ? 'bg-gray-100 text-gray-700' :
-                      'bg-yellow-100 text-yellow-700'
+                      product.status === 'ACTIVE' ? 'bg-green-100 text-green-700' :
+                      'bg-gray-100 text-gray-700'
                     }`}>
-                      {lottery.status}
+                      {product.status}
                     </span>
                   </div>
                 ))}
               </div>
             )}
 
-            {selectedLottery && (
+            {selectedProduct && (
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  已选择: <strong>{selectedLottery.title}</strong>
+                  已选择: <strong>{selectedProduct.name}</strong>
                 </p>
               </div>
             )}
