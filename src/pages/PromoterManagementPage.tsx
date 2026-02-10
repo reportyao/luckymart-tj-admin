@@ -26,6 +26,8 @@ import {
   Download,
   ChevronDown,
   ChevronUp,
+  ClipboardList,
+  Calendar,
 } from 'lucide-react';
 
 // ============================================================
@@ -68,6 +70,14 @@ interface PromotionPoint {
   point_status: 'active' | 'inactive';
   created_at: string;
   staff_count?: number;
+}
+
+interface DailyLog {
+  id?: string;
+  promoter_id: string;
+  log_date: string;
+  contact_count: number;
+  note: string;
 }
 
 type ActiveTab = 'promoters' | 'teams' | 'points';
@@ -118,6 +128,19 @@ export default function PromoterManagementPage() {
     daily_base_salary: 0,
     hire_date: new Date().toISOString().split('T')[0],
   });
+
+  // Daily log state
+  const [showDailyLog, setShowDailyLog] = useState(false);
+  const [dailyLogPromoter, setDailyLogPromoter] = useState<PromoterProfile | null>(null);
+  const [dailyLogForm, setDailyLogForm] = useState<DailyLog>({
+    promoter_id: '',
+    log_date: new Date().toISOString().split('T')[0],
+    contact_count: 0,
+    note: '',
+  });
+  const [dailyLogHistory, setDailyLogHistory] = useState<DailyLog[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [savingLog, setSavingLog] = useState(false);
 
   // ============================================================
   // Data Fetching
@@ -311,7 +334,7 @@ export default function PromoterManagementPage() {
       const existingIds = new Set(promoters.map(p => p.user_id));
       setSearchedUsers((data || []).filter(u => !existingIds.has(u.id)));
     } catch (err: any) {
-      toast.error('搜索用户失败: ' + err.message);
+      toast.error('搜索失败: ' + err.message);
     } finally {
       setSearchingUser(false);
     }
@@ -357,7 +380,6 @@ export default function PromoterManagementPage() {
           point_id: promoterForm.point_id || null,
           daily_base_salary: promoterForm.daily_base_salary,
           promoter_status: editingPromoter.promoter_status,
-          updated_at: new Date().toISOString(),
         })
         .eq('user_id', editingPromoter.user_id);
 
@@ -376,7 +398,7 @@ export default function PromoterManagementPage() {
     try {
       const { error } = await supabase
         .from('promoter_profiles')
-        .update({ promoter_status: newStatus, updated_at: new Date().toISOString() })
+        .update({ promoter_status: newStatus })
         .eq('user_id', promoter.user_id);
 
       if (error) throw error;
@@ -393,7 +415,7 @@ export default function PromoterManagementPage() {
     try {
       const { error } = await supabase
         .from('promoter_profiles')
-        .update({ promoter_status: 'dismissed', updated_at: new Date().toISOString() })
+        .update({ promoter_status: 'dismissed' })
         .eq('user_id', promoter.user_id);
 
       if (error) throw error;
@@ -403,6 +425,88 @@ export default function PromoterManagementPage() {
     } catch (err: any) {
       toast.error('操作失败: ' + err.message);
     }
+  };
+
+  // ============================================================
+  // Daily Log Operations
+  // ============================================================
+
+  const openDailyLog = async (promoter: PromoterProfile) => {
+    setDailyLogPromoter(promoter);
+    setDailyLogForm({
+      promoter_id: promoter.user_id,
+      log_date: new Date().toISOString().split('T')[0],
+      contact_count: 0,
+      note: '',
+    });
+    setShowDailyLog(true);
+    await fetchDailyLogs(promoter.user_id);
+  };
+
+  const fetchDailyLogs = async (promoterId: string) => {
+    setLoadingLogs(true);
+    try {
+      const { data, error } = await supabase
+        .from('promoter_daily_logs')
+        .select('*')
+        .eq('promoter_id', promoterId)
+        .order('log_date', { ascending: false })
+        .limit(14);
+
+      if (error) throw error;
+      setDailyLogHistory(data || []);
+    } catch (err: any) {
+      toast.error('加载日志失败: ' + err.message);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
+  const handleSaveDailyLog = async () => {
+    if (!dailyLogPromoter) return;
+    if (dailyLogForm.contact_count < 0) {
+      toast.error('接触人数不能为负数');
+      return;
+    }
+    setSavingLog(true);
+    try {
+      // Use upsert with the unique constraint (promoter_id, log_date)
+      const { error } = await supabase
+        .from('promoter_daily_logs')
+        .upsert(
+          {
+            promoter_id: dailyLogPromoter.user_id,
+            log_date: dailyLogForm.log_date,
+            contact_count: dailyLogForm.contact_count,
+            note: dailyLogForm.note,
+          },
+          { onConflict: 'promoter_id,log_date' }
+        );
+
+      if (error) throw error;
+
+      toast.success(`${dailyLogForm.log_date} 日志已保存`);
+      await fetchDailyLogs(dailyLogPromoter.user_id);
+      // Reset form for next entry but keep the promoter
+      setDailyLogForm(prev => ({
+        ...prev,
+        contact_count: 0,
+        note: '',
+      }));
+    } catch (err: any) {
+      toast.error('保存日志失败: ' + err.message);
+    } finally {
+      setSavingLog(false);
+    }
+  };
+
+  const handleEditDailyLog = (log: DailyLog) => {
+    setDailyLogForm({
+      promoter_id: log.promoter_id,
+      log_date: log.log_date,
+      contact_count: log.contact_count,
+      note: log.note || '',
+    });
   };
 
   // ============================================================
@@ -421,7 +525,6 @@ export default function PromoterManagementPage() {
           .update({
             name: teamForm.name,
             leader_user_id: teamForm.leader_user_id || null,
-            updated_at: new Date().toISOString(),
           })
           .eq('id', editingTeam.id);
         if (error) throw error;
@@ -451,7 +554,7 @@ export default function PromoterManagementPage() {
       // Clear team_id from promoter_profiles
       await supabase
         .from('promoter_profiles')
-        .update({ team_id: null, updated_at: new Date().toISOString() })
+        .update({ team_id: null })
         .eq('team_id', team.id);
 
       const { error } = await supabase
@@ -490,7 +593,7 @@ export default function PromoterManagementPage() {
       if (editingPoint) {
         const { error } = await supabase
           .from('promotion_points')
-          .update({ ...payload, updated_at: new Date().toISOString() })
+          .update(payload)
           .eq('id', editingPoint.id);
         if (error) throw error;
         toast.success('点位更新成功');
@@ -515,7 +618,7 @@ export default function PromoterManagementPage() {
     try {
       await supabase
         .from('promoter_profiles')
-        .update({ point_id: null, updated_at: new Date().toISOString() })
+        .update({ point_id: null })
         .eq('point_id', point.id);
 
       const { error } = await supabase
@@ -720,6 +823,14 @@ export default function PromoterManagementPage() {
                           <TableCell className="text-sm text-gray-600">{p.hire_date || '--'}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1">
+                              {/* Daily Log Button */}
+                              <button
+                                onClick={() => openDailyLog(p)}
+                                className="p-1.5 text-gray-400 hover:text-indigo-600 rounded"
+                                title="录入日志"
+                              >
+                                <ClipboardList className="w-4 h-4" />
+                              </button>
                               <button
                                 onClick={() => {
                                   setEditingPromoter(p);
@@ -1098,6 +1209,112 @@ export default function PromoterManagementPage() {
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setEditingPromoter(null)}>取消</Button>
               <Button onClick={handleUpdatePromoter}>保存</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ==================== Daily Log Dialog ==================== */}
+      <Dialog open={showDailyLog} onOpenChange={(open) => { if (!open) { setShowDailyLog(false); setDailyLogPromoter(null); } }}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardList className="w-5 h-5" />
+              代录工作日志
+            </DialogTitle>
+            <DialogDescription>
+              {dailyLogPromoter?.user_name} · {dailyLogPromoter?.referral_code || ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-5">
+            {/* Log Entry Form */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+              <h4 className="text-sm font-semibold text-blue-800">录入日志</h4>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    <Calendar className="w-3 h-3 inline mr-1" />日期
+                  </label>
+                  <input
+                    type="date"
+                    value={dailyLogForm.log_date}
+                    onChange={(e) => setDailyLogForm(prev => ({ ...prev, log_date: e.target.value }))}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">接触人数</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={dailyLogForm.contact_count}
+                    onChange={(e) => setDailyLogForm(prev => ({ ...prev, contact_count: parseInt(e.target.value) || 0 }))}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500"
+                    placeholder="0"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    size="sm"
+                    onClick={handleSaveDailyLog}
+                    disabled={savingLog}
+                    className="w-full"
+                  >
+                    {savingLog ? <RefreshCw className="w-3 h-3 animate-spin mr-1" /> : null}
+                    保存
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">备注（可选）</label>
+                <input
+                  type="text"
+                  value={dailyLogForm.note}
+                  onChange={(e) => setDailyLogForm(prev => ({ ...prev, note: e.target.value }))}
+                  placeholder="例如：天气不好人流少、换了新话术效果好..."
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <p className="text-xs text-blue-600">同一日期重复保存会自动覆盖（upsert），可放心修改。</p>
+            </div>
+
+            {/* Log History */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-2">最近14天日志</h4>
+              {loadingLogs ? (
+                <div className="flex items-center justify-center py-6">
+                  <RefreshCw className="w-5 h-5 animate-spin text-blue-600" />
+                </div>
+              ) : dailyLogHistory.length === 0 ? (
+                <div className="text-center py-6 text-gray-400 text-sm">
+                  暂无日志记录
+                </div>
+              ) : (
+                <div className="border rounded-lg divide-y max-h-60 overflow-y-auto">
+                  {dailyLogHistory.map(log => (
+                    <div
+                      key={log.id || log.log_date}
+                      className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                      onClick={() => handleEditDailyLog(log)}
+                    >
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm font-medium text-gray-900 w-24">{log.log_date}</span>
+                        <span className="text-sm">
+                          接触 <span className="font-semibold text-blue-600">{log.contact_count}</span> 人
+                        </span>
+                        {log.note && (
+                          <span className="text-xs text-gray-500 truncate max-w-[200px]">{log.note}</span>
+                        )}
+                      </div>
+                      <Edit className="w-3 h-3 text-gray-400" />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button variant="outline" onClick={() => { setShowDailyLog(false); setDailyLogPromoter(null); }}>关闭</Button>
             </div>
           </div>
         </DialogContent>

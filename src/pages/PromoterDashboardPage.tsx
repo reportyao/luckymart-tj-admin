@@ -1,23 +1,36 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSupabase } from '../contexts/SupabaseContext';
 import {
-  Users,
-  DollarSign,
-  UserPlus,
   TrendingUp,
+  UserPlus,
+  DollarSign,
+  Phone,
+  Award,
+  MapPin,
+  Users,
   RefreshCw,
   AlertCircle,
-  MapPin,
-  Award,
-  ArrowUpRight,
-  ArrowDownRight,
+  ArrowUp,
+  ArrowDown,
   Minus,
-  Phone,
 } from 'lucide-react';
 
 // ============================================================
 // Types
 // ============================================================
+
+type TimeRange = 'today' | 'week' | 'month';
+
+interface Summary {
+  total_registrations: number;
+  total_first_charges: number;
+  total_first_charge_amount: number;
+  total_contacts: number;
+  prev_registrations: number;
+  prev_first_charges: number;
+  prev_first_charge_amount: number;
+  prev_contacts: number;
+}
 
 interface PromoterStat {
   user_id: string;
@@ -45,130 +58,102 @@ interface PointStat {
   health: 'good' | 'fair' | 'poor' | 'inactive';
 }
 
-interface DashboardSummary {
-  total_registrations: number;
-  total_first_charges: number;
-  total_first_charge_amount: number;
-  total_contacts: number;
-  prev_registrations: number;
-  prev_first_charges: number;
-  prev_first_charge_amount: number;
-  prev_contacts: number;
-}
-
-type TimeRange = 'today' | 'week' | 'month';
-
 // ============================================================
-// Helper functions
+// Helpers
 // ============================================================
 
-function getTimeRangeStart(range: TimeRange): string {
+function getTimeRangeParams(range: TimeRange) {
   const now = new Date();
-  switch (range) {
-    case 'today':
-      now.setHours(0, 0, 0, 0);
-      return now.toISOString();
-    case 'week': {
-      const day = now.getDay();
-      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-      now.setDate(diff);
-      now.setHours(0, 0, 0, 0);
-      return now.toISOString();
-    }
-    case 'month':
-      now.setDate(1);
-      now.setHours(0, 0, 0, 0);
-      return now.toISOString();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrowStart = new Date(todayStart);
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+
+  let rangeStart: Date;
+  let rangeEnd: Date;
+  let prevStart: Date;
+  let prevEnd: Date;
+
+  if (range === 'today') {
+    rangeStart = todayStart;
+    rangeEnd = tomorrowStart;
+    prevStart = new Date(todayStart);
+    prevStart.setDate(prevStart.getDate() - 1);
+    prevEnd = todayStart;
+  } else if (range === 'week') {
+    const dayOfWeek = now.getDay() || 7; // Monday = 1
+    rangeStart = new Date(todayStart);
+    rangeStart.setDate(rangeStart.getDate() - dayOfWeek + 1);
+    rangeEnd = tomorrowStart;
+    prevStart = new Date(rangeStart);
+    prevStart.setDate(prevStart.getDate() - 7);
+    prevEnd = rangeStart;
+  } else {
+    rangeStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    rangeEnd = tomorrowStart;
+    prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    prevEnd = rangeStart;
   }
+
+  return {
+    range_start: rangeStart.toISOString(),
+    range_end: rangeEnd.toISOString(),
+    prev_start: prevStart.toISOString(),
+    prev_end: prevEnd.toISOString(),
+  };
 }
 
-function getPrevTimeRangeStart(range: TimeRange): { start: string; end: string } {
-  const now = new Date();
-  let start: Date;
-  let end: Date;
-
-  switch (range) {
-    case 'today':
-      end = new Date(now);
-      end.setHours(0, 0, 0, 0);
-      start = new Date(end);
-      start.setDate(start.getDate() - 1);
-      return { start: start.toISOString(), end: end.toISOString() };
-    case 'week': {
-      const day = now.getDay();
-      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-      end = new Date(now);
-      end.setDate(diff);
-      end.setHours(0, 0, 0, 0);
-      start = new Date(end);
-      start.setDate(start.getDate() - 7);
-      return { start: start.toISOString(), end: end.toISOString() };
-    }
-    case 'month':
-      end = new Date(now);
-      end.setDate(1);
-      end.setHours(0, 0, 0, 0);
-      start = new Date(end);
-      start.setMonth(start.getMonth() - 1);
-      return { start: start.toISOString(), end: end.toISOString() };
+function TrendIndicator({ current, previous }: { current: number; previous: number }) {
+  if (previous === 0 && current === 0) {
+    return <Minus className="w-4 h-4 opacity-60" />;
   }
+  if (current > previous) {
+    const pct = previous > 0 ? Math.round((current - previous) / previous * 100) : 100;
+    return (
+      <span className="flex items-center gap-0.5 text-sm font-medium text-green-200">
+        <ArrowUp className="w-4 h-4" />
+        {pct}%
+      </span>
+    );
+  }
+  if (current < previous) {
+    const pct = previous > 0 ? Math.round((previous - current) / previous * 100) : 0;
+    return (
+      <span className="flex items-center gap-0.5 text-sm font-medium text-red-200">
+        <ArrowDown className="w-4 h-4" />
+        {pct}%
+      </span>
+    );
+  }
+  return <Minus className="w-4 h-4 opacity-60" />;
 }
 
-function getRankIcon(index: number): string {
-  if (index === 0) return '🏆';
-  if (index === 1) return '🥇';
-  if (index === 2) return '🥈';
-  return `#${index + 1}`;
+function getRankIcon(index: number) {
+  if (index === 0) return <span className="text-lg">🥇</span>;
+  if (index === 1) return <span className="text-lg">🥈</span>;
+  if (index === 2) return <span className="text-lg">🥉</span>;
+  return <span className="text-sm text-gray-500 font-medium">{index + 1}</span>;
 }
 
 function getHealthBadge(health: string) {
   switch (health) {
     case 'good':
-      return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">良好</span>;
+      return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">优秀</span>;
     case 'fair':
-      return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">一般</span>;
+      return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">一般</span>;
     case 'poor':
-      return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">较差</span>;
-    case 'inactive':
-      return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">无数据</span>;
+      return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">较差</span>;
     default:
-      return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">--</span>;
+      return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">无数据</span>;
   }
 }
 
-function getAreaSizeLabel(size: string): string {
+function getAreaSizeLabel(size: string) {
   switch (size) {
-    case 'large': return '大';
-    case 'medium': return '中';
-    case 'small': return '小';
+    case 'large': return '大型';
+    case 'medium': return '中型';
+    case 'small': return '小型';
     default: return size;
   }
-}
-
-function TrendIndicator({ current, previous }: { current: number; previous: number }) {
-  if (previous === 0) {
-    return <span className="text-xs opacity-70">--</span>;
-  }
-  const pct = ((current - previous) / previous * 100).toFixed(1);
-  const num = parseFloat(pct);
-  if (num > 0) {
-    return (
-      <span className="flex items-center text-xs opacity-90">
-        <ArrowUpRight className="w-3 h-3 mr-0.5" />+{pct}%
-      </span>
-    );
-  } else if (num < 0) {
-    return (
-      <span className="flex items-center text-xs opacity-90">
-        <ArrowDownRight className="w-3 h-3 mr-0.5" />{pct}%
-      </span>
-    );
-  }
-  return (
-    <span className="flex items-center text-xs opacity-70">
-      <Minus className="w-3 h-3 mr-0.5" />0%
-    </span>
-  );
 }
 
 // ============================================================
@@ -177,10 +162,11 @@ function TrendIndicator({ current, previous }: { current: number; previous: numb
 
 export default function PromoterDashboardPage() {
   const { supabase } = useSupabase();
-  const [timeRange, setTimeRange] = useState<TimeRange>('today');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [summary, setSummary] = useState<DashboardSummary>({
+  const [timeRange, setTimeRange] = useState<TimeRange>('today');
+
+  const [summary, setSummary] = useState<Summary>({
     total_registrations: 0,
     total_first_charges: 0,
     total_first_charge_amount: 0,
@@ -192,242 +178,74 @@ export default function PromoterDashboardPage() {
   });
   const [promoters, setPromoters] = useState<PromoterStat[]>([]);
   const [points, setPoints] = useState<PointStat[]>([]);
-  const [sortField, setSortField] = useState<keyof PromoterStat>('first_charges');
+
+  const [sortField, setSortField] = useState<keyof PromoterStat>('registrations');
   const [sortAsc, setSortAsc] = useState(false);
+
+  // ============================================================
+  // Data Fetching - Single RPC Call
+  // ============================================================
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
-
     try {
-      const rangeStart = getTimeRangeStart(timeRange);
-      const prev = getPrevTimeRangeStart(timeRange);
+      const params = getTimeRangeParams(timeRange);
 
-      // 1. Fetch all promoter profiles with team and point info
-      const { data: promoterProfiles, error: ppError } = await supabase
-        .from('promoter_profiles')
-        .select('user_id, team_id, point_id, promoter_status')
-        .eq('promoter_status', 'active');
+      // Single RPC call replaces 8-10 separate queries
+      const { data, error: rpcError } = await supabase.rpc('get_promoter_command_center', {
+        p_range_start: params.range_start,
+        p_range_end: params.range_end,
+        p_prev_start: params.prev_start,
+        p_prev_end: params.prev_end,
+      });
 
-      if (ppError) throw ppError;
+      if (rpcError) throw rpcError;
 
-      if (!promoterProfiles || promoterProfiles.length === 0) {
+      if (data) {
+        // Set summary
+        const s = data.summary || {};
         setSummary({
-          total_registrations: 0, total_first_charges: 0,
-          total_first_charge_amount: 0, total_contacts: 0,
-          prev_registrations: 0, prev_first_charges: 0,
-          prev_first_charge_amount: 0, prev_contacts: 0,
+          total_registrations: s.total_registrations || 0,
+          total_first_charges: s.total_first_charges || 0,
+          total_first_charge_amount: parseFloat(s.total_first_charge_amount) || 0,
+          total_contacts: s.total_contacts || 0,
+          prev_registrations: s.prev_registrations || 0,
+          prev_first_charges: s.prev_first_charges || 0,
+          prev_first_charge_amount: parseFloat(s.prev_first_charge_amount) || 0,
+          prev_contacts: s.prev_contacts || 0,
         });
-        setPromoters([]);
-        setPoints([]);
-        setLoading(false);
-        return;
+
+        // Set promoter stats
+        const pList = (data.promoters || []).map((p: any) => ({
+          user_id: p.user_id,
+          name: p.name?.trim() || 'N/A',
+          referral_code: p.referral_code || '',
+          team_name: p.team_name || null,
+          point_name: p.point_name || null,
+          contacts: p.contacts || 0,
+          registrations: p.registrations || 0,
+          first_charges: p.first_charges || 0,
+          first_charge_amount: parseFloat(p.first_charge_amount) || 0,
+          reg_conversion_rate: parseFloat(p.reg_conversion_rate) || 0,
+          charge_conversion_rate: parseFloat(p.charge_conversion_rate) || 0,
+        }));
+        setPromoters(pList);
+
+        // Set point stats
+        const ptList = (data.points || []).map((pt: any) => ({
+          point_id: pt.point_id,
+          point_name: pt.point_name,
+          area_size: pt.area_size || 'medium',
+          staff_count: pt.staff_count || 0,
+          registrations: pt.registrations || 0,
+          charges: pt.charges || 0,
+          charge_amount: parseFloat(pt.charge_amount) || 0,
+          reg_per_staff: parseFloat(pt.reg_per_staff) || 0,
+          health: pt.health || 'inactive',
+        }));
+        setPoints(ptList);
       }
-
-      const promoterUserIds = promoterProfiles.map(p => p.user_id);
-
-      // 2. Fetch user info for promoters
-      const { data: usersData, error: usersError } = await supabase
-        .from('users')
-        .select('id, first_name, last_name, telegram_username, referral_code')
-        .in('id', promoterUserIds);
-
-      if (usersError) throw usersError;
-
-      // 3. Fetch teams
-      const teamIds = [...new Set(promoterProfiles.map(p => p.team_id).filter(Boolean))];
-      let teamsMap: Record<string, string> = {};
-      if (teamIds.length > 0) {
-        const { data: teamsData } = await supabase
-          .from('promoter_teams')
-          .select('id, name')
-          .in('id', teamIds);
-        if (teamsData) {
-          teamsMap = Object.fromEntries(teamsData.map(t => [t.id, t.name]));
-        }
-      }
-
-      // 4. Fetch points
-      const pointIds = [...new Set(promoterProfiles.map(p => p.point_id).filter(Boolean))];
-      let pointsMap: Record<string, { name: string; area_size: string }> = {};
-      if (pointIds.length > 0) {
-        const { data: pointsData } = await supabase
-          .from('promotion_points')
-          .select('id, name, area_size')
-          .in('id', pointIds);
-        if (pointsData) {
-          pointsMap = Object.fromEntries(pointsData.map(p => [p.id, { name: p.name, area_size: p.area_size }]));
-        }
-      }
-
-      // 5. Fetch registrations (users referred by promoters in time range)
-      const { data: regsData, error: regsError } = await supabase
-        .from('users')
-        .select('id, referred_by_id, created_at')
-        .in('referred_by_id', promoterUserIds)
-        .gte('created_at', rangeStart);
-
-      if (regsError) throw regsError;
-
-      // 6. Fetch previous period registrations
-      const { data: prevRegsData } = await supabase
-        .from('users')
-        .select('id, referred_by_id')
-        .in('referred_by_id', promoterUserIds)
-        .gte('created_at', prev.start)
-        .lt('created_at', prev.end);
-
-      // 7. Fetch deposit_requests (approved) in time range for users referred by promoters
-      // First get all user IDs referred by promoters
-      const { data: allReferredUsers } = await supabase
-        .from('users')
-        .select('id, referred_by_id')
-        .in('referred_by_id', promoterUserIds);
-
-      const referredUserIds = allReferredUsers?.map(u => u.id) || [];
-      const referrerMap: Record<string, string> = {};
-      allReferredUsers?.forEach(u => {
-        if (u.referred_by_id) referrerMap[u.id] = u.referred_by_id;
-      });
-
-      let depositsInRange: any[] = [];
-      let prevDepositsInRange: any[] = [];
-
-      if (referredUserIds.length > 0) {
-        // Batch fetch in chunks of 100 to avoid query limits
-        for (let i = 0; i < referredUserIds.length; i += 100) {
-          const chunk = referredUserIds.slice(i, i + 100);
-          const { data: dData } = await supabase
-            .from('deposit_requests')
-            .select('id, user_id, amount, status, created_at')
-            .in('user_id', chunk)
-            .eq('status', 'APPROVED')
-            .gte('created_at', rangeStart);
-          if (dData) depositsInRange.push(...dData);
-
-          const { data: pdData } = await supabase
-            .from('deposit_requests')
-            .select('id, user_id, amount, status')
-            .in('user_id', chunk)
-            .eq('status', 'APPROVED')
-            .gte('created_at', prev.start)
-            .lt('created_at', prev.end);
-          if (pdData) prevDepositsInRange.push(...pdData);
-        }
-      }
-
-      // 8. Fetch daily logs for contacts
-      const { data: logsData } = await supabase
-        .from('promoter_daily_logs')
-        .select('promoter_id, contact_count, log_date')
-        .in('promoter_id', promoterUserIds)
-        .gte('log_date', rangeStart.split('T')[0]);
-
-      // 9. Build per-promoter stats
-      const promoterStats: PromoterStat[] = promoterProfiles.map(pp => {
-        const user = usersData?.find(u => u.id === pp.user_id);
-        const name = user?.telegram_username || [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'N/A';
-        const referralCode = user?.referral_code || '';
-        const teamName = pp.team_id ? (teamsMap[pp.team_id] || null) : null;
-        const pointName = pp.point_id ? (pointsMap[pp.point_id]?.name || null) : null;
-
-        const regs = regsData?.filter(r => r.referred_by_id === pp.user_id).length || 0;
-
-        // Deposits: find unique users referred by this promoter who deposited in range
-        const referredByThis = allReferredUsers?.filter(u => u.referred_by_id === pp.user_id).map(u => u.id) || [];
-        const depositsForThis = depositsInRange.filter(d => referredByThis.includes(d.user_id));
-        const uniqueChargeUsers = new Set(depositsForThis.map(d => d.user_id));
-        const chargeAmount = depositsForThis.reduce((sum: number, d: any) => sum + (parseFloat(d.amount) || 0), 0);
-
-        const contacts = logsData?.filter(l => l.promoter_id === pp.user_id).reduce((sum, l) => sum + (l.contact_count || 0), 0) || 0;
-
-        const regRate = contacts > 0 ? Math.round(regs / contacts * 1000) / 10 : 0;
-        const chargeRate = regs > 0 ? Math.round(uniqueChargeUsers.size / regs * 1000) / 10 : 0;
-
-        return {
-          user_id: pp.user_id,
-          name,
-          referral_code: referralCode,
-          team_name: teamName,
-          point_name: pointName,
-          contacts,
-          registrations: regs,
-          first_charges: uniqueChargeUsers.size,
-          first_charge_amount: chargeAmount,
-          reg_conversion_rate: regRate,
-          charge_conversion_rate: chargeRate,
-        };
-      });
-
-      // 10. Build summary
-      const totalRegs = promoterStats.reduce((s, p) => s + p.registrations, 0);
-      const totalCharges = promoterStats.reduce((s, p) => s + p.first_charges, 0);
-      const totalChargeAmt = promoterStats.reduce((s, p) => s + p.first_charge_amount, 0);
-      const totalContacts = promoterStats.reduce((s, p) => s + p.contacts, 0);
-
-      const prevTotalRegs = prevRegsData?.length || 0;
-      const prevUniqueChargeUsers = new Set(prevDepositsInRange.map(d => d.user_id));
-      const prevTotalChargeAmt = prevDepositsInRange.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
-
-      setSummary({
-        total_registrations: totalRegs,
-        total_first_charges: totalCharges,
-        total_first_charge_amount: totalChargeAmt,
-        total_contacts: totalContacts,
-        prev_registrations: prevTotalRegs,
-        prev_first_charges: prevUniqueChargeUsers.size,
-        prev_first_charge_amount: prevTotalChargeAmt,
-        prev_contacts: 0, // Previous contacts not easily available
-      });
-
-      setPromoters(promoterStats);
-
-      // 11. Build point stats
-      const pointStatsMap: Record<string, PointStat> = {};
-      promoterProfiles.forEach(pp => {
-        if (!pp.point_id) return;
-        const pointInfo = pointsMap[pp.point_id];
-        if (!pointInfo) return;
-
-        if (!pointStatsMap[pp.point_id]) {
-          pointStatsMap[pp.point_id] = {
-            point_id: pp.point_id,
-            point_name: pointInfo.name,
-            area_size: pointInfo.area_size,
-            staff_count: 0,
-            registrations: 0,
-            charges: 0,
-            charge_amount: 0,
-            reg_per_staff: 0,
-            health: 'inactive',
-          };
-        }
-        const ps = pointStatsMap[pp.point_id];
-        ps.staff_count += 1;
-
-        const pStat = promoterStats.find(s => s.user_id === pp.user_id);
-        if (pStat) {
-          ps.registrations += pStat.registrations;
-          ps.charges += pStat.first_charges;
-          ps.charge_amount += pStat.first_charge_amount;
-        }
-      });
-
-      // Calculate derived fields
-      Object.values(pointStatsMap).forEach(ps => {
-        ps.reg_per_staff = ps.staff_count > 0 ? Math.round(ps.registrations / ps.staff_count * 10) / 10 : 0;
-        if (ps.registrations === 0) {
-          ps.health = 'inactive';
-        } else {
-          const chargeRate = ps.charges / ps.registrations;
-          if (chargeRate >= 0.25) ps.health = 'good';
-          else if (chargeRate >= 0.15) ps.health = 'fair';
-          else ps.health = 'poor';
-        }
-      });
-
-      setPoints(Object.values(pointStatsMap).sort((a, b) => b.registrations - a.registrations));
-
     } catch (err: any) {
       console.error('Failed to fetch promoter dashboard stats:', err);
       setError(err.message || '加载地推数据失败');

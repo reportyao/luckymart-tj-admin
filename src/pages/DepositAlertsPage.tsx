@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSupabase } from '../contexts/SupabaseContext';
-import { useAdminAuth } from '../contexts/AdminAuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import {
@@ -19,12 +18,10 @@ import {
   DollarSign,
   Clock,
   CheckCircle,
-  XCircle,
   Eye,
-  Shield,
-  TrendingUp,
   Users,
   Filter,
+  ExternalLink,
 } from 'lucide-react';
 
 // ============================================================
@@ -65,7 +62,7 @@ interface AlertConfig {
   rapid_succession_count: number;
 }
 
-type FilterTab = 'all' | 'urgent' | 'promoter' | 'resolved';
+type FilterTab = 'all' | 'urgent' | 'promoter';
 
 // ============================================================
 // Constants
@@ -84,7 +81,6 @@ const DEFAULT_CONFIG: AlertConfig = {
 
 export default function DepositAlertsPage() {
   const { supabase } = useSupabase();
-  const { admin } = useAdminAuth();
   const [loading, setLoading] = useState(true);
   const [alerts, setAlerts] = useState<DepositAlert[]>([]);
   const [filterTab, setFilterTab] = useState<FilterTab>('all');
@@ -100,15 +96,16 @@ export default function DepositAlertsPage() {
   const fetchAlerts = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. Fetch all deposit requests (recent 7 days)
+      // 1. Fetch pending deposit requests (only PENDING status - monitoring focus)
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
       const { data: deposits, error: depError } = await supabase
         .from('deposit_requests')
         .select('*')
+        .eq('status', 'PENDING')
         .gte('created_at', sevenDaysAgo.toISOString())
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: true }); // Oldest first (most urgent)
 
       if (depError) throw depError;
 
@@ -160,36 +157,27 @@ export default function DepositAlertsPage() {
         const isPromoterReferred = referredById ? promoterUserIds.has(referredById) : false;
         const promoterName = referredById && isPromoterReferred ? promoterNamesMap[referredById] || '' : '';
 
-        // Referred by name (even if not promoter)
         const referredByUser = referredById ? usersMap[referredById] : null;
         const referredByName = referredByUser
           ? (referredByUser.telegram_username || [referredByUser.first_name, referredByUser.last_name].filter(Boolean).join(' ') || '')
           : '';
 
-        // Calculate wait time
         const createdAt = new Date(dep.created_at);
-        const waitMinutes = dep.status === 'PENDING'
-          ? Math.round((now.getTime() - createdAt.getTime()) / 60000)
-          : 0;
+        const waitMinutes = Math.round((now.getTime() - createdAt.getTime()) / 60000);
 
-        // Classify alert type
+        // Classify alert type (priority order: timeout > large > rapid > promoter > normal)
         let alertType: AlertType = 'normal_pending';
-        let alertReason = '';
+        let alertReason = '待审核';
 
-        if (dep.status === 'PENDING') {
-          if (waitMinutes >= config.pending_threshold_minutes) {
-            alertType = 'pending_long';
-            alertReason = `等待超过 ${waitMinutes} 分钟`;
-          } else if (dep.amount >= config.large_amount_threshold) {
-            alertType = 'large_amount';
-            alertReason = `大额充值 ${dep.amount} ${dep.currency}`;
-          } else if (isPromoterReferred) {
-            alertType = 'promoter_referred';
-            alertReason = `地推用户 (推荐人: ${promoterName})`;
-          } else {
-            alertType = 'normal_pending';
-            alertReason = '待审核';
-          }
+        if (waitMinutes >= config.pending_threshold_minutes) {
+          alertType = 'pending_long';
+          alertReason = `等待超过 ${waitMinutes} 分钟`;
+        } else if (dep.amount >= config.large_amount_threshold) {
+          alertType = 'large_amount';
+          alertReason = `大额充值 ${dep.amount} ${dep.currency}`;
+        } else if (isPromoterReferred) {
+          alertType = 'promoter_referred';
+          alertReason = `地推用户 (推荐人: ${promoterName})`;
         }
 
         return {
@@ -210,14 +198,13 @@ export default function DepositAlertsPage() {
       const userDepositCounts: Record<string, number> = {};
       const recentWindow = new Date(now.getTime() - config.rapid_succession_minutes * 60000);
       deposits.forEach(dep => {
-        if (dep.status === 'PENDING' && new Date(dep.created_at) >= recentWindow) {
+        if (new Date(dep.created_at) >= recentWindow) {
           userDepositCounts[dep.user_id] = (userDepositCounts[dep.user_id] || 0) + 1;
         }
       });
 
       enrichedAlerts.forEach(alert => {
         if (
-          alert.status === 'PENDING' &&
           (userDepositCounts[alert.user_id] || 0) >= config.rapid_succession_count &&
           alert.alert_type === 'normal_pending'
         ) {
@@ -246,61 +233,18 @@ export default function DepositAlertsPage() {
   }, [fetchAlerts]);
 
   // ============================================================
-  // Actions
-  // ============================================================
-
-  const handleReview = async (alert: DepositAlert, action: 'APPROVED' | 'REJECTED') => {
-    if (!admin) {
-      toast.error('请先登录');
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/approve-deposit`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY}`,
-            'apikey': import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
-            'x-admin-id': admin.id,
-          },
-          body: JSON.stringify({
-            requestId: alert.id,
-            action: action,
-          }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || '审核失败');
-      }
-
-      toast.success(`充值已${action === 'APPROVED' ? '批准' : '拒绝'}`);
-      fetchAlerts();
-    } catch (err: any) {
-      toast.error(`审核失败: ${err.message}`);
-    }
-  };
-
-  // ============================================================
   // Filtering
   // ============================================================
 
   const filteredAlerts = alerts.filter(a => {
     switch (filterTab) {
       case 'urgent':
-        return a.status === 'PENDING' && (a.alert_type === 'pending_long' || a.alert_type === 'large_amount' || a.alert_type === 'rapid_succession');
+        return a.alert_type === 'pending_long' || a.alert_type === 'large_amount' || a.alert_type === 'rapid_succession';
       case 'promoter':
-        return a.is_promoter_referred && a.status === 'PENDING';
-      case 'resolved':
-        return a.status !== 'PENDING';
+        return a.is_promoter_referred;
       case 'all':
       default:
-        return a.status === 'PENDING';
+        return true;
     }
   });
 
@@ -308,10 +252,10 @@ export default function DepositAlertsPage() {
   // Stats
   // ============================================================
 
-  const pendingCount = alerts.filter(a => a.status === 'PENDING').length;
-  const urgentCount = alerts.filter(a => a.status === 'PENDING' && (a.alert_type === 'pending_long' || a.alert_type === 'large_amount' || a.alert_type === 'rapid_succession')).length;
-  const promoterPendingCount = alerts.filter(a => a.is_promoter_referred && a.status === 'PENDING').length;
-  const totalPendingAmount = alerts.filter(a => a.status === 'PENDING').reduce((s, a) => s + a.amount, 0);
+  const pendingCount = alerts.length;
+  const urgentCount = alerts.filter(a => a.alert_type === 'pending_long' || a.alert_type === 'large_amount' || a.alert_type === 'rapid_succession').length;
+  const promoterPendingCount = alerts.filter(a => a.is_promoter_referred).length;
+  const totalPendingAmount = alerts.reduce((s, a) => s + a.amount, 0);
 
   // ============================================================
   // Helper functions
@@ -329,19 +273,6 @@ export default function DepositAlertsPage() {
         return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">地推</span>;
       case 'normal_pending':
         return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">待审</span>;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'PENDING':
-        return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">待审核</span>;
-      case 'APPROVED':
-        return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">已批准</span>;
-      case 'REJECTED':
-        return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">已拒绝</span>;
-      default:
-        return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">{status}</span>;
     }
   };
 
@@ -372,9 +303,14 @@ export default function DepositAlertsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Bell className="w-7 h-7" />
-            充值告警中心
+            充值监控告警
           </h1>
-          <p className="text-gray-600 mt-1">实时监控充值审核状态，优先处理紧急和地推相关充值</p>
+          <p className="text-gray-600 mt-1">
+            实时监控待审充值状态，识别异常和地推相关充值 ·
+            <a href="/deposit-review" className="text-blue-600 hover:underline ml-1">
+              前往充值审核页面处理 <ExternalLink className="w-3 h-3 inline" />
+            </a>
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setShowConfigDialog(true)}>
@@ -424,7 +360,6 @@ export default function DepositAlertsPage() {
           { key: 'all' as FilterTab, label: '全部待审', count: pendingCount },
           { key: 'urgent' as FilterTab, label: '紧急告警', count: urgentCount },
           { key: 'promoter' as FilterTab, label: '地推用户', count: promoterPendingCount },
-          { key: 'resolved' as FilterTab, label: '已处理', count: alerts.filter(a => a.status !== 'PENDING').length },
         ].map(tab => (
           <button
             key={tab.key}
@@ -445,7 +380,7 @@ export default function DepositAlertsPage() {
         ))}
       </div>
 
-      {/* Alerts Table */}
+      {/* Alerts Table - Monitoring Only, No Review Actions */}
       <Card>
         <CardContent className="p-0">
           {loading ? (
@@ -464,14 +399,13 @@ export default function DepositAlertsPage() {
                   <TableHead>凭证</TableHead>
                   <TableHead>等待时间</TableHead>
                   <TableHead>原因</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>操作</TableHead>
+                  <TableHead>提交时间</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredAlerts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-12 text-gray-500">
+                    <TableCell colSpan={9} className="text-center py-12 text-gray-500">
                       <CheckCircle className="w-12 h-12 mx-auto mb-3 opacity-30" />
                       <p>{filterTab === 'all' ? '暂无待审核充值' : '暂无匹配记录'}</p>
                     </TableCell>
@@ -522,28 +456,12 @@ export default function DepositAlertsPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {alert.status === 'PENDING' ? (
-                          <span className={`text-sm font-medium ${alert.wait_minutes >= config.pending_threshold_minutes ? 'text-red-600' : 'text-gray-600'}`}>
-                            {formatWaitTime(alert.wait_minutes)}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-gray-400">{formatDateTime(alert.created_at)}</span>
-                        )}
+                        <span className={`text-sm font-medium ${alert.wait_minutes >= config.pending_threshold_minutes ? 'text-red-600' : 'text-gray-600'}`}>
+                          {formatWaitTime(alert.wait_minutes)}
+                        </span>
                       </TableCell>
                       <TableCell className="text-sm text-gray-600 max-w-xs">{alert.alert_reason}</TableCell>
-                      <TableCell>{getStatusBadge(alert.status)}</TableCell>
-                      <TableCell>
-                        {alert.status === 'PENDING' && (
-                          <div className="flex items-center gap-1">
-                            <Button size="sm" onClick={() => handleReview(alert, 'APPROVED')}>
-                              <CheckCircle className="w-3 h-3 mr-1" /> 批准
-                            </Button>
-                            <Button variant="destructive" size="sm" onClick={() => handleReview(alert, 'REJECTED')}>
-                              <XCircle className="w-3 h-3 mr-1" /> 拒绝
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
+                      <TableCell className="text-sm text-gray-500">{formatDateTime(alert.created_at)}</TableCell>
                     </TableRow>
                   ))
                 )}
@@ -553,11 +471,29 @@ export default function DepositAlertsPage() {
         </CardContent>
       </Card>
 
-      {/* Image Dialog */}
+      {/* Tip: Go to review page */}
+      {filteredAlerts.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-blue-600" />
+            <span className="text-sm text-blue-800">
+              有 <strong>{pendingCount}</strong> 笔充值待审核，请前往充值审核页面处理
+            </span>
+          </div>
+          <a
+            href="/deposit-review"
+            className="inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+          >
+            前往审核 <ExternalLink className="w-4 h-4" />
+          </a>
+        </div>
+      )}
+
+      {/* Image Preview Dialog */}
       <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>充值凭证</DialogTitle>
+            <DialogTitle>充值凭证预览</DialogTitle>
             <DialogDescription>
               用户: {selectedAlert?.user_name} | 金额: {selectedAlert?.amount} {selectedAlert?.currency}
               {selectedAlert?.is_promoter_referred && ` | 地推: ${selectedAlert?.promoter_name}`}
@@ -611,23 +547,15 @@ export default function DepositAlertsPage() {
               </div>
             </div>
 
-            {/* Actions */}
-            {selectedAlert?.status === 'PENDING' && (
-              <div className="flex justify-end space-x-2 pt-4 border-t">
-                <Button variant="outline" onClick={() => setShowImageDialog(false)}>关闭</Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => { if (selectedAlert) { handleReview(selectedAlert, 'REJECTED'); setShowImageDialog(false); } }}
-                >
-                  拒绝
-                </Button>
-                <Button
-                  onClick={() => { if (selectedAlert) { handleReview(selectedAlert, 'APPROVED'); setShowImageDialog(false); } }}
-                >
-                  批准
-                </Button>
-              </div>
-            )}
+            <div className="flex justify-between pt-4 border-t">
+              <a
+                href="/deposit-review"
+                className="inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+              >
+                前往审核页面处理 <ExternalLink className="w-4 h-4" />
+              </a>
+              <Button variant="outline" onClick={() => setShowImageDialog(false)}>关闭</Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
