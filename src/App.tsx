@@ -48,6 +48,8 @@ import PromoterDashboardPage from './pages/PromoterDashboardPage';
 import PromoterManagementPage from './pages/PromoterManagementPage';
 import PromoterReportsPage from './pages/PromoterReportsPage';
 import DepositAlertsPage from './pages/DepositAlertsPage';
+import PromotionPointsManagementPage from './pages/PromotionPointsManagementPage';
+import ChannelAnalyticsPage from './pages/ChannelAnalyticsPage';
 
 import { AdminAuthProvider, useAdminAuth } from './contexts/AdminAuthContext';
 import LoginPage from './pages/LoginPage';
@@ -130,6 +132,8 @@ function App(): JSX.Element {
             <NavSection label="地推管理" />
             <NavLink to="/promoter-dashboard" label="地推指挥室" icon="🎯" />
             <NavLink to="/promoter-management" label="人员管理" icon="🧑‍💼" />
+            <NavLink to="/promotion-points" label="点位管理" icon="📍" />
+            <NavLink to="/channel-analytics" label="渠道分析" icon="📡" />
             <NavLink to="/promoter-reports" label="KPI报表" icon="📊" />
             <NavLink to="/deposit-alerts" label="充值告警" icon="🔔" />
 
@@ -204,6 +208,8 @@ function App(): JSX.Element {
               {/* ==================== 地推管理模块路由 ==================== */}
               <Route path="/promoter-dashboard" element={<ProtectedRoute element={<PromoterDashboardPage />} requiredRole="admin" />} />
               <Route path="/promoter-management" element={<ProtectedRoute element={<PromoterManagementPage />} requiredRole="admin" />} />
+              <Route path="/promotion-points" element={<ProtectedRoute element={<PromotionPointsManagementPage />} requiredRole="admin" />} />
+              <Route path="/channel-analytics" element={<ProtectedRoute element={<ChannelAnalyticsPage />} requiredRole="admin" />} />
               <Route path="/promoter-reports" element={<ProtectedRoute element={<PromoterReportsPage />} requiredRole="admin" />} />
               <Route path="/deposit-alerts" element={<ProtectedRoute element={<DepositAlertsPage />} requiredRole="admin" />} />
 
