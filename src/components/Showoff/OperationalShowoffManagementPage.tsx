@@ -17,23 +17,25 @@ import {
 } from '../ui/dialog';
 import { formatDateTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
-import { Eye, EyeOff, Edit, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Edit, Loader2, Search } from 'lucide-react';
 
 interface Showoff {
   id: string;
-  user_id: string;
+  user_id: string | null;
   content: string;
-  image_urls: string[];
+  image_urls: string[] | null;
+  images: string[] | null;
   status: string;
-  reward_coins: number;
+  reward_coins: number | null;
   likes_count: number;
   comments_count: number;
-  is_operational: boolean;
+  source: string;
   is_hidden: boolean;
-  display_username?: string;
-  display_avatar_url?: string;
-  lottery_id?: string;
-  title?: string;
+  display_username: string | null;
+  display_avatar_url: string | null;
+  lottery_id: string | null;
+  title: string | null;
+  admin_note: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -45,7 +47,9 @@ export const OperationalShowoffManagementPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedShowoff, setSelectedShowoff] = useState<Showoff | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // 编辑表单状态
   const [editFormData, setEditFormData] = useState({
@@ -61,7 +65,7 @@ export const OperationalShowoffManagementPage: React.FC = () => {
       const { data, error } = await supabase
         .from('showoffs')
         .select('*')
-        .eq('is_operational', true)
+        .eq('source', 'ADMIN')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -78,13 +82,26 @@ export const OperationalShowoffManagementPage: React.FC = () => {
     fetchShowoffs();
   }, [fetchShowoffs]);
 
+  // 搜索过滤
+  const filteredShowoffs = showoffs.filter(showoff => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      (showoff.display_username || '').toLowerCase().includes(searchLower) ||
+      (showoff.content || '').toLowerCase().includes(searchLower)
+    );
+  });
+
   const handleToggleHidden = async (showoff: Showoff) => {
     try {
       const newHiddenStatus = !showoff.is_hidden;
       
       const { error } = await supabase
         .from('showoffs')
-        .update({ is_hidden: newHiddenStatus })
+        .update({ 
+          is_hidden: newHiddenStatus,
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', showoff.id);
 
       if (error) throw error;
@@ -97,11 +114,16 @@ export const OperationalShowoffManagementPage: React.FC = () => {
     }
   };
 
+  const handleViewDetail = (showoff: Showoff) => {
+    setSelectedShowoff(showoff);
+    setIsDetailDialogOpen(true);
+  };
+
   const handleEditClick = (showoff: Showoff) => {
     setSelectedShowoff(showoff);
     setEditFormData({
       display_username: showoff.display_username || '',
-      content: showoff.content,
+      content: showoff.content || '',
       likes_count: showoff.likes_count || 0,
       reward_coins: showoff.reward_coins || 0,
     });
@@ -111,7 +133,6 @@ export const OperationalShowoffManagementPage: React.FC = () => {
   const handleSaveEdit = async () => {
     if (!selectedShowoff) return;
 
-    // 表单验证
     if (!editFormData.display_username.trim()) {
       toast.error('请输入用户昵称');
       return;
@@ -147,6 +168,11 @@ export const OperationalShowoffManagementPage: React.FC = () => {
     }
   };
 
+  // 获取晒单图片数组（兼容 image_urls 和 images 两个字段）
+  const getShowoffImages = (showoff: Showoff): string[] => {
+    return showoff.image_urls || showoff.images || [];
+  };
+
   return (
     <>
       <Card>
@@ -156,107 +182,265 @@ export const OperationalShowoffManagementPage: React.FC = () => {
             共 {showoffs.length} 条运营晒单
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* 搜索栏 */}
+          <div className="flex items-center space-x-2">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="搜索用户昵称或内容..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
           {isLoading ? (
             <div className="flex items-center justify-center py-10">
               <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+            </div>
+          ) : filteredShowoffs.length === 0 ? (
+            <div className="text-center py-10 text-gray-500">
+              {searchTerm ? '没有找到匹配的运营晒单' : '暂无运营晒单'}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ID</TableHead>
+                    <TableHead className="w-20">ID</TableHead>
                     <TableHead>虚拟用户</TableHead>
-                    <TableHead>内容预览</TableHead>
+                    <TableHead className="max-w-xs">内容预览</TableHead>
                     <TableHead>图片</TableHead>
                     <TableHead>点赞数</TableHead>
                     <TableHead>奖励</TableHead>
                     <TableHead>状态</TableHead>
                     <TableHead>创建时间</TableHead>
-                    <TableHead>操作</TableHead>
+                    <TableHead className="w-32">操作</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {showoffs.map((showoff) => (
-                    <TableRow key={showoff.id}>
-                      <TableCell className="font-medium">{showoff.id.substring(0, 8)}...</TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          {showoff.display_avatar_url && (
-                            <img
-                              src={showoff.display_avatar_url}
-                              alt={showoff.display_username}
-                              className="w-8 h-8 rounded-full object-cover"
-                            />
-                          )}
-                          <span className="text-sm">{showoff.display_username || '-'}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate">{showoff.content}</TableCell>
-                      <TableCell>
-                        {showoff.image_urls && showoff.image_urls.length > 0 ? (
-                          <span className="text-sm text-gray-600">{showoff.image_urls.length} 张</span>
-                        ) : (
-                          <span className="text-sm text-gray-400">无</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm font-medium">{showoff.likes_count || 0}</span>
-                      </TableCell>
-                      <TableCell>
-                        {showoff.reward_coins ? (
-                          <span className="text-sm font-medium text-amber-600">
-                            {showoff.reward_coins} 币
-                          </span>
-                        ) : (
-                          <span className="text-sm text-gray-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {showoff.is_hidden ? (
-                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                            已隐藏
-                          </span>
-                        ) : (
-                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                            显示中
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>{formatDateTime(showoff.created_at)}</TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleToggleHidden(showoff)}
-                            title={showoff.is_hidden ? '显示' : '隐藏'}
-                          >
-                            {showoff.is_hidden ? (
-                              <Eye className="w-4 h-4" />
-                            ) : (
-                              <EyeOff className="w-4 h-4" />
+                  {filteredShowoffs.map((showoff) => {
+                    const imgs = getShowoffImages(showoff);
+                    return (
+                      <TableRow key={showoff.id} className={showoff.is_hidden ? 'opacity-50' : ''}>
+                        <TableCell className="font-mono text-xs">{showoff.id.substring(0, 8)}...</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            {showoff.display_avatar_url && (
+                              <img
+                                src={showoff.display_avatar_url}
+                                alt={showoff.display_username || ''}
+                                className="w-8 h-8 rounded-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
                             )}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEditClick(showoff)}
-                            title="编辑"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                            <span className="text-sm font-medium">{showoff.display_username || '-'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="max-w-xs">
+                          <p className="truncate text-sm">{showoff.content}</p>
+                        </TableCell>
+                        <TableCell>
+                          {imgs.length > 0 ? (
+                            <span className="text-sm text-gray-600">{imgs.length} 张</span>
+                          ) : (
+                            <span className="text-sm text-gray-400">无</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm font-medium">{showoff.likes_count || 0}</span>
+                        </TableCell>
+                        <TableCell>
+                          {showoff.reward_coins ? (
+                            <span className="text-sm font-medium text-amber-600">
+                              {showoff.reward_coins} 币
+                            </span>
+                          ) : (
+                            <span className="text-sm text-gray-400">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {showoff.is_hidden ? (
+                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                              已隐藏
+                            </span>
+                          ) : (
+                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                              显示中
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm">{formatDateTime(showoff.created_at)}</TableCell>
+                        <TableCell>
+                          <div className="flex space-x-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewDetail(showoff)}
+                              title="查看详情"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleToggleHidden(showoff)}
+                              title={showoff.is_hidden ? '取消隐藏' : '隐藏'}
+                            >
+                              {showoff.is_hidden ? (
+                                <Eye className="w-4 h-4 text-green-600" />
+                              ) : (
+                                <EyeOff className="w-4 h-4 text-gray-600" />
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditClick(showoff)}
+                              title="编辑"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* 详情查看对话框 */}
+      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>晒单详情</DialogTitle>
+            <DialogDescription>
+              ID: {selectedShowoff?.id}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedShowoff && (
+            <div className="space-y-4">
+              {/* 虚拟用户信息 */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold mb-2">虚拟用户信息</h3>
+                <div className="flex items-center space-x-3">
+                  {selectedShowoff.display_avatar_url && (
+                    <img
+                      src={selectedShowoff.display_avatar_url}
+                      alt={selectedShowoff.display_username || ''}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  )}
+                  <div>
+                    <p className="font-medium">{selectedShowoff.display_username || '-'}</p>
+                    <p className="text-xs text-gray-500">来源: {selectedShowoff.source}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 基本信息 */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold mb-2">基本信息</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-gray-600">状态:</span>
+                    <span className="ml-2 font-medium">{selectedShowoff.status}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">显示状态:</span>
+                    <span className={`ml-2 font-medium ${selectedShowoff.is_hidden ? 'text-red-600' : 'text-green-600'}`}>
+                      {selectedShowoff.is_hidden ? '已隐藏' : '显示中'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">点赞数:</span>
+                    <span className="ml-2 font-medium">{selectedShowoff.likes_count || 0}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">奖励积分:</span>
+                    <span className="ml-2 font-medium text-amber-600">{selectedShowoff.reward_coins || 0} 币</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">创建时间:</span>
+                    <span className="ml-2 font-medium">{formatDateTime(selectedShowoff.created_at)}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">更新时间:</span>
+                    <span className="ml-2 font-medium">{formatDateTime(selectedShowoff.updated_at)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 晒单内容 */}
+              <div>
+                <h3 className="font-semibold mb-2">晒单内容</h3>
+                <div className="bg-white border rounded-lg p-4">
+                  <p className="text-sm whitespace-pre-wrap">{selectedShowoff.content}</p>
+                </div>
+              </div>
+
+              {/* 晒单图片 */}
+              {(() => {
+                const imgs = getShowoffImages(selectedShowoff);
+                if (imgs.length === 0) return null;
+                return (
+                  <div>
+                    <h3 className="font-semibold mb-2">晒单图片 ({imgs.length} 张)</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {imgs.map((imageUrl, index) => (
+                        <div key={index} className="border rounded-lg overflow-hidden">
+                          <img
+                            src={imageUrl}
+                            alt={`晒单图片 ${index + 1}`}
+                            className="w-full h-40 object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23ddd" width="400" height="300"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3E图片加载失败%3C/text%3E%3C/svg%3E';
+                            }}
+                          />
+                          <div className="p-2 bg-gray-50 text-xs text-gray-600">
+                            <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                              在新窗口打开
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 管理员备注 */}
+              {selectedShowoff.admin_note && (
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <h3 className="font-semibold mb-2">管理员备注</h3>
+                  <p className="text-sm text-gray-700">{selectedShowoff.admin_note}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDetailDialogOpen(false)}>
+              关闭
+            </Button>
+            <Button onClick={() => {
+              setIsDetailDialogOpen(false);
+              if (selectedShowoff) handleEditClick(selectedShowoff);
+            }}>
+              编辑
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 编辑对话框 */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -302,50 +486,56 @@ export const OperationalShowoffManagementPage: React.FC = () => {
             </div>
 
             {/* 晒单图片预览 */}
-            {selectedShowoff?.image_urls && selectedShowoff.image_urls.length > 0 && (
-              <div className="space-y-2">
-                <Label>晒单图片</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {selectedShowoff.image_urls.map((imageUrl, index) => (
-                    <div key={index} className="border rounded-lg overflow-hidden">
-                      <img
-                        src={imageUrl}
-                        alt={`晒单图片 ${index + 1}`}
-                        className="w-full h-24 object-cover"
-                      />
-                    </div>
-                  ))}
+            {selectedShowoff && (() => {
+              const imgs = getShowoffImages(selectedShowoff);
+              if (imgs.length === 0) return null;
+              return (
+                <div className="space-y-2">
+                  <Label>晒单图片</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {imgs.map((imageUrl, index) => (
+                      <div key={index} className="border rounded-lg overflow-hidden">
+                        <img
+                          src={imageUrl}
+                          alt={`晒单图片 ${index + 1}`}
+                          className="w-full h-24 object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    图片暂不支持修改，如需修改请重新创建晒单
+                  </p>
                 </div>
-                <p className="text-xs text-gray-500">
-                  注意：图片暂不支持修改，如需修改请重新创建晒单
-                </p>
-              </div>
-            )}
+              );
+            })()}
 
             {/* 点赞数 */}
-            <div className="space-y-2">
-              <Label htmlFor="edit_likes_count">点赞数</Label>
-              <Input
-                id="edit_likes_count"
-                type="number"
-                min="0"
-                max="9999"
-                value={editFormData.likes_count}
-                onChange={(e) => setEditFormData({ ...editFormData, likes_count: parseInt(e.target.value) || 0 })}
-              />
-            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_likes_count">点赞数</Label>
+                <Input
+                  id="edit_likes_count"
+                  type="number"
+                  min="0"
+                  max="9999"
+                  value={editFormData.likes_count}
+                  onChange={(e) => setEditFormData({ ...editFormData, likes_count: parseInt(e.target.value) || 0 })}
+                />
+              </div>
 
-            {/* 积分奖励 */}
-            <div className="space-y-2">
-              <Label htmlFor="edit_reward_coins">积分奖励</Label>
-              <Input
-                id="edit_reward_coins"
-                type="number"
-                min="0"
-                max="1000"
-                value={editFormData.reward_coins}
-                onChange={(e) => setEditFormData({ ...editFormData, reward_coins: parseInt(e.target.value) || 0 })}
-              />
+              {/* 积分奖励 */}
+              <div className="space-y-2">
+                <Label htmlFor="edit_reward_coins">积分奖励</Label>
+                <Input
+                  id="edit_reward_coins"
+                  type="number"
+                  min="0"
+                  max="1000"
+                  value={editFormData.reward_coins}
+                  onChange={(e) => setEditFormData({ ...editFormData, reward_coins: parseInt(e.target.value) || 0 })}
+                />
+              </div>
             </div>
           </div>
 
