@@ -300,6 +300,25 @@ export default function PromotionPointsManagementPage() {
     try {
       const params = getTimeRangeParams(timeRange);
 
+      // Always fetch all points from the table to get accurate total count
+      const { data: allPointsData } = await supabase
+        .from('promotion_points')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      // Also fetch staff counts for all points
+      const { data: ppData } = await supabase
+        .from('promoter_profiles')
+        .select('user_id, point_id, promoter_status')
+        .eq('promoter_status', 'active');
+
+      const staffCounts: Record<string, number> = {};
+      ppData?.forEach(pp => {
+        if (pp.point_id) {
+          staffCounts[pp.point_id] = (staffCounts[pp.point_id] || 0) + 1;
+        }
+      });
+
       // Try to use the RPC function first (get_promoter_command_center)
       const { data: rpcData, error: rpcError } = await supabase.rpc('get_promoter_command_center', {
         p_range_start: params.range_start,
@@ -315,28 +334,43 @@ export default function PromotionPointsManagementPage() {
       }
 
       if (rpcData) {
-        // Extract point stats from RPC response
-        const ptList: PointWithStats[] = (rpcData.points || []).map((pt: any) => ({
-          id: pt.point_id,
-          name: pt.point_name,
-          address: pt.address || '',
-          latitude: pt.latitude || null,
-          longitude: pt.longitude || null,
-          area_size: pt.area_size || 'medium',
-          point_status: pt.point_status || 'active',
-          created_at: pt.created_at || '',
-          updated_at: pt.updated_at || '',
-          staff_count: pt.staff_count || 0,
-          registrations: pt.registrations || 0,
-          charges: pt.charges || 0,
-          charge_amount: parseFloat(pt.charge_amount) || 0,
-          contacts: pt.contacts || 0,
-          reg_per_staff: parseFloat(pt.reg_per_staff) || 0,
-          charge_per_staff: pt.staff_count > 0 ? Math.round((pt.charges || 0) / pt.staff_count * 10) / 10 : 0,
-          reg_conversion_rate: pt.contacts > 0 ? Math.round((pt.registrations || 0) / pt.contacts * 1000) / 10 : 0,
-          charge_conversion_rate: pt.registrations > 0 ? Math.round((pt.charges || 0) / (pt.registrations || 1) * 1000) / 10 : 0,
-          health: pt.health || 'inactive',
-        }));
+        // Build a map of RPC point stats by point_id
+        const rpcPointMap: Record<string, any> = {};
+        (rpcData.points || []).forEach((pt: any) => {
+          if (pt.point_id) rpcPointMap[pt.point_id] = pt;
+        });
+
+        // Merge: use all points from the table, enrich with RPC stats where available
+        const ptList: PointWithStats[] = (allPointsData || []).map(pt => {
+          const rpcPt = rpcPointMap[pt.id];
+          const sc = rpcPt?.staff_count || staffCounts[pt.id] || 0;
+          const regs = rpcPt?.registrations || 0;
+          const charges = rpcPt?.charges || 0;
+          const chargeAmount = parseFloat(rpcPt?.charge_amount) || 0;
+          const contacts = rpcPt?.contacts || 0;
+          const regPerStaff = sc > 0 ? Math.round(regs / sc * 10) / 10 : 0;
+
+          let health: 'good' | 'fair' | 'poor' | 'inactive' = 'inactive';
+          if (pt.point_status === 'active' && sc > 0) {
+            if (regPerStaff >= 15) health = 'good';
+            else if (regPerStaff >= 8) health = 'fair';
+            else health = 'poor';
+          }
+
+          return {
+            ...pt,
+            staff_count: sc,
+            registrations: regs,
+            charges,
+            charge_amount: chargeAmount,
+            contacts,
+            reg_per_staff: regPerStaff,
+            charge_per_staff: sc > 0 ? Math.round(charges / sc * 10) / 10 : 0,
+            reg_conversion_rate: contacts > 0 ? Math.round(regs / contacts * 1000) / 10 : 0,
+            charge_conversion_rate: regs > 0 ? Math.round(charges / regs * 1000) / 10 : 0,
+            health,
+          };
+        });
 
         setPointsWithStats(ptList);
 
