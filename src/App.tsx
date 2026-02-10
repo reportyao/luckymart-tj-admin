@@ -43,6 +43,12 @@ import BatchArrivalConfirmPage from './pages/BatchArrivalConfirmPage';
 import BatchStatisticsPage from './pages/BatchStatisticsPage';
 import ErrorLogsPage from './pages/ErrorLogsPage';
 
+// ==================== 地推管理模块 ====================
+import PromoterDashboardPage from './pages/PromoterDashboardPage';
+import PromoterManagementPage from './pages/PromoterManagementPage';
+import PromoterReportsPage from './pages/PromoterReportsPage';
+import DepositAlertsPage from './pages/DepositAlertsPage';
+
 import { AdminAuthProvider, useAdminAuth } from './contexts/AdminAuthContext';
 import LoginPage from './pages/LoginPage';
 import { AdminDebugPanel } from './components/Debug/AdminDebugPanel';
@@ -119,6 +125,16 @@ function App(): JSX.Element {
             <NavLink to="/showoff-create" label="创建运营晒单" icon="✨" />
             <NavLink to="/showoff-management" label="运营晒单管理" icon="📋" />
             <NavLink to="/resale-management" label="转售管理" icon="🔄" />
+
+            {/* ==================== 地推管理模块 ==================== */}
+            <NavSection label="地推管理" />
+            <NavLink to="/promoter-dashboard" label="地推指挥室" icon="🎯" />
+            <NavLink to="/promoter-management" label="人员管理" icon="🧑‍💼" />
+            <NavLink to="/promoter-reports" label="KPI报表" icon="📊" />
+            <NavLink to="/deposit-alerts" label="充值告警" icon="🔔" />
+
+            {/* ==================== 系统配置 ==================== */}
+            <NavSection label="系统配置" />
             <NavLink to="/payment-config" label="支付配置" icon="⚙️" />
             <NavLink to="/commission-config" label="佣金配置" icon="💵" />
             <NavLink to="/commission-records" label="佣金记录" icon="📊" />
@@ -184,6 +200,13 @@ function App(): JSX.Element {
               <Route path="/ai-management" element={<ProtectedRoute element={<AIManagementPage />} requiredRole="admin" />} />
               <Route path="/error-logs" element={<ProtectedRoute element={<ErrorLogsPage />} requiredRole="admin" />} />
               <Route path="/audit-logs" element={<ProtectedRoute element={<PagePlaceholder title="Audit Logs" />} requiredRole="admin" />} />
+
+              {/* ==================== 地推管理模块路由 ==================== */}
+              <Route path="/promoter-dashboard" element={<ProtectedRoute element={<PromoterDashboardPage />} requiredRole="admin" />} />
+              <Route path="/promoter-management" element={<ProtectedRoute element={<PromoterManagementPage />} requiredRole="admin" />} />
+              <Route path="/promoter-reports" element={<ProtectedRoute element={<PromoterReportsPage />} requiredRole="admin" />} />
+              <Route path="/deposit-alerts" element={<ProtectedRoute element={<DepositAlertsPage />} requiredRole="admin" />} />
+
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
               <Route path="/forbidden" element={<ForbiddenPage />} />
             </Routes>
@@ -206,6 +229,14 @@ function NavLink({ to, label, icon }: { to: string; label: string; icon: string 
       <span className="text-xl">{icon}</span>
       <span>{label}</span>
     </Link>
+  )
+}
+
+function NavSection({ label }: { label: string }): JSX.Element {
+  return (
+    <div className="pt-4 pb-1 px-3">
+      <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{label}</div>
+    </div>
   )
 }
 
