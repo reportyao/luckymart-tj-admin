@@ -530,14 +530,14 @@ export default function PromotionPointsManagementPage() {
           return promoterId && promoterIds.includes(promoterId);
         });
         const charges = new Set(pointDeposits.map(d => d.user_id)).size;
-        const chargeAmount = pointDeposits.reduce((sum: number, d: any) => sum + parseFloat(d.amount || 0), 0);
+        const chargeAmount = pointDeposits.reduce((sum: number, d: any) => sum + (parseFloat(d.amount) || 0), 0);
 
         const prevPointDeposits = prevDepositsData.filter(d => {
           const promoterId = referralMap[d.user_id];
           return promoterId && promoterIds.includes(promoterId);
         });
         const prevCharges = new Set(prevPointDeposits.map(d => d.user_id)).size;
-        const prevChargeAmount = prevPointDeposits.reduce((sum: number, d: any) => sum + parseFloat(d.amount || 0), 0);
+        const prevChargeAmount = prevPointDeposits.reduce((sum: number, d: any) => sum + (parseFloat(d.amount) || 0), 0);
 
         // Count contacts
         const contacts = logsData?.filter(l => promoterIds.includes(l.promoter_id))
@@ -581,7 +581,7 @@ export default function PromotionPointsManagementPage() {
 
       const prevTotalRegs = prevRegsData.length;
       const prevTotalCharges = new Set(prevDepositsData.map(d => d.user_id)).size;
-      const prevTotalChargeAmount = prevDepositsData.reduce((sum: number, d: any) => sum + parseFloat(d.amount || 0), 0);
+      const prevTotalChargeAmount = prevDepositsData.reduce((sum: number, d: any) => sum + (parseFloat(d.amount) || 0), 0);
 
       setTotalStats({
         total_points: ptStats.length,
@@ -689,7 +689,7 @@ export default function PromotionPointsManagementPage() {
         const promoterId = refMap[d.user_id];
         if (promoterId) {
           chargeCounts[promoterId] = (chargeCounts[promoterId] || 0) + 1;
-          chargeAmounts[promoterId] = (chargeAmounts[promoterId] || 0) + parseFloat(d.amount || 0);
+          chargeAmounts[promoterId] = (chargeAmounts[promoterId] || 0) + (parseFloat(d.amount) || 0);
         }
       });
 
@@ -748,8 +748,8 @@ export default function PromotionPointsManagementPage() {
       const payload = {
         name: pointForm.name,
         address: pointForm.address,
-        latitude: pointForm.latitude ? parseFloat(pointForm.latitude) : null,
-        longitude: pointForm.longitude ? parseFloat(pointForm.longitude) : null,
+        latitude: pointForm.latitude ? (isNaN(parseFloat(pointForm.latitude)) ? null : parseFloat(pointForm.latitude)) : null,
+        longitude: pointForm.longitude ? (isNaN(parseFloat(pointForm.longitude)) ? null : parseFloat(pointForm.longitude)) : null,
         area_size: pointForm.area_size,
         point_status: pointForm.point_status,
       };
@@ -1423,8 +1423,8 @@ export default function PromotionPointsManagementPage() {
               <div className="flex items-center gap-4 text-sm text-gray-600">
                 <span>面积: {getAreaSizeBadge(detailPoint.area_size)}</span>
                 <span>健康度: {getHealthBadge(detailPoint.health)}</span>
-                <span>人均注册: <strong>{detailPoint.reg_per_staff.toFixed(1)}</strong></span>
-                <span>充值转化率: <strong>{detailPoint.charge_conversion_rate.toFixed(1)}%</strong></span>
+                <span>人均注册: <strong>{(detailPoint.reg_per_staff || 0).toFixed(1)}</strong></span>
+                <span>充值转化率: <strong>{(detailPoint.charge_conversion_rate || 0).toFixed(1)}%</strong></span>
               </div>
 
               {/* Staff Table */}

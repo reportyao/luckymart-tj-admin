@@ -75,7 +75,7 @@ export const OperationalShowoffCreatePage: React.FC = () => {
   const filteredProducts = products.filter(product => {
     if (!productSearchTerm) return true;
     const searchLower = productSearchTerm.toLowerCase();
-    return product.name.toLowerCase().includes(searchLower);
+    return (product.name || '').toLowerCase().includes(searchLower);
   });
 
   // ========== 获取选中商品的信息 ==========

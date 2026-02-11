@@ -666,8 +666,8 @@ export default function PromoterManagementPage() {
       const payload = {
         name: pointForm.name,
         address: pointForm.address,
-        latitude: pointForm.latitude ? parseFloat(pointForm.latitude) : null,
-        longitude: pointForm.longitude ? parseFloat(pointForm.longitude) : null,
+        latitude: pointForm.latitude ? (isNaN(parseFloat(pointForm.latitude)) ? null : parseFloat(pointForm.latitude)) : null,
+        longitude: pointForm.longitude ? (isNaN(parseFloat(pointForm.longitude)) ? null : parseFloat(pointForm.longitude)) : null,
         area_size: pointForm.area_size,
         point_status: pointForm.point_status,
       };

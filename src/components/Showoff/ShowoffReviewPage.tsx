@@ -144,7 +144,7 @@ export const ShowoffReviewPage: React.FC = () => {
                 <TableBody>
                   {showoffs.map((showoff) => (
                     <TableRow key={showoff.id}>
-                      <TableCell className="font-medium">{showoff.id.substring(0, 8)}...</TableCell>
+                      <TableCell className="font-medium">{(showoff.id || '').substring(0, 8)}...</TableCell>
                       <TableCell>{showoff.user_id ? `${showoff.user_id.substring(0, 8)}...` : <span className="text-gray-400 italic">运营晒单</span>}</TableCell>
                       <TableCell className="max-w-xs truncate">{showoff.content}</TableCell>
                       <TableCell>

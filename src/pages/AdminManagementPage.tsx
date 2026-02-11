@@ -217,12 +217,12 @@ export default function AdminManagementPage() {
                 <td className="px-6 py-4 whitespace-nowrap">{admin.username}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{admin.display_name || '-'}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 text-xs rounded-full bg-${getRoleColor(admin.role)}-100 text-${getRoleColor(admin.role)}-800`}>
+                  <span className={`px-2 py-1 text-xs rounded-full ${getRoleColor(admin.role) === 'red' ? 'bg-red-100 text-red-800' : getRoleColor(admin.role) === 'blue' ? 'bg-blue-100 text-blue-800' : getRoleColor(admin.role) === 'green' ? 'bg-green-100 text-green-800' : getRoleColor(admin.role) === 'yellow' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}`}>
                     {getRoleLabel(admin.role)}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 text-xs rounded-full bg-${getStatusColor(admin.status)}-100 text-${getStatusColor(admin.status)}-800`}>
+                  <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(admin.status) === 'green' ? 'bg-green-100 text-green-800' : getStatusColor(admin.status) === 'red' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>
                     {getStatusLabel(admin.status)}
                   </span>
                 </td>

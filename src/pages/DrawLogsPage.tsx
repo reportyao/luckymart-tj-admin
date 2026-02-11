@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Download, Eye, Calendar, RefreshCw } from 'lucide-react';
 import { useSupabase } from '../contexts/SupabaseContext';
+import toast from 'react-hot-toast';
 
 interface LotteryResult {
   id: string;
@@ -88,7 +89,7 @@ export default function DrawLogsPage() {
       setTotalCount(count || 0);
     } catch (error: any) {
       console.error('加载开奖记录失败:', error);
-      alert('加载失败: ' + error.message);
+      toast.error('加载失败: ' + (error instanceof Error ? error.message : '未知错误'));
     } finally {
       setLoading(false);
     }

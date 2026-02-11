@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Copy, Trash2, Eye, EyeOff } from 'lucide-react';
 import { MultiImageUpload } from '@/components/MultiImageUpload';
 import { useSupabase } from '@/contexts/SupabaseContext';
+import toast from 'react-hot-toast';
 
 interface PriceComparisonItem {
   platform: string;
@@ -115,7 +116,7 @@ export default function GroupBuyProductManagementPage() {
       price_comparisons: formData.price_comparisons || [],
     });
     setShowSkuSelector(false);
-    alert('已从库存商品导入信息（最少/最多参与人数默认为3）');
+    toast.success('已从库存商品导入信息（最少/最多参与人数默认为3）');
   };
 
   const fetchProducts = async () => {
@@ -130,7 +131,7 @@ export default function GroupBuyProductManagementPage() {
       setProducts(data || []);
     } catch (error) {
       console.error('Failed to fetch products:', error);
-      alert('获取商品列表失败');
+      toast.error('获取商品列表失败');
     } finally {
       setLoading(false);
     }
@@ -207,7 +208,7 @@ export default function GroupBuyProductManagementPage() {
           .eq('id', editingProduct.id);
 
         if (error) {throw error;}
-        alert('商品更新成功');
+        toast.success('商品更新成功');
       } else {
         // Create new product
         const { error } = await supabase
@@ -215,7 +216,7 @@ export default function GroupBuyProductManagementPage() {
           .insert([productData]);
 
         if (error) {throw error;}
-        alert('商品创建成功');
+        toast.success('商品创建成功');
       }
 
       setShowModal(false);
@@ -224,7 +225,7 @@ export default function GroupBuyProductManagementPage() {
       fetchProducts();
     } catch (error) {
       console.error('Failed to save product:', error);
-      alert(`保存商品失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      toast.error(`保存商品失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   };
 
@@ -320,7 +321,7 @@ export default function GroupBuyProductManagementPage() {
         .eq('status', 'ACTIVE');
 
       if (activeSessions && Array.isArray(activeSessions) && activeSessions.length > 0) {
-        alert('该商品有进行中的拼团会话，无法删除。请先等待会话结束或手动关闭。');
+        toast.error('该商品有进行中的拼团会话，无法删除。请先等待会话结束或手动关闭。');
         return;
       }
 
@@ -336,7 +337,7 @@ export default function GroupBuyProductManagementPage() {
       }
 
       if (orders && orders.length > 0) {
-        alert('该商品已有用户下单，无法删除。如需删除，请联系技术人员处理关联数据。');
+        toast.error('该商品已有用户下单，无法删除。如需删除，请联系技术人员处理关联数据。');
         return;
       }
 
@@ -352,7 +353,7 @@ export default function GroupBuyProductManagementPage() {
       }
 
       if (allSessions && allSessions.length > 0) {
-        alert('该商品已有拼团会话记录，无法删除。如需删除，请联系技术人员处理关联数据。');
+        toast.error('该商品已有拼团会话记录，无法删除。如需删除，请联系技术人员处理关联数据。');
         return;
       }
 
@@ -365,18 +366,18 @@ export default function GroupBuyProductManagementPage() {
       if (error) {
         // 如果仍然有外键约束错误，提供详细信息
         if (error.code === '23503') {
-          alert(`删除失败：该商品仍有关联数据。\n\n详细信息：${error.message}\n\n请联系技术人员处理。`);
+          toast.error(`删除失败：该商品仍有关联数据。请联系技术人员处理。`);
         } else {
           throw error;
         }
         return;
       }
       
-      alert('商品删除成功');
+      toast.success('商品删除成功');
       fetchProducts();
     } catch (error) {
       console.error('Failed to delete product:', error);
-      alert(`删除商品失败：${error instanceof Error ? error.message : '未知错误'}`);
+      toast.error(`删除商品失败：${error instanceof Error ? error.message : '未知错误'}`);
     }
   };
 
@@ -392,7 +393,7 @@ export default function GroupBuyProductManagementPage() {
       fetchProducts();
     } catch (error) {
       console.error('Failed to toggle status:', error);
-      alert('状态切换失败');
+      toast.error('状态切换失败');
     }
   };
 

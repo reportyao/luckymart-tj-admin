@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, RefreshCw, Settings, AlertCircle } from 'lucide-react';
 import { useSupabase } from '../contexts/SupabaseContext';
+import toast from 'react-hot-toast';
 
 interface CommissionSetting {
   id: string;
@@ -39,7 +40,7 @@ export default function CommissionConfigPage() {
       setSettings(data || []);
     } catch (error: any) {
       console.error('加载配置失败:', error);
-      alert('加载配置失败: ' + error.message);
+      toast.error('加载配置失败: ' + (error instanceof Error ? error.message : '未知错误'));
     } finally {
       setLoading(false);
     }
@@ -62,12 +63,12 @@ export default function CommissionConfigPage() {
 
       if (error) {throw error;}
 
-      alert('保存成功！');
+      toast.success('保存成功！');
       setEditingLevel(null);
       await loadSettings();
     } catch (error: any) {
       console.error('保存失败:', error);
-      alert('保存失败: ' + error.message);
+      toast.error('保存失败: ' + (error instanceof Error ? error.message : '未知错误'));
     } finally {
       setSaving(false);
     }

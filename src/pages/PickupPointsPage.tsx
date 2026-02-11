@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import toast from 'react-hot-toast';
 
 interface BusinessHours {
   monday?: string;
@@ -139,7 +140,7 @@ export default function PickupPointsPage() {
       setPickupPoints(data || []);
     } catch (error) {
       console.error('加载自提点失败:', error);
-      alert('加载自提点失败');
+      toast.error('加载自提点失败');
     } finally {
       setLoading(false);
     }
@@ -182,7 +183,7 @@ export default function PickupPointsPage() {
   // 保存自提点
   const handleSave = async () => {
     if (!formData.name || !formData.address) {
-      alert('请填写名称和地址');
+      toast.error('请填写名称和地址');
       return;
     }
 
@@ -209,7 +210,7 @@ export default function PickupPointsPage() {
           .eq('id', editingPoint.id);
 
         if (error) {throw error;}
-        alert('更新成功');
+        toast.success('更新成功');
       } else {
         // 新增
         const { error } = await supabase
@@ -217,14 +218,14 @@ export default function PickupPointsPage() {
           .insert(dataToSave);
 
         if (error) {throw error;}
-        alert('添加成功');
+        toast.success('添加成功');
       }
 
       closeModal();
       loadPickupPoints();
     } catch (error) {
       console.error('保存失败:', error);
-      alert('保存失败');
+      toast.error('保存失败');
     } finally {
       setSaving(false);
     }
@@ -242,11 +243,11 @@ export default function PickupPointsPage() {
         .eq('id', id);
 
       if (error) {throw error;}
-      alert('删除成功');
+      toast.success('删除成功');
       loadPickupPoints();
     } catch (error) {
       console.error('删除失败:', error);
-      alert('删除失败');
+      toast.error('删除失败');
     }
   };
 
@@ -263,7 +264,7 @@ export default function PickupPointsPage() {
       loadPickupPoints();
     } catch (error) {
       console.error('更新状态失败:', error);
-      alert('更新状态失败');
+      toast.error('更新状态失败');
     }
   };
 

@@ -82,7 +82,7 @@ const UserFinancialPage: React.FC = () => {
       const summaryUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-user-financial?user_id=${userId}&action=summary&period=${period}`;
       const summaryResponse = await fetch(summaryUrl, {
         headers: {
-          'X-Admin-Id': JSON.parse(localStorage.getItem('admin_user') || '{}').id || '',
+          'X-Admin-Id': (() => { try { return JSON.parse(localStorage.getItem('admin_user') || '{}').id || ''; } catch { return ''; } })(),
           'Content-Type': 'application/json',
           'apikey': import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY}`
@@ -106,7 +106,7 @@ const UserFinancialPage: React.FC = () => {
 
       const transactionsResponse = await fetch(transactionsUrl.toString(), {
         headers: {
-          'X-Admin-Id': JSON.parse(localStorage.getItem('admin_user') || '{}').id || '',
+          'X-Admin-Id': (() => { try { return JSON.parse(localStorage.getItem('admin_user') || '{}').id || ''; } catch { return ''; } })(),
           'Content-Type': 'application/json',
           'apikey': import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY}`
@@ -136,7 +136,7 @@ const UserFinancialPage: React.FC = () => {
 
       const response = await fetch(exportUrl.toString(), {
         headers: {
-          'X-Admin-Id': JSON.parse(localStorage.getItem('admin_user') || '{}').id || '',
+          'X-Admin-Id': (() => { try { return JSON.parse(localStorage.getItem('admin_user') || '{}').id || ''; } catch { return ''; } })(),
           'apikey': import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY}`
         }
