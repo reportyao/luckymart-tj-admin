@@ -690,8 +690,8 @@ export default function ChannelAnalyticsPage() {
       const term = codeForm.promoter_search.trim();
       const { data, error } = await supabase
         .from('users')
-        .select('id, first_name, last_name, telegram_username, telegram_id, invite_code')
-        .or(`telegram_id.eq.${term},telegram_username.ilike.%${term}%,invite_code.ilike.%${term}%`)
+        .select('id, first_name, last_name, telegram_username, telegram_id, referral_code')
+        .or(`telegram_id.eq.${term},telegram_username.ilike.%${term}%,referral_code.ilike.%${term}%`)
         .limit(10);
 
       if (error) throw error;
@@ -1420,7 +1420,7 @@ export default function ChannelAnalyticsPage() {
                           ...prev,
                           promoter_id: u.id,
                           promoter_name: name,
-                          code: u.invite_code || prev.code,
+                          code: u.referral_code || prev.code,
                         }));
                       }}
                     >
@@ -1431,7 +1431,7 @@ export default function ChannelAnalyticsPage() {
                         <div className="text-xs text-gray-500 flex items-center gap-2">
                           <span className="flex items-center gap-1">
                             <Hash className="w-3 h-3" />
-                            邀请码: <span className="font-mono font-semibold text-blue-600">{u.invite_code || '--'}</span>
+                            邀请码: <span className="font-mono font-semibold text-blue-600">{u.referral_code || '--'}</span>
                           </span>
                           <span>|</span>
                           <span>TG ID: {u.telegram_id || '--'}</span>
