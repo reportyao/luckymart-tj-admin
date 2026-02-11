@@ -548,6 +548,26 @@ export default function PromoterManagementPage() {
       return;
     }
     try {
+      // 如果填写了队长用户ID，先验证该用户是否存在
+      let validLeaderUserId: string | null = null;
+      if (teamForm.leader_user_id && teamForm.leader_user_id.trim()) {
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('id', teamForm.leader_user_id.trim())
+          .maybeSingle();
+        
+        if (userError) {
+          console.error('Validate leader user error:', userError);
+        }
+        
+        if (!userData) {
+          toast.error('队长用户ID不存在，请检查后重试');
+          return;
+        }
+        validLeaderUserId = userData.id;
+      }
+      
       // 检查团队名称是否已存在
       const { data: existingTeams, error: checkError } = await supabase
         .from('promoter_teams')
@@ -558,39 +578,42 @@ export default function PromoterManagementPage() {
         console.error('Check team name error:', checkError);
       }
       
-      // 如果是新建或编辑时改了名字,检查是否重复
+      // 如果是新建或编辑时改了名字，检查是否重复
       if (existingTeams && existingTeams.length > 0) {
         const isDuplicate = editingTeam 
           ? existingTeams.some(t => t.id !== editingTeam.id)
           : true;
         
         if (isDuplicate) {
-          toast.error(`团队名称 "${teamForm.name.trim()}" 已存在,请使用其他名称`);
+          toast.error(`团队名称 "${teamForm.name.trim()}" 已存在，请使用其他名称`);
           return;
         }
       }
       
+      const teamPayload = {
+        name: teamForm.name.trim(),
+        leader_user_id: validLeaderUserId,
+      };
+      
       if (editingTeam) {
         const { error } = await supabase
           .from('promoter_teams')
-          .update({
-            name: teamForm.name.trim(),
-            leader_user_id: teamForm.leader_user_id || null,
-          })
+          .update(teamPayload)
           .eq('id', editingTeam.id);
         if (error) throw error;
         toast.success('团队更新成功');
       } else {
         const { error } = await supabase
           .from('promoter_teams')
-          .insert({
-            name: teamForm.name.trim(),
-            leader_user_id: teamForm.leader_user_id || null,
-          });
+          .insert(teamPayload);
         if (error) {
           console.error('Insert team error:', error);
           if (error.code === '23505') {
-            toast.error('团队名称已存在,请使用其他名称');
+            toast.error('团队名称已存在，请使用其他名称');
+            return;
+          }
+          if (error.code === '23503') {
+            toast.error('队长用户ID不存在，请检查后重试');
             return;
           }
           throw error;

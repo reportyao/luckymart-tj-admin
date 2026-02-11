@@ -145,7 +145,7 @@ export const ShowoffReviewPage: React.FC = () => {
                   {showoffs.map((showoff) => (
                     <TableRow key={showoff.id}>
                       <TableCell className="font-medium">{showoff.id.substring(0, 8)}...</TableCell>
-                      <TableCell>{showoff.user_id.substring(0, 8)}...</TableCell>
+                      <TableCell>{showoff.user_id ? `${showoff.user_id.substring(0, 8)}...` : <span className="text-gray-400 italic">运营晒单</span>}</TableCell>
                       <TableCell className="max-w-xs truncate">{showoff.content}</TableCell>
                       <TableCell>
                         {showoff.image_urls && showoff.image_urls.length > 0 ? (
@@ -204,7 +204,7 @@ export const ShowoffReviewPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
                   <span className="text-gray-600">用户ID:</span>
-                  <span className="ml-2 font-medium">{selectedShowoff?.user_id}</span>
+                  <span className="ml-2 font-medium">{selectedShowoff?.user_id || <span className="text-gray-400 italic">运营晒单(无用户)</span>}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">创建时间:</span>

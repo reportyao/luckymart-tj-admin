@@ -179,8 +179,8 @@ export const ShippingManagementPage: React.FC = () => {
                 {shippings.map((shipping) => (
                   <TableRow key={shipping.id}>
                     <TableCell className="font-medium">{shipping.id.substring(0, 8)}...</TableCell>
-                    <TableCell>{shipping.prize_id.substring(0, 8)}...</TableCell>
-                    <TableCell>{shipping.user_id.substring(0, 8)}...</TableCell>
+                    <TableCell>{shipping.prize_id ? `${shipping.prize_id.substring(0, 8)}...` : '-'}</TableCell>
+                    <TableCell>{shipping.user_id ? `${shipping.user_id.substring(0, 8)}...` : '-'}</TableCell>
                     <TableCell>
                       <div className="text-xs">
                         <div>{shipping.recipient_name || '-'}</div>
