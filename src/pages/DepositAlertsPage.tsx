@@ -307,7 +307,7 @@ export default function DepositAlertsPage() {
           </h1>
           <p className="text-gray-600 mt-1">
             实时监控待审充值状态，识别异常和地推相关充值 ·
-            <a href="/deposit-review" className="text-blue-600 hover:underline ml-1">
+            <a href="/admin/deposit-review" className="text-blue-600 hover:underline ml-1">
               前往充值审核页面处理 <ExternalLink className="w-3 h-3 inline" />
             </a>
           </p>
@@ -481,7 +481,7 @@ export default function DepositAlertsPage() {
             </span>
           </div>
           <a
-            href="/deposit-review"
+            href="/admin/deposit-review"
             className="inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
           >
             前往审核 <ExternalLink className="w-4 h-4" />
@@ -549,7 +549,7 @@ export default function DepositAlertsPage() {
 
             <div className="flex justify-between pt-4 border-t">
               <a
-                href="/deposit-review"
+                href="/admin/deposit-review"
                 className="inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
               >
                 前往审核页面处理 <ExternalLink className="w-4 h-4" />
