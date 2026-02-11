@@ -1402,36 +1402,47 @@ export default function ChannelAnalyticsPage() {
 
             {/* Search results */}
             {searchedUsers.length > 0 && (
-              <div className="border rounded-lg divide-y max-h-40 overflow-y-auto">
-                {searchedUsers.map(u => (
-                  <div
-                    key={u.id}
-                    className={`flex items-center justify-between px-3 py-2 hover:bg-gray-50 cursor-pointer ${
-                      codeForm.promoter_id === u.id ? 'bg-blue-50' : ''
-                    }`}
-                    onClick={() => {
-                      const name = u.telegram_username || `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'N/A';
-                      setCodeForm(prev => ({
-                        ...prev,
-                        promoter_id: u.id,
-                        promoter_name: name,
-                        code: u.invite_code || prev.code,
-                      }));
-                    }}
-                  >
-                    <div>
-                      <div className="text-sm font-medium">
-                        {u.telegram_username || `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'N/A'}
+              <div className="space-y-2">
+                <div className="text-xs text-gray-500 flex items-center gap-1">
+                  <Eye className="w-3 h-3" />
+                  点击用户将自动填充邀请码
+                </div>
+                <div className="border rounded-lg divide-y max-h-40 overflow-y-auto">
+                  {searchedUsers.map(u => (
+                    <div
+                      key={u.id}
+                      className={`flex items-center justify-between px-3 py-2 hover:bg-gray-50 cursor-pointer ${
+                        codeForm.promoter_id === u.id ? 'bg-blue-50' : ''
+                      }`}
+                      onClick={() => {
+                        const name = u.telegram_username || `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'N/A';
+                        setCodeForm(prev => ({
+                          ...prev,
+                          promoter_id: u.id,
+                          promoter_name: name,
+                          code: u.invite_code || prev.code,
+                        }));
+                      }}
+                    >
+                      <div className="flex-1">
+                        <div className="text-sm font-medium">
+                          {u.telegram_username || `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'N/A'}
+                        </div>
+                        <div className="text-xs text-gray-500 flex items-center gap-2">
+                          <span className="flex items-center gap-1">
+                            <Hash className="w-3 h-3" />
+                            邀请码: <span className="font-mono font-semibold text-blue-600">{u.invite_code || '--'}</span>
+                          </span>
+                          <span>|</span>
+                          <span>TG ID: {u.telegram_id || '--'}</span>
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        邀请码: {u.invite_code || '--'} | TG ID: {u.telegram_id || '--'}
-                      </div>
+                      {codeForm.promoter_id === u.id && (
+                        <span className="text-blue-600 text-xs font-medium">✓ 已选择</span>
+                      )}
                     </div>
-                    {codeForm.promoter_id === u.id && (
-                      <span className="text-blue-600 text-xs font-medium">已选择</span>
-                    )}
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
 

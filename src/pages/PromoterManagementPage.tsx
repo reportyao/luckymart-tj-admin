@@ -255,7 +255,7 @@ export default function PromoterManagementPage() {
 
         const enriched: Team[] = data.map(t => ({
           ...t,
-          leader_name: t.leader_user_id ? leadersMap[t.leader_user_id] || '' : '',
+          leader_name: (t.leader_user_id && leadersMap[t.leader_user_id]) ? leadersMap[t.leader_user_id] : '',
           member_count: memberCounts[t.id] || 0,
         }));
 
@@ -548,11 +548,33 @@ export default function PromoterManagementPage() {
       return;
     }
     try {
+      // 检查团队名称是否已存在
+      const { data: existingTeams, error: checkError } = await supabase
+        .from('promoter_teams')
+        .select('id, name')
+        .eq('name', teamForm.name.trim());
+      
+      if (checkError) {
+        console.error('Check team name error:', checkError);
+      }
+      
+      // 如果是新建或编辑时改了名字,检查是否重复
+      if (existingTeams && existingTeams.length > 0) {
+        const isDuplicate = editingTeam 
+          ? existingTeams.some(t => t.id !== editingTeam.id)
+          : true;
+        
+        if (isDuplicate) {
+          toast.error(`团队名称 "${teamForm.name.trim()}" 已存在,请使用其他名称`);
+          return;
+        }
+      }
+      
       if (editingTeam) {
         const { error } = await supabase
           .from('promoter_teams')
           .update({
-            name: teamForm.name,
+            name: teamForm.name.trim(),
             leader_user_id: teamForm.leader_user_id || null,
           })
           .eq('id', editingTeam.id);
@@ -562,10 +584,17 @@ export default function PromoterManagementPage() {
         const { error } = await supabase
           .from('promoter_teams')
           .insert({
-            name: teamForm.name,
+            name: teamForm.name.trim(),
             leader_user_id: teamForm.leader_user_id || null,
           });
-        if (error) throw error;
+        if (error) {
+          console.error('Insert team error:', error);
+          if (error.code === '23505') {
+            toast.error('团队名称已存在,请使用其他名称');
+            return;
+          }
+          throw error;
+        }
         toast.success('团队创建成功');
       }
       setShowAddTeam(false);
@@ -573,7 +602,8 @@ export default function PromoterManagementPage() {
       setTeamForm({ name: '', leader_user_id: '' });
       fetchTeams();
     } catch (err: any) {
-      toast.error('操作失败: ' + err.message);
+      console.error('Save team error:', err);
+      toast.error('操作失败: ' + (err.message || '未知错误'));
     }
   };
 
