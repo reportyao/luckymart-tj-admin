@@ -132,7 +132,7 @@ export const WithdrawalReviewPage: React.FC = () => {
                     <TableCell>
                       <div className="text-sm">
                         <div className="font-medium">{withdrawal.users?.display_name || withdrawal.users?.telegram_username || '未知用户'}</div>
-                        <div className="text-gray-500 text-xs">ID: {withdrawal.user_id.substring(0, 8)}...</div>
+                        <div className="text-gray-500 text-xs">ID: {withdrawal.user_id ? `${withdrawal.user_id.substring(0, 8)}...` : '-'}</div>
                       </div>
                     </TableCell>
                     <TableCell>{withdrawal.amount} {withdrawal.currency}</TableCell>

@@ -165,6 +165,13 @@ const ErrorLogsPage: React.FC = () => {
     loadLogs(true);
   }, [filters]);
 
+  // page变化时加载更多数据（非reset）
+  useEffect(() => {
+    if (page > 0) {
+      loadLogs(false);
+    }
+  }, [page]);
+
   // 更新日志状态
   const updateLogStatus = async (logId: string, newStatus: string, note?: string) => {
     try {
@@ -418,7 +425,7 @@ const ErrorLogsPage: React.FC = () => {
         {hasMore && logs.length > 0 && (
           <div className="p-4 text-center">
             <button
-              onClick={() => { setPage(p => p + 1); loadLogs(); }}
+              onClick={() => { const nextPage = page + 1; setPage(nextPage); }}
               disabled={loading}
               className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50"
             >

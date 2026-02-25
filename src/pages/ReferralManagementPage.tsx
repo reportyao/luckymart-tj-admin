@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Users, TrendingUp, Download } from 'lucide-react';
 import { useSupabase } from '../contexts/SupabaseContext';
+import toast from 'react-hot-toast';
 
 interface User {
   id: string;
@@ -34,7 +35,7 @@ export default function ReferralManagementPage() {
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
-      alert('请输入用户ID、用户名或邀请码');
+      toast.error('请输入用户ID、用户名或邀请码');
       return;
     }
 
@@ -52,11 +53,11 @@ export default function ReferralManagementPage() {
         setSelectedUser(data[0]);
         await loadReferralTree(data[0].id);
       } else {
-        alert('未找到用户');
+        toast.error('未找到用户');
       }
     } catch (error: any) {
       console.error('搜索用户失败:', error);
-      alert('搜索失败: ' + error.message);
+      toast.error('搜索失败: ' + (error instanceof Error ? error.message : '未知错误'));
     } finally {
       setLoading(false);
     }
@@ -75,7 +76,7 @@ export default function ReferralManagementPage() {
       setExpandedNodes(new Set([userId]));
     } catch (error: any) {
       console.error('加载邀请树失败:', error);
-      alert('加载邀请树失败: ' + error.message);
+      toast.error('加载邀请树失败: ' + (error instanceof Error ? error.message : '未知错误'));
     } finally {
       setLoading(false);
     }
@@ -93,7 +94,7 @@ export default function ReferralManagementPage() {
 
   const exportData = async () => {
     if (!referralTree) {
-      alert('请先搜索用户');
+      toast.error('请先搜索用户');
       return;
     }
 

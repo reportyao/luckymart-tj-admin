@@ -225,7 +225,7 @@ export const OperationalShowoffManagementPage: React.FC = () => {
                     const imgs = getShowoffImages(showoff);
                     return (
                       <TableRow key={showoff.id} className={showoff.is_hidden ? 'opacity-50' : ''}>
-                        <TableCell className="font-mono text-xs">{showoff.id.substring(0, 8)}...</TableCell>
+                        <TableCell className="font-mono text-xs">{(showoff.id || '').substring(0, 8)}...</TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             {showoff.display_avatar_url && (

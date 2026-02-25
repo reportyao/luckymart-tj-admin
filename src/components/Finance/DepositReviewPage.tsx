@@ -168,7 +168,7 @@ export const DepositReviewPage: React.FC = () => {
                   {deposits.map((deposit) => (
                     <TableRow key={deposit.id}>
                       <TableCell className="font-medium">{deposit.id.substring(0, 8)}...</TableCell>
-                      <TableCell>{deposit.user_id.substring(0, 8)}...</TableCell>
+                      <TableCell>{deposit.user_id ? `${deposit.user_id.substring(0, 8)}...` : '-'}</TableCell>
                       <TableCell>{deposit.amount} {deposit.currency}</TableCell>
                       <TableCell>{deposit.payment_method}</TableCell>
                       <TableCell>

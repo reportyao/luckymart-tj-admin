@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSupabase } from '../../contexts/SupabaseContext';
+import toast from 'react-hot-toast';
 
 interface DebugInfo {
   page: {
@@ -203,7 +204,7 @@ export function AdminDebugPanel() {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(JSON.stringify(debugInfo, null, 2));
-    alert('调试信息已复制到剪贴板');
+    toast.success('调试信息已复制到剪贴板');
   };
 
   const clearLogs = () => {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Plus, Edit, Trash2, Check, X, TestTube } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import toast from 'react-hot-toast';
 
 interface DrawAlgorithm {
   id: string;
@@ -47,7 +48,7 @@ export default function AlgorithmConfigPageEnhanced() {
       setAlgorithms(data || []);
     } catch (error: any) {
       console.error('加载算法失败:', error);
-      alert('加载算法失败: ' + error.message);
+      toast.error('加载算法失败: ' + (error instanceof Error ? error.message : '未知错误'));
     } finally {
       setLoading(false);
     }
@@ -78,12 +79,12 @@ export default function AlgorithmConfigPageEnhanced() {
           .neq('id', algorithm.id);
       }
 
-      alert('保存成功！');
+      toast.success('保存成功！');
       setEditingId(null);
       await loadAlgorithms();
     } catch (error: any) {
       console.error('保存失败:', error);
-      alert('保存失败: ' + error.message);
+      toast.error('保存失败: ' + (error instanceof Error ? error.message : '未知错误'));
     }
   };
 

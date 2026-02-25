@@ -12,15 +12,22 @@ export function formatCurrency(amount: number, currency: string = 'TJS'): string
 
 // 日期时间格式化（使用北京时间 UTC+8）
 export function formatDateTime(dateString: string): string {
-  const date = new Date(dateString);
-  // 转换为北京时间
-  const beijingTime = new Date(date.getTime() + (8 * 60 * 60 * 1000) - (date.getTimezoneOffset() * 60 * 1000));
-  const year = beijingTime.getUTCFullYear();
-  const month = String(beijingTime.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(beijingTime.getUTCDate()).padStart(2, '0');
-  const hours = String(beijingTime.getUTCHours()).padStart(2, '0');
-  const minutes = String(beijingTime.getUTCMinutes()).padStart(2, '0');
-  return `${year}-${month}-${day} ${hours}:${minutes}`;
+  if (!dateString) return '--';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '--';
+    return new Intl.DateTimeFormat('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(date).replace(/\//g, '-');
+  } catch {
+    return '--';
+  }
 }
 
 // 获取彩票状态文本

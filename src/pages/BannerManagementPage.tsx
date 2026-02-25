@@ -173,21 +173,33 @@ export default function BannerManagementPage() {
     const targetBanner = banners[targetIndex];
 
     try {
-      await supabase
+      // 第一步：更新当前 banner 的排序
+      const { error: err1 } = await supabase
         .from('banners')
         .update({ sort_order: targetBanner.sort_order })
         .eq('id', banner.id);
+      if (err1) throw err1;
 
-      await supabase
+      // 第二步：更新目标 banner 的排序
+      const { error: err2 } = await supabase
         .from('banners')
         .update({ sort_order: banner.sort_order })
         .eq('id', targetBanner.id);
+      if (err2) {
+        // 回滚第一步
+        await supabase
+          .from('banners')
+          .update({ sort_order: banner.sort_order })
+          .eq('id', banner.id);
+        throw err2;
+      }
 
       toast.success('排序已更新');
       fetchBanners();
     } catch (error: any) {
       console.error('Failed to update order:', error);
       toast.error('排序更新失败');
+      fetchBanners(); // 失败时也刷新列表确保状态一致
     }
   };
 

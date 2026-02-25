@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Download, DollarSign, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useSupabase } from '../contexts/SupabaseContext';
+import toast from 'react-hot-toast';
 
 interface CommissionRecord {
   id: string;
@@ -98,7 +99,7 @@ export default function CommissionRecordsPage() {
       setTotalCount(count || 0);
     } catch (error: any) {
       console.error('加载返利记录失败:', error);
-      alert('加载失败: ' + error.message);
+      toast.error('加载失败: ' + (error instanceof Error ? error.message : '未知错误'));
     } finally {
       setLoading(false);
     }
@@ -152,7 +153,7 @@ export default function CommissionRecordsPage() {
       setRecords(recordsWithUsers);
     } catch (error: any) {
       console.error('搜索失败:', error);
-      alert('搜索失败: ' + error.message);
+      toast.error('搜索失败: ' + (error instanceof Error ? error.message : '未知错误'));
     } finally {
       setLoading(false);
     }
@@ -160,7 +161,7 @@ export default function CommissionRecordsPage() {
 
   const handleBulkPayout = async () => {
     if (selectedRecords.size === 0) {
-      alert('请先选择要发放的返利记录');
+      toast.error('请先选择要发放的返利记录');
       return;
     }
 
@@ -175,12 +176,12 @@ export default function CommissionRecordsPage() {
 
       if (error) {throw error;}
 
-      alert(`成功发放 ${data.success_count} 条返利，失败 ${data.fail_count} 条`);
+      toast.success(`成功发放 ${data.success_count} 条返利，失败 ${data.fail_count} 条`);
       setSelectedRecords(new Set());
       await loadRecords();
     } catch (error: any) {
       console.error('批量发放失败:', error);
-      alert('批量发放失败: ' + error.message);
+      toast.error('批量发放失败: ' + (error instanceof Error ? error.message : '未知错误'));
     } finally {
       setLoading(false);
     }

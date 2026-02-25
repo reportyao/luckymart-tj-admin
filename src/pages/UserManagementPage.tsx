@@ -100,7 +100,7 @@ const UserManagementPage: React.FC = () => {
                     type="number"
                     className="w-20 px-2 py-1 border border-gray-300 rounded"
                     defaultValue={user.level}
-                    onBlur={(e) => handleLevelChange(user.id, parseInt(e.target.value, 10))}
+                    onBlur={(e) => { const val = parseInt(e.target.value, 10); if (!isNaN(val)) handleLevelChange(user.id, val); }}
                   />
                 </td>
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Clock, Trophy, RefreshCw } from 'lucide-react';
 import { useSupabase } from '@/contexts/SupabaseContext';
+import toast from 'react-hot-toast';
 
 interface GroupBuySession {
   id: string;
@@ -103,7 +104,7 @@ export default function GroupBuySessionManagementPage() {
       setSessions(data || []);
     } catch (error) {
       console.error('Failed to fetch sessions:', error);
-      alert('获取拼团会话失败');
+      toast.error('获取拼团会话失败');
     } finally {
       setLoading(false);
     }
