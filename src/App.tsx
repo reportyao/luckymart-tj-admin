@@ -50,6 +50,8 @@ import PromoterReportsPage from './pages/PromoterReportsPage';
 import DepositAlertsPage from './pages/DepositAlertsPage';
 import PromotionPointsManagementPage from './pages/PromotionPointsManagementPage';
 import ChannelAnalyticsPage from './pages/ChannelAnalyticsPage';
+import PromoterDepositManagementPage from './pages/PromoterDepositManagementPage';
+import PromoterSettlementPage from './pages/PromoterSettlementPage';
 
 import { AdminAuthProvider, useAdminAuth } from './contexts/AdminAuthContext';
 import LoginPage from './pages/LoginPage';
@@ -136,6 +138,8 @@ function App(): JSX.Element {
             <NavLink to="/channel-analytics" label="渠道分析" icon="📡" />
             <NavLink to="/promoter-reports" label="KPI报表" icon="📊" />
             <NavLink to="/deposit-alerts" label="充值告警" icon="🔔" />
+            <NavLink to="/promoter-deposit-management" label="地推充值管理" icon="💰" />
+            <NavLink to="/promoter-settlement" label="缴款管理" icon="🧾" />
 
             {/* ==================== 系统配置 ==================== */}
             <NavSection label="系统配置" />
@@ -212,6 +216,8 @@ function App(): JSX.Element {
               <Route path="/channel-analytics" element={<ProtectedRoute element={<ChannelAnalyticsPage />} requiredRole="admin" />} />
               <Route path="/promoter-reports" element={<ProtectedRoute element={<PromoterReportsPage />} requiredRole="admin" />} />
               <Route path="/deposit-alerts" element={<ProtectedRoute element={<DepositAlertsPage />} requiredRole="admin" />} />
+              <Route path="/promoter-deposit-management" element={<ProtectedRoute element={<PromoterDepositManagementPage />} requiredRole="admin" />} />
+              <Route path="/promoter-settlement" element={<ProtectedRoute element={<PromoterSettlementPage />} requiredRole="admin" />} />
 
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
               <Route path="/forbidden" element={<ForbiddenPage />} />
